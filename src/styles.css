@@ -1,0 +1,255 @@
+:root {
+  --bg: #0b0a10;
+  --panel-bg: rgba(14, 12, 20, 0.78);
+  --panel-border: #3b3346;
+  --text: #e6e0d4;
+  --muted: #9a9288;
+  --gold: #e0b84a;
+  --danger: #e5604f;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', system-ui, sans-serif;
+}
+
+.game-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The HUD sits above the canvas but lets mouse events through; only .panel opts back in. */
+.hud,
+.screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  text-align: center;
+  padding: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 64px;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-shadow: 0 0 18px rgba(224, 184, 74, 0.35);
+}
+
+.subtitle {
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 20px;
+}
+
+.panel {
+  position: absolute;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.hud-top-left {
+  top: 12px;
+  left: 12px;
+}
+
+.hud-bottom-left {
+  bottom: 12px;
+  left: 12px;
+  color: var(--muted);
+}
+
+.hud-toast {
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.hud-top-right {
+  top: 12px;
+  right: 12px;
+}
+
+.hud-warning {
+  top: 52px;
+  left: 12px;
+  color: var(--gold);
+  max-width: 480px;
+}
+
+.mono {
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+/* --- combat HUD ------------------------------------------------------------------------ */
+
+.hud-hp {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  padding: 6px;
+}
+
+.hp-track {
+  position: relative;
+  height: 22px;
+  background: #1a0f12;
+  border: 1px solid #4a2a2e;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(#d8483c, #8f2a24);
+  transition: width 0.12s linear;
+}
+
+.hp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.hud-kills {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.hit-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: inset 0 0 120px 30px rgba(220, 40, 30, 0.75);
+}
+
+.hit-flash.active {
+  animation: hit-flash 0.35s ease-out;
+}
+
+@keyframes hit-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.death-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: radial-gradient(ellipse at center, rgba(40, 0, 0, 0.55), rgba(0, 0, 0, 0.85));
+  pointer-events: auto;
+  animation: fade-in 0.8s ease-out;
+}
+
+.death-screen h2 {
+  margin: 0;
+  font-size: 48px;
+  letter-spacing: 0.2em;
+  color: var(--danger);
+}
+
+.death-screen button {
+  margin-top: 12px;
+  padding: 10px 28px;
+  font-size: 18px;
+  color: var(--text);
+  background: #2a1d1f;
+  border: 1px solid var(--gold);
+  cursor: pointer;
+}
+
+.death-screen button:hover {
+  background: #3b2a2c;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Floating combat text (DOM nodes pooled by DamageNumbers). */
+.damage-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.damage-number {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 700;
+  font-size: 18px;
+  color: #f4efe2;
+  text-shadow: 0 0 3px #000, 0 1px 2px #000;
+  will-change: transform, opacity;
+}
+
+.damage-number.crit {
+  color: var(--gold);
+  font-size: 26px;
+}
+
+.damage-number.taken {
+  color: #ff6b5e;
+}
