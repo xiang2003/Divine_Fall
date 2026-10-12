@@ -147,3 +147,104 @@ export class SlashEffect {
     this.positions.setXYZ(i, worldToSceneX(wx, wy), worldToSceneY(wx, wy), 0);
   }
 }
+
+const BOLT_POINTS = 7;
+const BOLT_WIDTH = 2.5;
+const BOLT_LIFE = 0.2;
+const BOLT_POOL = 8;
+
+interface Bolt {
+  mesh: THREE.Mesh;
+  positions: THREE.BufferAttribute;
+  material: THREE.MeshBasicMaterial;
+  age: number;
+}
+
+/** Jagged lightning arcs between two world points. A fixed pool is reused; nothing is allocated per strike. */
+export class LightningEffect {
+  readonly group = new THREE.Group();
+  private readonly bolts: Bolt[] = [];
+  private nextSlot = 0;
+
+  constructor() {
+    for (let i = 0; i < BOLT_POOL; i++) {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new THREE.BufferAttribute(new Float32Array(BOLT_POINTS * 2 * 3), 3);
+      geometry.setAttribute('position', positions);
+      const index: number[] = [];
+      for (let p = 0; p < BOLT_POINTS - 1; p++) {
+        const a = p * 2;
+        index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+      geometry.setIndex(index);
+      const material = new THREE.MeshBasicMaterial({
+        color: '#a9e0ff',
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.visible = false;
+      mesh.frustumCulled = false;
+      this.group.add(mesh);
+      this.bolts.push({ mesh, positions, material, age: 0 });
+    }
+  }
+
+  /** Flashes an arc from (ax, ay) to (bx, by) in world coordinates, lifted to chest height. */
+  strike(ax: number, ay: number, bx: number, by: number): void {
+    let bolt = this.bolts.find((b) => !b.mesh.visible);
+    if (!bolt) {
+      bolt = this.bolts[this.nextSlot]!;
+      this.nextSlot = (this.nextSlot + 1) % BOLT_POOL;
+    }
+    const lift = 22;
+    const x0 = worldToSceneX(ax, ay);
+    const y0 = worldToSceneY(ax, ay) + lift;
+    const x1 = worldToSceneX(bx, by);
+    const y1 = worldToSceneY(bx, by) + lift;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    for (let i = 0; i < BOLT_POINTS; i++) {
+      const t = i / (BOLT_POINTS - 1);
+      const jitter = i === 0 || i === BOLT_POINTS - 1 ? 0 : (Math.random() - 0.5) * 14;
+      const px = x0 + dx * t + nx * jitter;
+      const py = y0 + dy * t + ny * jitter;
+      bolt.positions.setXYZ(i * 2, px + nx * BOLT_WIDTH, py + ny * BOLT_WIDTH, 0);
+      bolt.positions.setXYZ(i * 2 + 1, px - nx * BOLT_WIDTH, py - ny * BOLT_WIDTH, 0);
+    }
+    bolt.positions.needsUpdate = true;
+    bolt.mesh.renderOrder = sortKey(Layer.FOREGROUND, bx, by) - 1;
+    bolt.age = 0;
+    bolt.material.opacity = 1;
+    bolt.mesh.visible = true;
+  }
+
+  update(dt: number): void {
+    for (const b of this.bolts) {
+      if (!b.mesh.visible) continue;
+      b.age += dt;
+      if (b.age >= BOLT_LIFE) b.mesh.visible = false;
+      else b.material.opacity = 1 - b.age / BOLT_LIFE;
+    }
+  }
+
+  clear(): void {
+    for (const b of this.bolts) b.mesh.visible = false;
+  }
+
+  dispose(): void {
+    for (const b of this.bolts) {
+      b.mesh.geometry.dispose();
+      b.material.dispose();
+    }
+    this.group.clear();
+    this.bolts.length = 0;
+  }
+}

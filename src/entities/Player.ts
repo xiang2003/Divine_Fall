@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { PLAYER_CONFIG } from '../config/gameConfig';
+import { LEGENDARY_EFFECTS, type LegendaryEffectId } from '../data/legendaryEffects';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
 import { SpriteAnimator } from '../game/SpriteAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
+import { Buffs, DodgeController } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
@@ -26,6 +28,8 @@ export class Player {
   readonly radius = PLAYER_CONFIG.radius;
   readonly group = new THREE.Group();
   readonly mover = new ClickMover();
+  readonly dodge = new DodgeController();
+  readonly buffs = new Buffs();
   hooks: PlayerHooks = {};
 
   hp: number;
@@ -35,6 +39,8 @@ export class Player {
   private readonly shadow: THREE.Mesh;
   private readonly attack = new AttackTimer();
   private readonly swingDir: Vec2 = { x: 1, y: 1 };
+  private readonly dodgeDir: Vec2 = { x: 1, y: 1 };
+  private effects: ReadonlySet<LegendaryEffectId> = new Set();
   private hurtTimer = 0;
   private sinceDamaged = Infinity;
 
@@ -57,9 +63,26 @@ export class Player {
     return this.attack.swinging;
   }
 
-  /** Walk toward a world position (click-to-move). Ignored while dead or mid-swing. */
+  /** Replaces the set of active legendary effects (called whenever equipment changes). */
+  setEffects(effects: Iterable<LegendaryEffectId>): void {
+    this.effects = new Set(effects);
+  }
+
+  hasEffect(id: LegendaryEffectId): boolean {
+    return this.effects.has(id);
+  }
+
+  /** Restores health (capped at max). Returns the amount actually restored. */
+  heal(amount: number): number {
+    if (this.isDead) return 0;
+    const before = this.hp;
+    this.hp = Math.min(this.stats.maxHp, this.hp + amount);
+    return this.hp - before;
+  }
+
+  /** Walk toward a world position (click-to-move). Ignored while dead, mid-swing or dodging. */
   moveTo(x: number, y: number): void {
-    if (this.isDead || this.attack.swinging) return;
+    if (this.isDead || this.attack.swinging || this.dodge.dashing) return;
     this.mover.setTarget(x, y);
   }
 
@@ -68,10 +91,10 @@ export class Player {
    * still on cooldown. The swing stops the player in place.
    */
   startAttack(aimX: number, aimY: number): boolean {
-    if (this.isDead || !this.attack.canStart) return false;
+    if (this.isDead || this.dodge.dashing || !this.attack.canStart) return false;
     normalizeInto(aimX - this.pos.x, aimY - this.pos.y, this.swingDir, this.swingDir.x, this.swingDir.y);
 
-    const cooldown = 1 / this.stats.attackSpeed;
+    const cooldown = 1 / (this.stats.attackSpeed * this.buffs.attackSpeedMultiplier);
     const animLength = this.animator.durationOf('attack');
     // The swing never outlasts the cooldown; at high attack speed the animation is sped up to match.
     const duration = Math.min(animLength, cooldown);
@@ -84,9 +107,27 @@ export class Player {
     return true;
   }
 
+  /**
+   * Starts a dodge: a quick dash toward the aim point during which the player cannot be hurt.
+   * It interrupts a swing. Returns false if dead, still dashing or on cooldown.
+   */
+  startDodge(aimX: number, aimY: number): boolean {
+    if (this.isDead || !this.dodge.ready) return false;
+    this.dodge.start();
+    normalizeInto(aimX - this.pos.x, aimY - this.pos.y, this.dodgeDir, this.swingDir.x, this.swingDir.y);
+    this.attack.cancel();
+    this.animator.setSpeed(1);
+    this.mover.stop();
+    this.faceWorld(this.dodgeDir.x, this.dodgeDir.y);
+    if (this.effects.has('dodgeHaste')) {
+      this.buffs.hasteMove(LEGENDARY_EFFECTS.dodgeHaste.duration, LEGENDARY_EFFECTS.dodgeHaste.speedBonus);
+    }
+    return true;
+  }
+
   /** Applies a hit (armor is applied here). Returns the damage actually taken and whether it was fatal. */
   takeDamage(rawDamage: number): { amount: number; died: boolean } {
-    if (this.isDead) return { amount: 0, died: false };
+    if (this.isDead || this.dodge.invulnerable) return { amount: 0, died: false };
     const amount = applyArmor(rawDamage, this.stats.armor);
     this.hp = Math.max(0, this.hp - amount);
     this.sinceDamaged = 0;
@@ -110,6 +151,8 @@ export class Player {
     this.hurtTimer = 0;
     this.sinceDamaged = Infinity;
     this.attack.reset();
+    this.dodge.reset();
+    this.buffs.clear();
     this.mover.stop();
     this.animator.setSpeed(1);
     this.animator.play('idle', true);
@@ -129,13 +172,30 @@ export class Player {
       this.hp = Math.min(this.stats.maxHp, this.hp + PLAYER_CONFIG.regenPerSecond * dt);
     }
 
+    this.buffs.update(dt);
+    const dash = this.dodge.update(dt);
+    if (dash > 0) {
+      const step = this.dodge.speed * dash;
+      this.collision.moveCircle(this.pos, this.radius, this.dodgeDir.x * step, this.dodgeDir.y * step);
+      this.animator.play('walk');
+      this.animator.update(dt);
+      this.syncVisuals();
+      return;
+    }
+
     const swing = this.attack.update(dt);
     if (swing.hit) this.hooks.swingHit?.(this.swingDir.x, this.swingDir.y);
     if (swing.finished) this.animator.setSpeed(1);
 
     let moving = false;
     if (!this.attack.swinging) {
-      moving = this.mover.update(this.pos, dt, this.stats.moveSpeed, this.radius, this.collision);
+      moving = this.mover.update(
+        this.pos,
+        dt,
+        this.stats.moveSpeed * this.buffs.moveMultiplier,
+        this.radius,
+        this.collision,
+      );
       if (moving) this.faceWorld(this.mover.direction.x, this.mover.direction.y);
       this.animator.play(moving ? 'walk' : this.hurtTimer > 0 ? 'hurt' : 'idle');
     }

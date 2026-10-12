@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BRANDING } from '../config/branding';
 import type { GameSnapshot } from '../game/Game';
+import { EquipmentSummary } from './EquipmentPanel';
+import { Inventory, type InventoryActions } from './Inventory';
 
 const TOAST_MS = 1200;
 
@@ -31,7 +33,15 @@ function Toast({ notice }: { notice: GameSnapshot['notice'] }) {
 }
 
 /** HUD: loading / error screens, health, kill counter, hit flash, death screen, controls hint and debug readout. */
-export function HUD({ snapshot, onRestart }: { snapshot: GameSnapshot; onRestart: () => void }) {
+export function HUD({
+  snapshot,
+  onRestart,
+  inventoryActions,
+}: {
+  snapshot: GameSnapshot;
+  onRestart: () => void;
+  inventoryActions: InventoryActions;
+}) {
   if (snapshot.phase === 'loading') {
     return (
       <div className="screen">
@@ -58,7 +68,7 @@ export function HUD({ snapshot, onRestart }: { snapshot: GameSnapshot; onRestart
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 普通攻擊（可按住）· Q W E R T 技能（尚未實作）· F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 · QWERT 技能（尚未實作）· F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       <div className="panel hud-hp">
@@ -75,6 +85,8 @@ export function HUD({ snapshot, onRestart }: { snapshot: GameSnapshot; onRestart
       <div className="panel hud-kills">
         擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
       </div>
+      <EquipmentSummary equipment={snapshot.inventory.equipment} />
+      {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       <Toast notice={snapshot.notice} />
       {snapshot.playerDead && (
         <div className="death-screen">

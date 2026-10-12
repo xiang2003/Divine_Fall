@@ -10,7 +10,8 @@ export type InputAction =
   | 'inventory'
   | 'pickup'
   | 'pause'
-  | 'debug';
+  | 'debug'
+  | 'debugLoot';
 
 /** Skill actions in hotbar order. */
 export const SKILL_ACTIONS = ['skillQ', 'skillW', 'skillE', 'skillR', 'skillT'] as const satisfies readonly InputAction[];
@@ -31,6 +32,7 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   pickup: ['KeyF'],
   pause: ['Escape'],
   debug: ['F3'],
+  debugLoot: ['F4'],
 };
 
 export type MouseAction = 'move' | 'attack';
@@ -68,8 +70,8 @@ export const PLAYER_CONFIG = {
   /** Level-1 stats before equipment and progression modifiers (see systems/stats.ts). */
   baseStats: {
     maxHp: 100,
-    /** Damage per hit before crits and armor. */
-    damage: 12,
+    /** Damage per hit before crits and armor. Unarmed value; the starter sword adds +4 (see Game.buildWorld). */
+    damage: 8,
     /** Swings per second. */
     attackSpeed: 1.6,
     /** Melee reach measured from the player's centre to the edge of the target (world units). */
@@ -81,6 +83,29 @@ export const PLAYER_CONFIG = {
     /** World units (tiles) per second. */
     moveSpeed: 4.5,
   },
+} as const;
+
+/** Dodge (Space): a short invulnerable dash toward the cursor. */
+export const DODGE_CONFIG = {
+  /** Distance covered by the dash, in world units. */
+  distance: 3.2,
+  /** Seconds the dash lasts. */
+  duration: 0.2,
+  /** Seconds before the next dodge. */
+  cooldown: 1.0,
+  /** Seconds of damage immunity from the start of the dash (slightly longer than the dash itself). */
+  invulnDuration: 0.35,
+} as const;
+
+export const LOOT_CONFIG = {
+  /** The player picks an item up automatically once this close to the one they targeted (world units). */
+  pickupRange: 1.2,
+  /** F picks up the nearest item within this distance. */
+  keyPickupRange: 1.6,
+  /** Items scatter this far from where the monster died. */
+  scatterRadius: 0.7,
+  /** Ground items beyond this count push out the oldest *normal* item (never rarer ones). */
+  maxGroundDrops: 60,
 } as const;
 
 /** Largest simulation step, so a tab switch or hitch can't teleport anyone through a wall. */

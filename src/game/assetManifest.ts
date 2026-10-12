@@ -1,3 +1,4 @@
+import type { EquipSlot } from '../data/items';
 import type { AnimationSet } from './AnimationClock';
 import {
   drawGhoulSheet,
@@ -7,6 +8,7 @@ import {
   drawShadeSheet,
   characterAnimations,
 } from './CharacterArt';
+import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
 import { drawCrate, drawFloorTile, drawMoveMarker, drawShadow, drawWallBlock } from './PlaceholderArt';
 
 export interface SpriteAssetDef {
@@ -36,6 +38,12 @@ export const SpriteKey = {
   SHADOW: 'fx.shadow',
   MOVE_MARKER: 'fx.move_marker',
   ORB: 'fx.orb',
+  LOOT_RING: 'fx.loot_ring',
+  ICON_WEAPON: 'item.weapon',
+  ICON_HELMET: 'item.helmet',
+  ICON_CHEST: 'item.chest',
+  ICON_BOOTS: 'item.boots',
+  ICON_RING: 'item.ring',
   PLAYER: 'char.player',
   GHOUL: 'monster.ghoul',
   SHADE: 'monster.shade',
@@ -99,11 +107,34 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
     anchor: { x: 0.5, y: 0.5 },
     placeholder: drawOrb,
   },
+  {
+    key: SpriteKey.LOOT_RING,
+    frameWidth: 48,
+    frameHeight: 24,
+    anchor: { x: 0.5, y: 0.5 },
+    placeholder: drawLootRing,
+  },
+  itemIcon(SpriteKey.ICON_WEAPON, 'weapon'),
+  itemIcon(SpriteKey.ICON_HELMET, 'helmet'),
+  itemIcon(SpriteKey.ICON_CHEST, 'chest'),
+  itemIcon(SpriteKey.ICON_BOOTS, 'boots'),
+  itemIcon(SpriteKey.ICON_RING, 'ring'),
   characterSprite(SpriteKey.PLAYER, 12, drawPlayerSheet),
   characterSprite(SpriteKey.GHOUL, 8, drawGhoulSheet),
   characterSprite(SpriteKey.SHADE, 8, drawShadeSheet),
   characterSprite(SpriteKey.HOUND, 8, drawHoundSheet),
 ];
+
+/** Ground sprite for an item icon, standing on its bottom edge. */
+function itemIcon(key: string, slot: EquipSlot): SpriteAssetDef {
+  return {
+    key,
+    frameWidth: ICON_SIZE,
+    frameHeight: ICON_SIZE,
+    anchor: { x: 0.5, y: 0 },
+    placeholder: () => drawItemIcon(slot),
+  };
+}
 
 /** Standard 64x64 character sheet; attackFps sets how long (4 frames / fps) the attack animation lasts. */
 function characterSprite(key: string, attackFps: number, placeholder: () => HTMLCanvasElement): SpriteAssetDef {
@@ -116,3 +147,12 @@ function characterSprite(key: string, attackFps: number, placeholder: () => HTML
     placeholder,
   };
 }
+
+/** Which ground sprite shows an item of each equipment slot. */
+export const SLOT_ICON_KEY: Record<EquipSlot, string> = {
+  weapon: SpriteKey.ICON_WEAPON,
+  helmet: SpriteKey.ICON_HELMET,
+  chest: SpriteKey.ICON_CHEST,
+  boots: SpriteKey.ICON_BOOTS,
+  ring: SpriteKey.ICON_RING,
+};

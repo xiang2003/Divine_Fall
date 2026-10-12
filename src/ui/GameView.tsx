@@ -29,5 +29,16 @@ export function GameView() {
 
 function HudBridge({ game }: { game: Game }) {
   const snapshot = useSyncExternalStore(game.subscribe, game.getSnapshot);
-  return <HUD snapshot={snapshot} onRestart={game.restart} />;
+  return (
+    <HUD
+      snapshot={snapshot}
+      onRestart={game.restart}
+      inventoryActions={{
+        onEquip: game.equipFromInventory,
+        onUnequip: game.unequip,
+        onDrop: game.dropFromInventory,
+        onClose: () => game.setInventoryOpen(false),
+      }}
+    />
+  );
 }

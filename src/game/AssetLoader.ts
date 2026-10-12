@@ -70,6 +70,10 @@ export class AssetLoader {
     return this.get(key).material;
   }
 
+  texture(key: string): THREE.Texture {
+    return this.get(key).texture;
+  }
+
   /** A geometry per sprite key showing frame 0, shared by every static sprite using that key. */
   sharedGeometry(key: string): THREE.BufferGeometry {
     let geo = this.sharedGeometries.get(key);

@@ -8,7 +8,9 @@ import { CombatSystem, type CombatEvents } from '../src/systems/CombatSystem';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
 import type { ProjectileSystem } from '../src/systems/ProjectileSystem';
 import { parseMap } from '../src/data/mapData';
-import { computePlayerStats } from '../src/systems/stats';
+import { Buffs } from '../src/systems/buffs';
+import { computeStats, emptyEquipment } from '../src/systems/stats';
+import type { LegendaryEffectId } from '../src/data/legendaryEffects';
 
 const MAP = parseMap({
   id: 'c',
@@ -17,14 +19,21 @@ const MAP = parseMap({
 });
 
 /** Minimal stand-in for Player: same damage rules, no rendering. */
-function fakePlayer(armor = 5) {
-  const stats = { ...computePlayerStats(), armor };
+function fakePlayer(armor = 5, effects: LegendaryEffectId[] = []) {
+  const stats = { ...computeStats(emptyEquipment()), armor };
   const p = {
     pos: { x: 2.5, y: 2.5 },
     radius: PLAYER_CONFIG.radius,
     stats,
     hp: stats.maxHp,
     isDead: false,
+    buffs: new Buffs(),
+    hasEffect: (id: LegendaryEffectId) => effects.includes(id),
+    heal(amount: number) {
+      const before = p.hp;
+      p.hp = Math.min(stats.maxHp, p.hp + amount);
+      return p.hp - before;
+    },
     takeDamage(raw: number) {
       if (p.isDead) return { amount: 0, died: false };
       const amount = applyArmor(raw, stats.armor);
@@ -39,8 +48,8 @@ function fakePlayer(armor = 5) {
   return p;
 }
 
-function setup(rngValue = 0.99, armor = 5) {
-  const player = fakePlayer(armor);
+function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
+  const player = fakePlayer(armor, effects);
   const monsters: Monster[] = [];
   const fired: { damage: number }[] = [];
   const events = {
@@ -48,6 +57,8 @@ function setup(rngValue = 0.99, armor = 5) {
     taken: [] as number[],
     kills: [] as Monster[],
     deaths: 0,
+    heals: [] as number[],
+    arcs: [] as [number, number, number, number][],
   };
   const projectiles = {
     fire: (_x: number, _y: number, _dx: number, _dy: number, _speed: number, damage: number) => {
@@ -61,6 +72,8 @@ function setup(rngValue = 0.99, armor = 5) {
     damageTaken: (_x, _y, amount) => events.taken.push(amount),
     monsterKilled: (m) => events.kills.push(m),
     playerDied: () => events.deaths++,
+    healed: (_x, _y, amount) => events.heals.push(amount),
+    lightningArc: (ax, ay, bx, by) => events.arcs.push([ax, ay, bx, by]),
   };
   const combat = new CombatSystem(
     player as unknown as Player,
@@ -119,13 +132,13 @@ describe('CombatSystem: player swings', () => {
   });
 
   it('rapid repeated swings never damage a corpse or double-count a kill', () => {
-    const { monsters, combat, events } = setup(0.99);
+    const { player, monsters, combat, events } = setup(0.99);
     const m = new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 });
     monsters.push(m);
     for (let i = 0; i < 30; i++) combat.playerSwingHit(1, 0);
     expect(events.kills).toHaveLength(1);
     expect(m.hp).toBe(0);
-    expect(events.dealt.length).toBe(Math.ceil(MONSTERS.ghoul.maxHp / 12)); // 4 hits of 12
+    expect(events.dealt.length).toBe(Math.ceil(MONSTERS.ghoul.maxHp / player.stats.damage));
   });
 });
 
@@ -160,5 +173,79 @@ describe('CombatSystem: damage to the player', () => {
     combat.meleeStrike(m);
     expect(events.taken).toHaveLength(hits);
     expect(events.taken.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(100);
+  });
+});
+
+describe('CombatSystem: legendary effects', () => {
+  it('chain lightning jumps to the nearest unhit enemies, at most maxTargets, never the same one twice', () => {
+    // rng 0 -> always procs (0 < chance) and always crits for the main hit; arcs ignore crit.
+    const { player, monsters, combat, events } = setup(0, 5, ['chainLightning']);
+    const first = new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 });
+    const chain = [1, 2, 3, 4].map((i) => new Monster(MONSTERS.ghoul, { x: 3.4 + i * 1.5, y: 2.5 }));
+    monsters.push(first, ...chain);
+    combat.playerSwingHit(1, 0);
+    const arcDamage = Math.round(player.stats.damage * 0.6);
+    // first monster took the swing; exactly 3 of the 4 others were hit by arcs, nearest first
+    expect(events.arcs).toHaveLength(4); // player -> first, then 3 jumps
+    expect(chain[0]!.hp).toBe(MONSTERS.ghoul.maxHp - arcDamage);
+    expect(chain[1]!.hp).toBe(MONSTERS.ghoul.maxHp - arcDamage);
+    expect(chain[2]!.hp).toBe(MONSTERS.ghoul.maxHp - arcDamage);
+    expect(chain[3]!.hp).toBe(MONSTERS.ghoul.maxHp);
+  });
+
+  it('chain lightning does not proc without the effect, without a hit, or when the roll fails', () => {
+    const noEffect = setup(0, 5, []);
+    noEffect.monsters.push(new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 }), new Monster(MONSTERS.ghoul, { x: 5, y: 2.5 }));
+    noEffect.combat.playerSwingHit(1, 0);
+    expect(noEffect.events.arcs).toHaveLength(0);
+
+    const miss = setup(0, 5, ['chainLightning']);
+    miss.monsters.push(new Monster(MONSTERS.ghoul, { x: 8.5, y: 2.5 }));
+    miss.combat.playerSwingHit(1, 0);
+    expect(miss.events.arcs).toHaveLength(0);
+
+    const failedRoll = setup(0.99, 5, ['chainLightning']);
+    failedRoll.monsters.push(new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 }), new Monster(MONSTERS.ghoul, { x: 5, y: 2.5 }));
+    failedRoll.combat.playerSwingHit(1, 0);
+    expect(failedRoll.events.arcs).toHaveLength(0);
+  });
+
+  it('chain lightning can finish off enemies and counts those kills too', () => {
+    const { monsters, combat, events } = setup(0, 5, ['chainLightning']);
+    const weak = new Monster(MONSTERS.hound, { x: 5, y: 2.5 });
+    weak.hp = 1;
+    monsters.push(new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 }), weak);
+    combat.playerSwingHit(1, 0);
+    expect(events.kills).toContain(weak);
+  });
+
+  it('life on kill heals a percentage of max HP (at least the minimum), capped at max', () => {
+    const { player, monsters, combat, events } = setup(0.99, 5, ['lifeOnKill']);
+    player.hp = 50;
+    const m = new Monster(MONSTERS.hound, { x: 3.4, y: 2.5 });
+    m.hp = 1;
+    monsters.push(m);
+    combat.playerSwingHit(1, 0);
+    expect(player.hp).toBe(50 + Math.round(player.stats.maxHp * 0.06));
+    expect(events.heals).toEqual([Math.round(player.stats.maxHp * 0.06)]);
+
+    // at full health there is nothing to restore and no number is shown
+    const full = setup(0.99, 5, ['lifeOnKill']);
+    const m2 = new Monster(MONSTERS.hound, { x: 3.4, y: 2.5 });
+    m2.hp = 1;
+    full.monsters.push(m2);
+    full.combat.playerSwingHit(1, 0);
+    expect(full.events.heals).toHaveLength(0);
+  });
+
+  it('kill frenzy grants an attack speed buff on kill only', () => {
+    const { player, monsters, combat } = setup(0.99, 5, ['killFrenzy']);
+    const m = new Monster(MONSTERS.ghoul, { x: 3.4, y: 2.5 });
+    monsters.push(m);
+    combat.playerSwingHit(1, 0); // hit, not a kill
+    expect(player.buffs.attackSpeedMultiplier).toBe(1);
+    m.hp = 1;
+    combat.playerSwingHit(1, 0);
+    expect(player.buffs.attackSpeedMultiplier).toBeCloseTo(1.3, 9);
   });
 });

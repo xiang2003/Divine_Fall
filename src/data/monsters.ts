@@ -1,4 +1,5 @@
 import { SpriteKey } from '../game/assetManifest';
+import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
 
@@ -28,6 +29,8 @@ export interface MonsterDef {
   projectileSpeed?: number;
   /** Experience granted on death (consumed by the progression system in Phase 5). */
   xp: number;
+  /** Which loot table this monster rolls on death. */
+  lootTable: LootTableId;
   /** Height of the health bar above the feet, in art pixels. */
   barHeight: number;
 }
@@ -47,6 +50,7 @@ export const MONSTERS = {
     attackDuration: 0.5,
     radius: 0.3,
     xp: 10,
+    lootTable: 'normalMonster',
     barHeight: 56,
   },
   shade: {
@@ -65,6 +69,7 @@ export const MONSTERS = {
     keepDistance: 3,
     projectileSpeed: 6,
     xp: 14,
+    lootTable: 'normalMonster',
     barHeight: 56,
   },
   hound: {
@@ -81,6 +86,7 @@ export const MONSTERS = {
     attackDuration: 0.35,
     radius: 0.26,
     xp: 8,
+    lootTable: 'normalMonster',
     barHeight: 34,
   },
 } as const satisfies Record<string, MonsterDef>;

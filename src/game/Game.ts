@@ -1,28 +1,41 @@
 import * as THREE from 'three';
-import { MAX_FRAME_DT, PLAYER_CONFIG, SKILL_ACTIONS } from '../config/gameConfig';
+import { LOOT_CONFIG, MAX_FRAME_DT, PLAYER_CONFIG, SKILL_ACTIONS } from '../config/gameConfig';
+import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
+import { LOOT_TABLES } from '../data/lootTables';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { CombatSystem } from '../systems/CombatSystem';
+import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
+import { Inventory } from '../systems/InventorySystem';
+import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { defaultRng } from '../systems/rng';
-import { computePlayerStats } from '../systems/stats';
+import { activeEffects, computeStats, type Equipment, type PlayerStats } from '../systems/stats';
 import { AssetLoader, assetUrl } from './AssetLoader';
 import { ASSET_MANIFEST, SpriteKey } from './assetManifest';
 import { CameraController } from './CameraController';
 import { DamageNumbers } from './DamageNumbers';
 import type { DebugOverlay } from './DebugOverlay';
-import { EffectAssets, SlashEffect } from './effects';
+import { EffectAssets, LightningEffect, SlashEffect } from './effects';
 import { Input } from './Input';
 import { Layer, placeAt, worldToSceneX, worldToSceneY, type Vec2 } from './iso';
 import { SceneManager } from './SceneManager';
 
 const MAP_URL = 'maps/dungeon.json';
 const STATS_INTERVAL = 0.25;
+const STARTER_WEAPON = 'sword_rusty';
 
 export type GamePhase = 'loading' | 'ready' | 'error';
+
+/** Immutable copy of the backpack, equipment and derived stats for the React UI. Replaced on every change. */
+export interface InventoryView {
+  slots: readonly (ItemInstance | null)[];
+  equipment: Readonly<Equipment>;
+  stats: Readonly<PlayerStats>;
+}
 
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
 export interface GameSnapshot {
@@ -46,7 +59,24 @@ export interface GameSnapshot {
   monstersAlive: number;
   monstersTotal: number;
   kills: number;
+  inventoryOpen: boolean;
+  inventory: InventoryView;
 }
+
+const EMPTY_INVENTORY: InventoryView = {
+  slots: [],
+  equipment: { weapon: null, helmet: null, chest: null, boots: null, ring: null },
+  stats: {
+    maxHp: 0,
+    damage: 0,
+    attackSpeed: 0,
+    attackRange: 0,
+    armor: 0,
+    critChance: 0,
+    critDamage: 0,
+    moveSpeed: 0,
+  },
+};
 
 const INITIAL: GameSnapshot = {
   phase: 'loading',
@@ -65,6 +95,8 @@ const INITIAL: GameSnapshot = {
   monstersAlive: 0,
   monstersTotal: 0,
   kills: 0,
+  inventoryOpen: false,
+  inventory: EMPTY_INVENTORY,
 };
 
 /** Everything that exists once a map has loaded. */
@@ -72,17 +104,20 @@ interface World {
   map: MapData;
   collision: CollisionSystem;
   player: Player;
+  inventory: Inventory;
   monsters: MonsterAISystem;
   projectiles: ProjectileSystem;
   combat: CombatSystem;
+  groundLoot: GroundLootSystem;
   effects: EffectAssets;
   slash: SlashEffect;
+  lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
   moveMarker: THREE.Mesh;
 }
 
-/** Top-level game object: wires renderer, input, map, collision, combat and the player together. */
+/** Top-level game object: wires renderer, input, map, collision, combat, loot and the player together. */
 export class Game {
   private snapshot: GameSnapshot = INITIAL;
   private readonly listeners = new Set<() => void>();
@@ -97,6 +132,9 @@ export class Game {
   private noticeSeq = 0;
   private hitSeq = 0;
   private kills = 0;
+  private inventoryOpen = false;
+  /** The ground item the player was told to walk to and pick up. */
+  private pickupTarget: LootDrop | null = null;
 
   private disposed = false;
   private rafId = 0;
@@ -138,6 +176,7 @@ export class Game {
 
       this.world = this.buildWorld(map, assets);
       const { player } = this.world;
+      this.syncEquipment();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
       this.publish({ phase: 'ready', mapName: map.name, warnings: [...assets.errors] });
       this.publishVitals();
@@ -153,7 +192,10 @@ export class Game {
     }
   }
 
-  /** Respawns the player at the start with full health and repopulates the dungeon. */
+  /**
+   * Respawns the player at the start with full health and repopulates the dungeon.
+   * The character keeps its inventory and equipment; items still on the floor are cleared.
+   */
   restart = (): void => {
     const w = this.world;
     if (!w) return;
@@ -162,6 +204,9 @@ export class Game {
     w.projectiles.clear();
     w.numbers.clear();
     w.slash.hide();
+    w.lightning.clear();
+    w.groundLoot.clear();
+    this.pickupTarget = null;
     this.kills = 0;
     this.cameraCtl.snapTo(worldToSceneX(w.player.pos.x, w.player.pos.y), worldToSceneY(w.player.pos.x, w.player.pos.y));
     this.publishVitals();
@@ -177,8 +222,10 @@ export class Game {
     if (w) {
       w.monsters.dispose();
       w.projectiles.dispose();
+      w.groundLoot.dispose();
       w.player.dispose();
       w.slash.dispose();
+      w.lightning.dispose();
       w.numbers.dispose();
       w.effects.dispose();
     }
@@ -191,20 +238,62 @@ export class Game {
     }
   }
 
+  // --- UI actions (called from React) --------------------------------------------------------
+
+  setInventoryOpen = (open: boolean): void => {
+    this.inventoryOpen = open;
+    this.publish({ inventoryOpen: open });
+  };
+
+  toggleInventory = (): void => this.setInventoryOpen(!this.inventoryOpen);
+
+  /** Equips the backpack item at `index` (swapping with what is worn in that slot). */
+  equipFromInventory = (index: number): void => {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    w.inventory.equip(index);
+  };
+
+  /** Moves an equipped item back to the backpack; refuses (item stays equipped) if the backpack is full. */
+  unequip = (slot: EquipSlot): void => {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    const result = w.inventory.unequip(slot);
+    if (!result.ok && result.reason === 'full') this.notify('背包已滿，無法卸下裝備');
+  };
+
+  /** Drops a backpack item on the floor next to the player (it can be picked up again). */
+  dropFromInventory = (index: number): void => {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    const item = w.inventory.take(index);
+    if (!item) return;
+    w.groundLoot.spawnNear(item, w.player.pos.x, w.player.pos.y);
+    this.notify(`丟棄：${item.name}`);
+  };
+
   // --- setup -------------------------------------------------------------------------------
 
   private buildWorld(map: MapData, assets: AssetLoader): World {
     const collision = new CollisionSystem(map);
     const debug = this.scene.loadMap(map, assets);
     const effects = new EffectAssets();
-    const player = new Player(assets, collision, map.spawns.player, computePlayerStats());
+
+    const inventory = new Inventory(() => this.syncEquipment());
+    inventory.add(createPlainItem(STARTER_WEAPON, defaultRng));
+    inventory.equip(0);
+
+    const player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment));
     const projectiles = new ProjectileSystem(assets);
     const slash = new SlashEffect();
+    const lightning = new LightningEffect();
     const numbers = new DamageNumbers(this.container);
+    const groundLoot = new GroundLootSystem(assets, this.container, collision, defaultRng, (drop) =>
+      this.requestPickup(drop),
+    );
 
     // Combat and the monster system reference each other (combat reads the monster list,
     // monsters call combat hooks), so the list is passed lazily.
-    // eslint-disable-next-line prefer-const -- assigned below once both exist
     let monsters: MonsterAISystem;
     const combat = new CombatSystem(player, () => monsters.all, projectiles, collision, defaultRng, {
       damageDealt: (x, y, amount, crit) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt'),
@@ -213,8 +302,16 @@ export class Game {
         this.hitSeq++;
         this.publishVitals();
       },
-      monsterKilled: () => {
+      healed: (x, y, amount) => {
+        numbers.spawn(x, y, `+${amount}`, 'heal');
+        this.publishVitals();
+      },
+      lightningArc: (ax, ay, bx, by) => lightning.strike(ax, ay, bx, by),
+      monsterKilled: (m: Monster) => {
         this.kills++;
+        for (const item of rollLoot(LOOT_TABLES[m.def.lootTable], defaultRng)) {
+          groundLoot.spawnNear(item, m.pos.x, m.pos.y);
+        }
         this.publishVitals();
         if (monsters.aliveCount === 0) this.notify('區域已清空！');
       },
@@ -235,8 +332,78 @@ export class Game {
     );
     moveMarker.visible = false;
 
-    this.scene.scene.add(monsters.group, projectiles.group, player.group, slash.mesh, moveMarker);
-    return { map, collision, player, monsters, projectiles, combat, effects, slash, numbers, debug, moveMarker };
+    this.scene.scene.add(
+      groundLoot.group,
+      monsters.group,
+      projectiles.group,
+      player.group,
+      slash.mesh,
+      lightning.group,
+      moveMarker,
+    );
+    return {
+      map,
+      collision,
+      player,
+      inventory,
+      monsters,
+      projectiles,
+      combat,
+      groundLoot,
+      effects,
+      slash,
+      lightning,
+      numbers,
+      debug,
+      moveMarker,
+    };
+  }
+
+  // --- equipment, pickup -------------------------------------------------------------------
+
+  /** Recomputes the player's stats and legendary effects from what is worn, and tells the UI. */
+  private syncEquipment(): void {
+    const w = this.world;
+    if (!w) return; // fires once while the world is still being built; start() syncs afterwards
+    const stats = computeStats(w.inventory.equipment);
+    Object.assign(w.player.stats, stats);
+    w.player.hp = Math.min(w.player.hp, stats.maxHp);
+    w.player.setEffects(activeEffects(w.inventory.equipment));
+    this.publish({
+      inventory: { slots: [...w.inventory.slots], equipment: { ...w.inventory.equipment }, stats: { ...stats } },
+    });
+    this.publishVitals();
+  }
+
+  /** Called when a ground label is clicked: walk there and pick the item up. */
+  private requestPickup(drop: LootDrop): void {
+    const w = this.world;
+    if (!w || w.player.isDead || drop.picked) return;
+    this.pickupTarget = drop;
+  }
+
+  private tryPickup(drop: LootDrop): void {
+    const w = this.world;
+    if (!w || drop.picked) return;
+    const result = w.inventory.add(drop.item);
+    if (result.ok) {
+      w.groundLoot.remove(drop);
+      this.notify(`拾取：${drop.item.name}`);
+    } else if (result.reason === 'duplicate') {
+      w.groundLoot.remove(drop); // the same item is already owned; never create a second copy
+    } else {
+      this.notify('背包已滿！');
+    }
+  }
+
+  /** Debug (F3 mode + F4): drops every legendary and a few rares next to the player. */
+  private debugDropLoot(): void {
+    const w = this.world;
+    if (!w) return;
+    const { x, y } = w.player.pos;
+    for (const def of LEGENDARIES) w.groundLoot.spawnNear(generateLegendary(def.id, defaultRng), x, y);
+    for (let i = 0; i < 3; i++) w.groundLoot.spawnNear(generateItem('rare', defaultRng), x, y);
+    this.notify('除錯：已掉落測試裝備');
   }
 
   // --- internals -------------------------------------------------------------------------
@@ -296,13 +463,17 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, combat, slash, numbers, moveMarker } = w;
+    const { player, debug, monsters, combat, slash, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (input.wasPressed('debug')) {
       debug.toggle();
       this.publish({ debug: debug.visible });
     }
+    if (debug.visible && input.wasPressed('debugLoot')) this.debugDropLoot();
+
+    if (input.wasPressed('inventory')) this.toggleInventory();
+    if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);
 
     const aim = input.pointerInside
       ? this.cameraCtl.pointerToWorld(input.pointer.x, input.pointer.y, this.aimWorld)
@@ -312,15 +483,40 @@ export class Game {
       // wasMousePressed also covers a click whose press and release land within one frame.
       const attackHeld = input.isMouseDown('attack') || input.wasMousePressed('attack');
       const moveHeld = input.isMouseDown('move') || input.wasMousePressed('move');
+      // Any fresh gameplay input cancels a pending walk-to-pickup.
+      if (attackHeld || moveHeld || input.wasPressed('dodge')) this.pickupTarget = null;
+
+      if (input.wasPressed('dodge')) player.startDodge(aim?.x ?? player.pos.x, aim?.y ?? player.pos.y);
+
       // Right button: swing toward the cursor (hold to keep swinging). It stops the player in place
       // and takes priority over walking, so holding both never drags the player mid-swing.
       if (attackHeld && aim) player.startAttack(aim.x, aim.y);
       else if (moveHeld && aim) player.moveTo(aim.x, aim.y);
 
+      // F: pick up the nearest item within reach.
+      if (input.wasPressed('pickup')) {
+        const near = groundLoot.nearest(player.pos, LOOT_CONFIG.keyPickupRange);
+        if (near) this.tryPickup(near);
+      }
+
+      // Walking toward a clicked ground item.
+      const target = this.pickupTarget;
+      if (target) {
+        if (target.picked) this.pickupTarget = null;
+        else if (Math.hypot(target.pos.x - player.pos.x, target.pos.y - player.pos.y) <= LOOT_CONFIG.pickupRange) {
+          this.pickupTarget = null;
+          this.tryPickup(target);
+        } else if (!player.isSwinging && !player.mover.hasTarget) {
+          player.moveTo(target.pos.x, target.pos.y);
+        }
+      }
+
       // Skill keys are bound, but their effects land in Phase 4.
       for (const action of SKILL_ACTIONS) {
         if (input.wasPressed(action)) this.notify(`${action.slice(5)}：技能（尚未實作）`);
       }
+    } else {
+      this.pickupTarget = null;
     }
 
     player.update(dt);
@@ -328,12 +524,14 @@ export class Game {
     combat.update(dt);
     monsters.syncViews(dt);
     slash.update(dt);
+    lightning.update(dt);
+    groundLoot.update(dt, this.cameraCtl);
     numbers.update(dt, this.cameraCtl);
     debug.setPlayerCircle(player.pos.x, player.pos.y, player.radius);
 
-    const target = player.mover.currentTarget;
-    moveMarker.visible = target !== null;
-    if (target) placeAt(moveMarker, Layer.GROUND_DECAL, target.x, target.y);
+    const moveTarget = player.mover.currentTarget;
+    moveMarker.visible = moveTarget !== null && this.pickupTarget === null;
+    if (moveTarget) placeAt(moveMarker, Layer.GROUND_DECAL, moveTarget.x, moveTarget.y);
 
     this.cameraCtl.follow(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y), dt);
 
@@ -351,12 +549,18 @@ export class Game {
     }
   }
 
-  /** Read-only view of live monsters, for tests and debugging. */
+  /** Read-only views for tests and debugging. */
   get monsterList(): readonly Monster[] {
     return this.world?.monsters.all ?? [];
   }
   get playerEntity(): Player | null {
     return this.world?.player ?? null;
+  }
+  get inventoryEntity(): Inventory | null {
+    return this.world?.inventory ?? null;
+  }
+  get lootDrops(): readonly LootDrop[] {
+    return this.world?.groundLoot.all ?? [];
   }
 }
 
@@ -365,3 +569,6 @@ function describeError(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);
 }
+
+// Re-exported for the UI.
+export { EQUIP_SLOTS, SLOT_LABEL };
