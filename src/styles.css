@@ -95,7 +95,10 @@ body,
 .hud-bottom-left {
   bottom: 12px;
   left: 12px;
+  /* stay clear of the centred health bar (320px wide) */
+  max-width: calc(50% - 190px);
   color: var(--muted);
+  line-height: 1.5;
 }
 
 .hud-toast {
@@ -317,7 +320,8 @@ body,
 .inventory {
   top: 64px;
   right: 12px;
-  width: 440px;
+  /* 150 (left column) + 12 gap + 6 columns x 44 + 5 gaps x 4 = 446, plus padding and border */
+  width: 480px;
   padding: 10px;
   pointer-events: auto;
   background: rgba(14, 12, 20, 0.92);
