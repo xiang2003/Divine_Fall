@@ -66,8 +66,8 @@ export class HealthBar {
   }
 }
 
-const SLASH_SEGMENTS = 14;
-const SLASH_INNER = 0.45;
+const SLASH_SEGMENTS = 28;
+const DEFAULT_INNER = 0.45;
 
 /**
  * The visible crescent of a melee swing, drawn on the ground in world space (so it is
@@ -79,8 +79,13 @@ export class SlashEffect {
   private readonly material: THREE.MeshBasicMaterial;
   private age = 0;
   private duration = 0;
+  /** Ramp mode (a ground warning): fades in and stays until hide() instead of flashing and fading out. */
+  private ramp = false;
+  private readonly inner: number;
 
-  constructor() {
+  /** `inner` is the hollow fraction of the radius: 0 draws a filled disc, 0.9 a thin ring. */
+  constructor(options: { color?: string; inner?: number } = {}) {
+    this.inner = options.inner ?? DEFAULT_INNER;
     const vertexCount = (SLASH_SEGMENTS + 1) * 2;
     const geometry = new THREE.BufferGeometry();
     this.positions = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
@@ -92,7 +97,7 @@ export class SlashEffect {
     }
     geometry.setIndex(index);
     this.material = new THREE.MeshBasicMaterial({
-      color: '#fff1c4',
+      color: options.color ?? '#fff1c4',
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
@@ -112,20 +117,32 @@ export class SlashEffect {
       const a = base - halfAngle + (2 * halfAngle * i) / SLASH_SEGMENTS;
       const c = Math.cos(a);
       const s = Math.sin(a);
-      this.setVertex(i * 2, wx + c * range * SLASH_INNER, wy + s * range * SLASH_INNER);
+      this.setVertex(i * 2, wx + c * range * this.inner, wy + s * range * this.inner);
       this.setVertex(i * 2 + 1, wx + c * range, wy + s * range);
     }
     this.positions.needsUpdate = true;
     this.mesh.renderOrder = sortKey(Layer.OBJECT, wx, wy) + 1;
     this.age = 0;
     this.duration = Math.max(0.05, duration);
+    this.ramp = false;
     this.mesh.visible = true;
+  }
+
+  /** Shows a full-circle ground warning that grows more opaque over `duration` and stays until hide(). */
+  telegraph(wx: number, wy: number, radius: number, duration: number): void {
+    this.trigger(wx, wy, 1, 0, radius, Math.PI, duration);
+    this.ramp = true;
   }
 
   update(dt: number): void {
     if (!this.mesh.visible) return;
     this.age += dt;
     const p = this.age / this.duration;
+    if (this.ramp) {
+      this.material.opacity = 0.12 + 0.4 * Math.min(1, p);
+      if (this.age > this.duration + 2) this.mesh.visible = false; // safety: never leave a warning stuck on screen
+      return;
+    }
     if (p >= 1) {
       this.mesh.visible = false;
       return;

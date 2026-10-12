@@ -1,7 +1,14 @@
 import * as THREE from 'three';
-import { LOOT_CONFIG, MAX_FRAME_DT, PLAYER_CONFIG, SKILL_ACTIONS } from '../config/gameConfig';
+import {
+  LOCKED_SKILL_ACTIONS,
+  LOOT_CONFIG,
+  MAX_FRAME_DT,
+  PLAYER_CONFIG,
+  SKILL_INPUT_BUFFER,
+} from '../config/gameConfig';
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { LOOT_TABLES } from '../data/lootTables';
+import { SKILLS, type SkillDef } from '../data/skills';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
@@ -12,6 +19,7 @@ import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
+import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { defaultRng } from '../systems/rng';
 import { activeEffects, computeStats, type Equipment, type PlayerStats } from '../systems/stats';
 import { AssetLoader, assetUrl } from './AssetLoader';
@@ -35,6 +43,19 @@ export interface InventoryView {
   slots: readonly (ItemInstance | null)[];
   equipment: Readonly<Equipment>;
   stats: Readonly<PlayerStats>;
+}
+
+/** What the skill bar needs to draw one skill slot. */
+export interface SkillView {
+  id: string;
+  keyLabel: string;
+  name: string;
+  description: string;
+  /** Seconds of cooldown left (0 when ready). */
+  remaining: number;
+  /** Length of the cooldown that is running (for the sweep animation). */
+  total: number;
+  ready: boolean;
 }
 
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
@@ -63,6 +84,7 @@ export interface GameSnapshot {
   inventory: InventoryView;
   /** Timed buffs from legendary effects, for the HUD badges. */
   buffs: { haste: boolean; frenzy: boolean };
+  skills: readonly SkillView[];
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -100,6 +122,7 @@ const INITIAL: GameSnapshot = {
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
   buffs: { haste: false, frenzy: false },
+  skills: [],
 };
 
 /** Everything that exists once a map has loaded. */
@@ -110,10 +133,13 @@ interface World {
   inventory: Inventory;
   monsters: MonsterAISystem;
   projectiles: ProjectileSystem;
+  skillBolts: SkillProjectileSystem;
   combat: CombatSystem;
   groundLoot: GroundLootSystem;
   effects: EffectAssets;
   slash: SlashEffect;
+  spinFx: SlashEffect;
+  slamFx: SlashEffect;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -138,6 +164,10 @@ export class Game {
   private inventoryOpen = false;
   /** The ground item the player was told to walk to and pick up. */
   private pickupTarget: LootDrop | null = null;
+  /** A skill key pressed while busy, cast as soon as the player is free (see SKILL_INPUT_BUFFER). */
+  private pendingSkill: { def: SkillDef; timeLeft: number } | null = null;
+  private skillTimer = 0;
+  private skillsWereActive = false;
 
   private disposed = false;
   private rafId = 0;
@@ -180,6 +210,7 @@ export class Game {
       this.world = this.buildWorld(map, assets);
       const { player } = this.world;
       this.syncEquipment();
+      this.publishSkills();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
       this.publish({ phase: 'ready', mapName: map.name, warnings: [...assets.errors] });
       this.publishVitals();
@@ -205,8 +236,13 @@ export class Game {
     w.player.respawn(w.map.spawns.player);
     w.monsters.spawnAll(w.map.spawns.monsters);
     w.projectiles.clear();
+    w.skillBolts.clear();
     w.numbers.clear();
     w.slash.hide();
+    w.spinFx.hide();
+    w.slamFx.hide();
+    this.pendingSkill = null;
+    this.publishSkills();
     w.lightning.clear();
     w.groundLoot.clear();
     this.pickupTarget = null;
@@ -225,9 +261,12 @@ export class Game {
     if (w) {
       w.monsters.dispose();
       w.projectiles.dispose();
+      w.skillBolts.dispose();
       w.groundLoot.dispose();
       w.player.dispose();
       w.slash.dispose();
+      w.spinFx.dispose();
+      w.slamFx.dispose();
       w.lightning.dispose();
       w.numbers.dispose();
       w.effects.dispose();
@@ -288,7 +327,10 @@ export class Game {
 
     const player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment));
     const projectiles = new ProjectileSystem(assets);
+    const skillBolts = new SkillProjectileSystem(assets);
     const slash = new SlashEffect();
+    const spinFx = new SlashEffect({ color: '#ffe08a', inner: 0.7 });
+    const slamFx = new SlashEffect({ color: '#ff7a45', inner: 0 });
     const lightning = new LightningEffect();
     const numbers = new DamageNumbers(this.container);
     const groundLoot = new GroundLootSystem(assets, this.container, collision, defaultRng, (drop) =>
@@ -298,7 +340,7 @@ export class Game {
     // Combat and the monster system reference each other (combat reads the monster list,
     // monsters call combat hooks), so the list is passed lazily.
     let monsters: MonsterAISystem;
-    const combat = new CombatSystem(player, () => monsters.all, projectiles, collision, defaultRng, {
+    const combat = new CombatSystem(player, () => monsters.all, projectiles, skillBolts, collision, defaultRng, {
       damageDealt: (x, y, amount, crit) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt'),
       damageTaken: (x, y, amount) => {
         numbers.spawn(x, y, `-${amount}`, 'taken');
@@ -310,6 +352,8 @@ export class Game {
         this.publishVitals();
       },
       lightningArc: (ax, ay, bx, by) => lightning.strike(ax, ay, bx, by),
+      skillFx: (kind, x, y, radius) =>
+        (kind === 'spin' ? spinFx : slamFx).trigger(x, y, 1, 0, radius, Math.PI, kind === 'spin' ? 0.35 : 0.45),
       monsterKilled: (m: Monster) => {
         this.kills++;
         for (const item of rollLoot(LOOT_TABLES[m.def.lootTable], defaultRng)) {
@@ -327,6 +371,7 @@ export class Game {
       swingStarted: (dx, dy, duration) =>
         slash.trigger(player.pos.x, player.pos.y, dx, dy, player.stats.attackRange, PLAYER_CONFIG.attackArcHalfAngle, duration),
       swingHit: (dx, dy) => combat.playerSwingHit(dx, dy),
+      skillCast: (def, stats, dx, dy, ax, ay) => combat.castSkill(def, stats, dx, dy, ax, ay),
     };
 
     const moveMarker = new THREE.Mesh(
@@ -339,8 +384,11 @@ export class Game {
       groundLoot.group,
       monsters.group,
       projectiles.group,
+      skillBolts.group,
       player.group,
       slash.mesh,
+      spinFx.mesh,
+      slamFx.mesh,
       lightning.group,
       moveMarker,
     );
@@ -351,10 +399,13 @@ export class Game {
       inventory,
       monsters,
       projectiles,
+      skillBolts,
       combat,
       groundLoot,
       effects,
       slash,
+      spinFx,
+      slamFx,
       lightning,
       numbers,
       debug,
@@ -452,6 +503,21 @@ export class Game {
     return parseMap(json);
   }
 
+  private publishSkills(): void {
+    const w = this.world;
+    if (!w) return;
+    const views: SkillView[] = SKILLS.map((def) => ({
+      id: def.id,
+      keyLabel: def.keyLabel,
+      name: def.name,
+      description: def.description,
+      remaining: w.player.cooldowns.remainingOf(def.id),
+      total: w.player.cooldowns.totalOf(def.id),
+      ready: w.player.cooldowns.ready(def.id),
+    }));
+    this.publish({ skills: views });
+  }
+
   private notify(text: string): void {
     this.publish({ notice: { seq: ++this.noticeSeq, text } });
   }
@@ -489,7 +555,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, combat, slash, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, combat, slash, spinFx, slamFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (input.wasPressed('debug')) {
@@ -539,12 +605,26 @@ export class Game {
         }
       }
 
-      // Skill keys are bound, but their effects land in Phase 4.
-      for (const action of SKILL_ACTIONS) {
-        if (input.wasPressed(action)) this.notify(`${action.slice(5)}：技能（尚未實作）`);
+      // Skills: a key press is remembered briefly so it is not lost while another swing finishes.
+      for (const def of SKILLS) {
+        if (input.wasPressed(def.action)) this.pendingSkill = { def, timeLeft: SKILL_INPUT_BUFFER };
+      }
+      const pending = this.pendingSkill;
+      if (pending) {
+        pending.timeLeft -= dt;
+        if (!player.cooldowns.ready(pending.def.id) || pending.timeLeft <= 0) {
+          this.pendingSkill = null; // cooling down (the skill bar shows it) or the press expired
+        } else if (player.startSkill(pending.def, aim?.x ?? player.pos.x, aim?.y ?? player.pos.y)) {
+          this.pendingSkill = null;
+          this.pickupTarget = null;
+        }
+      }
+      for (const action of LOCKED_SKILL_ACTIONS) {
+        if (input.wasPressed(action)) this.notify(`${action.slice(5)}：技能尚未解鎖`);
       }
     } else {
       this.pickupTarget = null;
+      this.pendingSkill = null;
     }
 
     player.update(dt);
@@ -552,10 +632,23 @@ export class Game {
     combat.update(dt);
     monsters.syncViews(dt);
     slash.update(dt);
+    spinFx.update(dt);
+    slamFx.update(dt);
     lightning.update(dt);
     groundLoot.update(dt, this.cameraCtl);
     numbers.update(dt, this.cameraCtl);
     debug.setPlayerCircle(player.pos.x, player.pos.y, player.radius);
+
+    // Cooldown sweeps repaint ~10 times per second while any skill is cooling down (and once more when idle).
+    const skillsActive = player.cooldowns.anyActive;
+    if (skillsActive || this.skillsWereActive) {
+      this.skillTimer += dt;
+      if (this.skillTimer >= 0.1 || !skillsActive) {
+        this.skillTimer = 0;
+        this.publishSkills();
+      }
+    }
+    this.skillsWereActive = skillsActive;
 
     const haste = player.buffs.moveActive;
     const frenzy = player.buffs.attackActive;

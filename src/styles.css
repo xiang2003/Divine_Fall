@@ -500,7 +500,7 @@ body,
 
 .hud-buffs {
   position: absolute;
-  bottom: 62px;
+  bottom: 122px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -522,4 +522,74 @@ body,
 
 .buff-frenzy {
   color: #ff9a42;
+}
+
+/* --- skill bar ------------------------------------------------------------------------- */
+
+.hud-skills {
+  position: absolute;
+  bottom: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.skill-slot {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  background: rgba(14, 12, 20, 0.85);
+  border: 1px solid #5a4a30;
+  overflow: hidden;
+  pointer-events: auto;
+  text-align: center;
+}
+
+.skill-slot.ready {
+  border-color: var(--gold);
+  box-shadow: 0 0 6px rgba(224, 184, 74, 0.35);
+}
+
+.skill-slot.locked {
+  opacity: 0.45;
+  border-color: #3b3346;
+}
+
+.skill-key {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.skill-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.skill-cooldown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.skill-seconds {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px #000;
 }

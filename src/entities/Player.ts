@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS, type LegendaryEffectId } from '../data/legendaryEffects';
+import { NO_UPGRADE, type SkillDef, type SkillUpgrade } from '../data/skills';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
@@ -10,6 +11,7 @@ import { Buffs, DodgeController } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
+import { getSkillStats, SkillCooldowns, type SkillStats } from '../systems/skills';
 import type { PlayerStats } from '../systems/stats';
 
 /** Seconds the "hurt" pose shows after a hit (only while standing still). */
@@ -20,6 +22,15 @@ export interface PlayerHooks {
   swingStarted?(dirX: number, dirY: number, duration: number): void;
   /** The strike moment of the swing. The combat system resolves who got hit. */
   swingHit?(dirX: number, dirY: number): void;
+  /** The effect moment of a skill cast. aimX / aimY is the world point the cursor was on when the cast began. */
+  skillCast?(def: SkillDef, stats: SkillStats, dirX: number, dirY: number, aimX: number, aimY: number): void;
+}
+
+interface ActiveSkill {
+  def: SkillDef;
+  stats: SkillStats;
+  aimX: number;
+  aimY: number;
 }
 
 export class Player {
@@ -30,6 +41,9 @@ export class Player {
   readonly mover = new ClickMover();
   readonly dodge = new DodgeController();
   readonly buffs = new Buffs();
+  readonly cooldowns = new SkillCooldowns();
+  /** Earned skill enhancements by skill id. Empty until the progression system (Phase 5) fills it. */
+  readonly skillUpgrades: Record<string, SkillUpgrade> = {};
   hooks: PlayerHooks = {};
 
   hp: number;
@@ -41,6 +55,7 @@ export class Player {
   private readonly swingDir: Vec2 = { x: 1, y: 1 };
   private readonly dodgeDir: Vec2 = { x: 1, y: 1 };
   private effects: ReadonlySet<LegendaryEffectId> = new Set();
+  private activeSkill: ActiveSkill | null = null;
   private hurtTimer = 0;
   private sinceDamaged = Infinity;
 
@@ -108,12 +123,32 @@ export class Player {
   }
 
   /**
+   * Casts a skill toward a world point. Fails (changing nothing) if dead, dodging, mid-swing, or the skill is
+   * on cooldown. The cast locks the player in place; the effect lands at the hit moment of the cast, and the
+   * cooldown starts immediately.
+   */
+  startSkill(def: SkillDef, aimX: number, aimY: number): boolean {
+    if (this.isDead || this.dodge.dashing || this.attack.swinging || !this.cooldowns.ready(def.id)) return false;
+    const stats = getSkillStats(def, this.skillUpgrades[def.id] ?? NO_UPGRADE);
+    if (!this.attack.start(def.castTime, def.castTime, def.hitFraction, true)) return false;
+    this.cooldowns.start(def.id, stats.cooldown);
+    this.activeSkill = { def, stats, aimX, aimY };
+    normalizeInto(aimX - this.pos.x, aimY - this.pos.y, this.swingDir, this.swingDir.x, this.swingDir.y);
+    this.animator.setSpeed(this.animator.durationOf('attack') / def.castTime);
+    this.animator.play('attack', true);
+    this.mover.stop();
+    this.faceWorld(this.swingDir.x, this.swingDir.y);
+    return true;
+  }
+
+  /**
    * Starts a dodge: a quick dash toward the aim point during which the player cannot be hurt.
    * It interrupts a swing. Returns false if dead, still dashing or on cooldown.
    */
   startDodge(aimX: number, aimY: number): boolean {
     if (this.isDead || !this.dodge.ready) return false;
     this.dodge.start();
+    this.activeSkill = null;
     normalizeInto(aimX - this.pos.x, aimY - this.pos.y, this.dodgeDir, this.swingDir.x, this.swingDir.y);
     this.attack.cancel();
     this.animator.setSpeed(1);
@@ -135,6 +170,7 @@ export class Player {
     if (this.hp > 0) return { amount, died: false };
 
     this.isDead = true;
+    this.activeSkill = null;
     this.attack.cancel();
     this.mover.stop();
     this.animator.setSpeed(1);
@@ -151,6 +187,8 @@ export class Player {
     this.hurtTimer = 0;
     this.sinceDamaged = Infinity;
     this.attack.reset();
+    this.activeSkill = null;
+    this.cooldowns.reset();
     this.dodge.reset();
     this.buffs.clear();
     this.mover.stop();
@@ -183,9 +221,20 @@ export class Player {
       return;
     }
 
+    this.cooldowns.update(dt);
     const swing = this.attack.update(dt);
-    if (swing.hit) this.hooks.swingHit?.(this.swingDir.x, this.swingDir.y);
-    if (swing.finished) this.animator.setSpeed(1);
+    if (swing.hit) {
+      const skill = this.activeSkill;
+      if (skill) {
+        this.hooks.skillCast?.(skill.def, skill.stats, this.swingDir.x, this.swingDir.y, skill.aimX, skill.aimY);
+      } else {
+        this.hooks.swingHit?.(this.swingDir.x, this.swingDir.y);
+      }
+    }
+    if (swing.finished) {
+      this.animator.setSpeed(1);
+      this.activeSkill = null;
+    }
 
     let moving = false;
     if (!this.attack.swinging) {

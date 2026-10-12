@@ -315,6 +315,18 @@ export function drawHoundSheet(): HTMLCanvasElement {
   });
 }
 
+/** 20x20 golden glow for the player's bolts. */
+export function drawBolt(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(20, 20);
+  const g = ctx.createRadialGradient(10, 10, 1, 10, 10, 10);
+  g.addColorStop(0, 'rgba(255,255,230,1)');
+  g.addColorStop(0.4, 'rgba(255,214,102,0.95)');
+  g.addColorStop(1, 'rgba(255,150,40,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 20, 20);
+  return c;
+}
+
 /** 16x16 glowing projectile. */
 export function drawOrb(): HTMLCanvasElement {
   const [c, ctx] = makeCanvas(16, 16);

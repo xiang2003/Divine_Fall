@@ -24,9 +24,12 @@ export class AttackTimer {
     return this.active ? Math.min(1, this.elapsed / this.swingDuration) : 0;
   }
 
-  /** Begins a swing. Returns false (and does nothing) if one is running or still cooling down. */
-  start(duration: number, cooldown: number, hitFraction: number): boolean {
-    if (!this.canStart) return false;
+  /**
+   * Begins a swing. Returns false (and does nothing) if one is running or still cooling down.
+   * `ignoreCooldown` lets a skill interrupt the basic-attack recovery (but never a swing in progress).
+   */
+  start(duration: number, cooldown: number, hitFraction: number, ignoreCooldown = false): boolean {
+    if (this.active || (!ignoreCooldown && this.cooldownLeft > 0)) return false;
     this.active = true;
     this.hitDone = false;
     this.elapsed = 0;

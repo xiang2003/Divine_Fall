@@ -18,6 +18,12 @@ export type InputAction =
 /** Skill actions in hotbar order. */
 export const SKILL_ACTIONS = ['skillQ', 'skillW', 'skillE', 'skillR', 'skillT'] as const satisfies readonly InputAction[];
 
+/** Bound but not yet unlocked skill slots (their skills arrive with progression in Phase 5). */
+export const LOCKED_SKILL_ACTIONS = ['skillR', 'skillT'] as const satisfies readonly InputAction[];
+
+/** A skill key pressed during another action is remembered this long (seconds) and cast as soon as possible. */
+export const SKILL_INPUT_BUFFER = 0.5;
+
 /**
  * Keyboard bindings, as `KeyboardEvent.code` values (layout independent).
  * Movement is mouse-only (see MOUSE_BINDINGS), so W is free to be a skill key.

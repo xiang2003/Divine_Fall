@@ -7,6 +7,7 @@ import { applyArmor } from '../src/systems/combatMath';
 import { CombatSystem, type CombatEvents } from '../src/systems/CombatSystem';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
 import type { ProjectileSystem } from '../src/systems/ProjectileSystem';
+import type { SkillProjectileSystem } from '../src/systems/SkillProjectileSystem';
 import { parseMap } from '../src/data/mapData';
 import { Buffs } from '../src/systems/buffs';
 import { computeStats, emptyEquipment } from '../src/systems/stats';
@@ -74,11 +75,13 @@ function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
     playerDied: () => events.deaths++,
     healed: (_x, _y, amount) => events.heals.push(amount),
     lightningArc: (ax, ay, bx, by) => events.arcs.push([ax, ay, bx, by]),
+    skillFx: () => {},
   };
   const combat = new CombatSystem(
     player as unknown as Player,
     () => monsters,
     projectiles,
+    { fire: () => true, update: () => {} } as unknown as SkillProjectileSystem,
     new CollisionSystem(MAP),
     () => rngValue,
     handlers,

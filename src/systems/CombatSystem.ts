@@ -1,5 +1,7 @@
 import { PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS } from '../data/legendaryEffects';
+import type { SkillDef } from '../data/skills';
+import type { BoltTarget } from '../entities/Bolt';
 import {
   MELEE_STRIKE_SLACK,
   type Monster,
@@ -9,6 +11,8 @@ import type { Player } from '../entities/Player';
 import { inAttackArc, rollDamage } from './combatMath';
 import type { CollisionSystem } from './CollisionSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
+import type { SkillProjectileSystem } from './SkillProjectileSystem';
+import type { SkillStats } from './skills';
 import type { Rng } from './rng';
 
 /** Things the rest of the game wants to react to (floating numbers, HUD, kill counts). */
@@ -24,6 +28,8 @@ export interface CombatEvents {
   healed(x: number, y: number, amount: number): void;
   /** A chain-lightning arc to draw between two world points. */
   lightningArc(ax: number, ay: number, bx: number, by: number): void;
+  /** A skill area effect to draw (a ring for the spin, a disc for the slam). */
+  skillFx(kind: 'spin' | 'slam', x: number, y: number, radius: number): void;
 }
 
 /** Spawn the projectile slightly in front of the caster so it doesn't start inside its body. */
@@ -39,6 +45,7 @@ export class CombatSystem implements MonsterHooks {
     private readonly player: Player,
     private readonly monsters: () => readonly Monster[],
     private readonly projectiles: ProjectileSystem,
+    private readonly skillBolts: SkillProjectileSystem,
     private readonly collision: CollisionSystem,
     private readonly rng: Rng,
     private readonly events: CombatEvents,
@@ -89,16 +96,77 @@ export class CombatSystem implements MonsterHooks {
     );
   }
 
-  /** Moves projectiles and applies the ones that reached the player. */
+  /** The effect moment of a skill cast (called by the player when the cast animation reaches its hit frame). */
+  castSkill(def: SkillDef, stats: SkillStats, dirX: number, dirY: number, aimX: number, aimY: number): void {
+    const { pos } = this.player;
+    switch (def.kind) {
+      case 'spin': {
+        const radius = def.radius ?? 2;
+        for (const m of this.monsters()) {
+          if (m.isDead) continue;
+          if (Math.hypot(m.pos.x - pos.x, m.pos.y - pos.y) <= radius + m.def.radius) this.skillHit(m, stats.damageMult);
+        }
+        this.events.skillFx('spin', pos.x, pos.y, radius);
+        break;
+      }
+      case 'bolt': {
+        const spread = def.spread ?? 0.2;
+        const base = Math.atan2(dirY, dirX);
+        for (let i = 0; i < stats.count; i++) {
+          const angle = base + (i - (stats.count - 1) / 2) * spread;
+          const dx = Math.cos(angle);
+          const dy = Math.sin(angle);
+          this.skillBolts.fire(pos.x + dx * 0.5, pos.y + dy * 0.5, dx, dy, def.speed ?? 12, def.range ?? 10, stats.damageMult);
+        }
+        break;
+      }
+      case 'slam': {
+        // The target is where the cursor was, but no farther than the range of the skill from the player.
+        const range = def.range ?? 6;
+        const vx = aimX - pos.x;
+        const vy = aimY - pos.y;
+        const len = Math.hypot(vx, vy);
+        const k = len > range ? range / len : 1;
+        const tx = pos.x + vx * k;
+        const ty = pos.y + vy * k;
+        const radius = def.radius ?? 2;
+        for (const m of this.monsters()) {
+          if (m.isDead) continue;
+          if (Math.hypot(m.pos.x - tx, m.pos.y - ty) <= radius + m.def.radius) {
+            if (!this.skillHit(m, stats.damageMult)) m.stun(def.stunSeconds ?? 1);
+          }
+        }
+        this.events.skillFx('slam', tx, ty, radius);
+        break;
+      }
+    }
+  }
+
+  /** A player bolt reached an enemy. */
+  boltHit(target: BoltTarget, damageMult: number): void {
+    const m = this.monsters().find((x) => x === target);
+    if (m && !m.isDead) this.skillHit(m, damageMult);
+  }
+
+  /** Rolls a skill hit (attack damage x multiplier, with crits). Returns true if it killed the monster. */
+  private skillHit(m: Monster, damageMult: number): boolean {
+    const { stats } = this.player;
+    const roll = rollDamage(stats.damage * damageMult, stats.critChance, stats.critDamage, this.rng);
+    return this.damageMonster(m, roll.amount, roll.crit);
+  }
+
+  /** Moves projectiles and bolts, applying the ones that reached their targets. */
   update(dt: number): void {
     this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage));
+    this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult));
   }
 
   /** Applies final damage to a monster, reports it, and handles the kill. */
-  private damageMonster(m: Monster, amount: number, crit: boolean): void {
+  private damageMonster(m: Monster, amount: number, crit: boolean): boolean {
     const killed = m.takeDamage(amount);
     this.events.damageDealt(m.pos.x, m.pos.y, amount, crit);
     if (killed) this.registerKill(m);
+    return killed;
   }
 
   /** On-kill legendary effects first, then the kill is announced (so a heal shows before loot spawns). */

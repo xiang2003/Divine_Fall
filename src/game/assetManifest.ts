@@ -1,6 +1,7 @@
 import type { EquipSlot } from '../data/items';
 import type { AnimationSet } from './AnimationClock';
 import {
+  drawBolt,
   drawGhoulSheet,
   drawHoundSheet,
   drawOrb,
@@ -38,6 +39,7 @@ export const SpriteKey = {
   SHADOW: 'fx.shadow',
   MOVE_MARKER: 'fx.move_marker',
   ORB: 'fx.orb',
+  BOLT: 'fx.bolt',
   LOOT_RING: 'fx.loot_ring',
   ICON_WEAPON: 'item.weapon',
   ICON_HELMET: 'item.helmet',
@@ -106,6 +108,13 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
     frameHeight: 16,
     anchor: { x: 0.5, y: 0.5 },
     placeholder: drawOrb,
+  },
+  {
+    key: SpriteKey.BOLT,
+    frameWidth: 20,
+    frameHeight: 20,
+    anchor: { x: 0.5, y: 0.5 },
+    placeholder: drawBolt,
   },
   {
     key: SpriteKey.LOOT_RING,

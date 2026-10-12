@@ -3,6 +3,7 @@ import { BRANDING } from '../config/branding';
 import type { GameSnapshot } from '../game/Game';
 import { EquipmentSummary } from './EquipmentPanel';
 import { Inventory, type InventoryActions } from './Inventory';
+import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
 
@@ -68,7 +69,7 @@ export function HUD({
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 · QWERT 技能（尚未實作）· F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       <div className="panel hud-hp">
@@ -91,6 +92,7 @@ export function HUD({
           {snapshot.buffs.frenzy && <span className="buff buff-frenzy">狂熱 +攻速</span>}
         </div>
       )}
+      <SkillBar skills={snapshot.skills} />
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       <Toast notice={snapshot.notice} />

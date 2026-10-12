@@ -60,6 +60,8 @@ export class Monster {
 
   private readonly attack = new AttackTimer();
   private sinceHurt = Infinity;
+  /** How long the current 'hurt' state lasts (longer when stunned). */
+  private hurtDuration = HURT_DURATION;
   private lostSightTime = 0;
   private stuckTime = 0;
 
@@ -75,8 +77,21 @@ export class Monster {
   get isDead(): boolean {
     return this.state === 'dead';
   }
+  get radius(): number {
+    return this.def.radius;
+  }
   get removable(): boolean {
     return this.state === 'dead' && this.stateTime >= CORPSE_LIFETIME;
+  }
+
+  /** Staggers the monster for `seconds`, cancelling any attack. Returns false if it is dead. */
+  stun(seconds: number): boolean {
+    if (this.state === 'dead') return false;
+    this.attack.cancel();
+    this.sinceHurt = 0;
+    this.hurtDuration = seconds;
+    this.enter('hurt');
+    return true;
   }
 
   /** Applies already-final damage. Returns true if this hit killed the monster. */
@@ -92,6 +107,7 @@ export class Monster {
     if (this.sinceHurt >= HURT_POISE_INTERVAL) {
       this.sinceHurt = 0;
       this.attack.cancel();
+      this.hurtDuration = HURT_DURATION;
       this.enter('hurt');
     } else if (this.state === 'idle') {
       this.enter('chase'); // being hit always draws aggro
@@ -109,7 +125,7 @@ export class Monster {
 
     switch (this.state) {
       case 'hurt':
-        if (this.stateTime >= HURT_DURATION) this.enter(target.isDead ? 'idle' : 'chase');
+        if (this.stateTime >= this.hurtDuration) this.enter(target.isDead ? 'idle' : 'chase');
         break;
       case 'attack':
         this.updateAttack(dt, target, hooks);
