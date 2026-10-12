@@ -1,6 +1,8 @@
 import type { EquipSlot } from '../data/items';
 import type { AnimationSet } from './AnimationClock';
 import {
+  BOSS_FRAME,
+  drawArchonSheet,
   drawBolt,
   drawGhoulSheet,
   drawHoundSheet,
@@ -50,6 +52,7 @@ export const SpriteKey = {
   GHOUL: 'monster.ghoul',
   SHADE: 'monster.shade',
   HOUND: 'monster.hound',
+  BOSS: 'monster.boss',
 } as const;
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
@@ -132,6 +135,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   characterSprite(SpriteKey.GHOUL, 8, drawGhoulSheet),
   characterSprite(SpriteKey.SHADE, 8, drawShadeSheet),
   characterSprite(SpriteKey.HOUND, 8, drawHoundSheet),
+  characterSprite(SpriteKey.BOSS, 8, drawArchonSheet, BOSS_FRAME),
 ];
 
 /** Ground sprite for an item icon, standing on its bottom edge. */
@@ -146,12 +150,17 @@ function itemIcon(key: string, slot: EquipSlot): SpriteAssetDef {
 }
 
 /** Standard 64x64 character sheet; attackFps sets how long (4 frames / fps) the attack animation lasts. */
-function characterSprite(key: string, attackFps: number, placeholder: () => HTMLCanvasElement): SpriteAssetDef {
+function characterSprite(
+  key: string,
+  attackFps: number,
+  placeholder: () => HTMLCanvasElement,
+  frame = 64,
+): SpriteAssetDef {
   return {
     key,
-    frameWidth: 64,
-    frameHeight: 64,
-    anchor: { x: 0.5, y: 4 / 64 },
+    frameWidth: frame,
+    frameHeight: frame,
+    anchor: { x: 0.5, y: 4 / frame },
     animations: characterAnimations(attackFps),
     placeholder,
   };

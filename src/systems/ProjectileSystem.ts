@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Monster } from '../entities/Monster';
 import { Projectile, type ProjectileOutcome, type ProjectileTarget } from '../entities/Projectile';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
@@ -33,10 +34,18 @@ export class ProjectileSystem {
   }
 
   /** Launches a projectile, or returns false if the pool is exhausted. */
-  fire(x: number, y: number, dirX: number, dirY: number, speed: number, damage: number): boolean {
+  fire(
+    x: number,
+    y: number,
+    dirX: number,
+    dirY: number,
+    speed: number,
+    damage: number,
+    owner: Monster | null = null,
+  ): boolean {
     const slot = this.slots.find((s) => !s.projectile.active);
     if (!slot) return false;
-    slot.projectile.launch(x, y, dirX, dirY, speed, damage, PROJECTILE_LIFE);
+    slot.projectile.launch(x, y, dirX, dirY, speed, damage, PROJECTILE_LIFE, owner);
     slot.mesh.visible = true;
     this.place(slot);
     return true;

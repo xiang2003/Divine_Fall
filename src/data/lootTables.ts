@@ -24,11 +24,18 @@ export const LOOT_TABLES = {
     rolls: 1,
     rarityWeights: RARITY_WEIGHTS,
   },
-  /** Used by bosses from Phase 4: always drops several items, at least one rare or better. */
+  /** Elites: always drop two items, at least one magic or better, with better odds of rares. */
+  elite: {
+    dropChance: 1,
+    rolls: 2,
+    rarityWeights: { normal: 20, magic: 50, rare: 27, legendary: 3 },
+    guaranteed: [{ minRarity: 'magic', count: 1 }],
+  },
+  /** Bosses: four drops, tilted toward high rarities, and always at least one rare or better. */
   boss: {
     dropChance: 1,
     rolls: 4,
-    rarityWeights: RARITY_WEIGHTS,
+    rarityWeights: { normal: 15, magic: 40, rare: 35, legendary: 10 },
     guaranteed: [{ minRarity: 'rare', count: 1 }],
   },
 } as const satisfies Record<string, LootTable>;

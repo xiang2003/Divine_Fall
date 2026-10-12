@@ -30,6 +30,12 @@ export interface CombatEvents {
   lightningArc(ax: number, ay: number, bx: number, by: number): void;
   /** A skill area effect to draw (a ring for the spin, a disc for the slam). */
   skillFx(kind: 'spin' | 'slam', x: number, y: number, radius: number): void;
+  /** A blast is winding up: show a ground warning of `radius` for `duration` seconds. */
+  telegraph(owner: Monster, x: number, y: number, radius: number, duration: number): void;
+  /** A blast just went off. */
+  novaFlash(x: number, y: number, radius: number): void;
+  /** A boss entered a new phase (1 = second phase, ...). */
+  phaseChanged(boss: Monster, phase: number): void;
 }
 
 /** Spawn the projectile slightly in front of the caster so it doesn't start inside its body. */
@@ -79,20 +85,36 @@ export class CombatSystem implements MonsterHooks {
     }
   }
 
-  meleeStrike(monster: Monster): void {
+  meleeStrike(monster: Monster, damageMult = 1): void {
     if (this.player.isDead) return;
     if (monster.reachTo(this.player) > monster.def.attackRange + MELEE_STRIKE_SLACK) return;
-    this.hurtPlayer(monster.def.damage);
+    this.hurtPlayer(monster.damage * damageMult, monster);
   }
 
-  fireProjectile(monster: Monster, dirX: number, dirY: number): void {
+  novaStrike(monster: Monster, radius: number, damageMult = 1): void {
+    this.events.novaFlash(monster.pos.x, monster.pos.y, radius);
+    if (this.player.isDead) return;
+    const dist = Math.hypot(this.player.pos.x - monster.pos.x, this.player.pos.y - monster.pos.y);
+    if (dist <= radius + this.player.radius) this.hurtPlayer(monster.damage * damageMult, monster);
+  }
+
+  telegraph(monster: Monster, radius: number, duration: number): void {
+    this.events.telegraph(monster, monster.pos.x, monster.pos.y, radius, duration);
+  }
+
+  phaseChanged(monster: Monster, phase: number): void {
+    this.events.phaseChanged(monster, phase);
+  }
+
+  fireProjectile(monster: Monster, dirX: number, dirY: number, damageMult = 1): void {
     this.projectiles.fire(
       monster.pos.x + dirX * MUZZLE_OFFSET,
       monster.pos.y + dirY * MUZZLE_OFFSET,
       dirX,
       dirY,
       monster.def.projectileSpeed ?? 6,
-      monster.def.damage,
+      monster.damage * damageMult,
+      monster,
     );
   }
 
@@ -157,7 +179,7 @@ export class CombatSystem implements MonsterHooks {
 
   /** Moves projectiles and bolts, applying the ones that reached their targets. */
   update(dt: number): void {
-    this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage));
+    this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage, p.owner));
     this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult));
   }
 
@@ -209,10 +231,25 @@ export class CombatSystem implements MonsterHooks {
     }
   }
 
-  private hurtPlayer(rawDamage: number): void {
+  /**
+   * Applies a monster hit to the player. `source` (if known) adds its elite effects: lifesteal heals it by a
+   * share of the damage dealt, and lightning adds a second, separate hit that armor also reduces.
+   */
+  private hurtPlayer(rawDamage: number, source: Monster | null = null): void {
     const result = this.player.takeDamage(rawDamage);
-    if (result.amount === 0) return;
+    if (result.amount === 0) return; // dodged (invulnerable) or already dead
     this.events.damageTaken(this.player.pos.x, this.player.pos.y, result.amount);
-    if (result.died) this.events.playerDied();
+    if (result.died) {
+      this.events.playerDied();
+      return;
+    }
+    if (!source) return;
+    if (source.stats.lifestealRatio > 0) source.heal(Math.round(result.amount * source.stats.lifestealRatio));
+    if (source.stats.lightningRatio > 0) {
+      this.events.lightningArc(source.pos.x, source.pos.y, this.player.pos.x, this.player.pos.y);
+      const extra = this.player.takeDamage(Math.max(1, Math.round(rawDamage * source.stats.lightningRatio)));
+      if (extra.amount > 0) this.events.damageTaken(this.player.pos.x, this.player.pos.y, extra.amount);
+      if (extra.died) this.events.playerDied();
+    }
   }
 }

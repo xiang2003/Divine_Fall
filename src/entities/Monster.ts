@@ -1,7 +1,12 @@
-import type { MonsterDef } from '../data/monsters';
+import type { EliteAffixId } from '../data/eliteAffixes';
+import type { LootTableId } from '../data/lootTables';
+import type { BossAttackKind, MonsterDef } from '../data/monsters';
 import type { Vec2 } from '../game/iso';
 import { AttackTimer } from '../systems/AttackTimer';
+import { chooseBossAttack, phaseForHpRatio } from '../systems/bossAI';
 import type { CollisionSystem } from '../systems/CollisionSystem';
+import { computeMonsterStats, type MonsterStats } from '../systems/elite';
+import { defaultRng, type Rng } from '../systems/rng';
 
 export type MonsterState = 'idle' | 'chase' | 'attack' | 'hurt' | 'dead';
 
@@ -14,10 +19,27 @@ export interface MonsterTarget {
 
 /** Side effects of a monster's attack, implemented by the combat system. */
 export interface MonsterHooks {
-  /** Strike frame of a melee attack. The hook decides whether it connects. */
-  meleeStrike(monster: Monster): void;
+  /** Strike frame of a melee attack. The hook decides whether it connects. `damageMult` scales the monster's damage. */
+  meleeStrike(monster: Monster, damageMult: number): void;
   /** Strike frame of a ranged attack: spawn a projectile along (dirX, dirY). */
-  fireProjectile(monster: Monster, dirX: number, dirY: number): void;
+  fireProjectile(monster: Monster, dirX: number, dirY: number, damageMult: number): void;
+  /** Strike frame of a ground blast centred on the monster: hurts the target if it is within `radius`. */
+  novaStrike(monster: Monster, radius: number, damageMult: number): void;
+  /** The start of a blast windup: show a warning of `radius` for `duration` seconds. */
+  telegraph(monster: Monster, radius: number, duration: number): void;
+  /** A boss crossed into a new phase (1 = second phase, ...). */
+  phaseChanged(monster: Monster, phase: number): void;
+}
+
+/** What one attack looks like right now (normal attacks and boss moves alike). */
+interface AttackSpec {
+  kind: 'melee' | 'projectile' | BossAttackKind;
+  duration: number;
+  hitFraction: number;
+  damageMult: number;
+  radius: number;
+  count: number;
+  spread: number;
 }
 
 /** Fraction of the attack animation at which the blow lands. */
@@ -41,14 +63,25 @@ const HOME_SPEED_FACTOR = 0.6;
 
 let nextId = 1;
 
+export interface MonsterOptions {
+  /** Elite affixes. A non-empty list makes the monster an elite. */
+  affixes?: readonly EliteAffixId[];
+  /** Random source for boss attack choice (inject a seeded one in tests). */
+  rng?: Rng;
+}
+
 /**
  * One enemy. Pure game logic (no rendering): a five-state machine
- * idle -> chase -> attack, with hurt (stagger) and dead. Stats come from its MonsterDef.
+ * idle -> chase -> attack, with hurt (stagger) and dead. Stats come from its MonsterDef, scaled up for elites;
+ * a boss additionally changes phase as it loses health and chooses between several attacks.
  */
 export class Monster {
   readonly id = nextId++;
   readonly pos: Vec2;
   readonly home: Vec2;
+  readonly affixes: readonly EliteAffixId[];
+  /** Effective stats (base definition plus elite bonuses). */
+  readonly stats: MonsterStats;
   hp: number;
   state: MonsterState = 'idle';
   /** Seconds spent in the current state. */
@@ -57,8 +90,15 @@ export class Monster {
   moving = false;
   /** Horizontal facing in screen space: +1 right, -1 left. */
   facing: 1 | -1 = 1;
+  /** True once it has noticed the player (used to show the boss health bar). */
+  engaged = false;
+  /** Boss phase, 0-based. Always 0 for non-bosses. */
+  phase = 0;
 
   private readonly attack = new AttackTimer();
+  private readonly rng: Rng;
+  private currentAttack: AttackSpec | null = null;
+  private announcedPhase = 0;
   private sinceHurt = Infinity;
   /** How long the current 'hurt' state lasts (longer when stunned). */
   private hurtDuration = HURT_DURATION;
@@ -68,10 +108,14 @@ export class Monster {
   constructor(
     readonly def: MonsterDef,
     spawn: Vec2,
+    options: MonsterOptions = {},
   ) {
     this.pos = { x: spawn.x, y: spawn.y };
     this.home = { x: spawn.x, y: spawn.y };
-    this.hp = def.maxHp;
+    this.affixes = options.affixes ?? [];
+    this.rng = options.rng ?? defaultRng;
+    this.stats = computeMonsterStats(def, this.affixes);
+    this.hp = this.stats.maxHp;
   }
 
   get isDead(): boolean {
@@ -80,18 +124,56 @@ export class Monster {
   get radius(): number {
     return this.def.radius;
   }
+  get isElite(): boolean {
+    return this.affixes.length > 0;
+  }
+  get isBoss(): boolean {
+    return this.def.isBoss === true;
+  }
+  get maxHp(): number {
+    return this.stats.maxHp;
+  }
+  /** Base damage per hit (elite bonuses included, armor not yet applied). */
+  get damage(): number {
+    return this.stats.damage;
+  }
+  get scale(): number {
+    return this.stats.scale;
+  }
+  get lootTable(): LootTableId {
+    return this.isElite ? 'elite' : this.def.lootTable;
+  }
   get removable(): boolean {
     return this.state === 'dead' && this.stateTime >= CORPSE_LIFETIME;
   }
+  get moveSpeed(): number {
+    return this.stats.moveSpeed * (this.def.phaseSpeed?.[this.phase] ?? 1);
+  }
+  /** Seconds between the start of one attack and the next (faster in later boss phases). */
+  get attackCooldown(): number {
+    return this.stats.attackCooldown * (this.def.phaseCooldown?.[this.phase] ?? 1);
+  }
+  /** Length of the attack in progress, or of a standard attack when idle (used to fit the animation). */
+  get attackDuration(): number {
+    return this.currentAttack?.duration ?? this.stats.attackDuration;
+  }
 
-  /** Staggers the monster for `seconds`, cancelling any attack. Returns false if it is dead. */
+  /** Staggers the monster for `seconds`, cancelling any attack. Bosses cannot be staggered. */
   stun(seconds: number): boolean {
-    if (this.state === 'dead') return false;
+    if (this.state === 'dead' || this.isBoss) return false;
     this.attack.cancel();
     this.sinceHurt = 0;
     this.hurtDuration = seconds;
     this.enter('hurt');
     return true;
+  }
+
+  /** Restores health up to the maximum. Returns the amount actually restored. */
+  heal(amount: number): number {
+    if (this.state === 'dead') return 0;
+    const before = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    return this.hp - before;
   }
 
   /** Applies already-final damage. Returns true if this hit killed the monster. */
@@ -103,6 +185,14 @@ export class Monster {
       this.attack.cancel();
       this.moving = false;
       return true;
+    }
+    if (this.def.phaseThresholds) {
+      this.phase = Math.max(this.phase, phaseForHpRatio(this.hp / this.maxHp, this.def.phaseThresholds));
+    }
+    if (this.isBoss) {
+      // Super armor: a boss is never staggered; it just turns on whoever hurts it.
+      if (this.state === 'idle') this.enter('chase');
+      return false;
     }
     if (this.sinceHurt >= HURT_POISE_INTERVAL) {
       this.sinceHurt = 0;
@@ -120,6 +210,10 @@ export class Monster {
     this.moving = false;
     if (this.state === 'dead') return;
     this.sinceHurt += dt;
+    if (this.phase !== this.announcedPhase) {
+      this.announcedPhase = this.phase;
+      hooks.phaseChanged(this, this.phase);
+    }
     // The attack cooldown keeps running in every state; during 'attack' the timer is advanced by updateAttack.
     if (this.state !== 'attack') this.attack.update(dt);
 
@@ -134,7 +228,7 @@ export class Monster {
         this.updateIdle(dt, target, collision);
         break;
       case 'chase':
-        this.updateChase(dt, target, collision);
+        this.updateChase(dt, target, collision, hooks);
         break;
     }
   }
@@ -149,6 +243,8 @@ export class Monster {
     this.stateTime = 0;
     this.stuckTime = 0;
     this.lostSightTime = 0;
+    if (state === 'chase') this.engaged = true;
+    if (state !== 'attack') this.currentAttack = null;
   }
 
   private updateIdle(dt: number, target: MonsterTarget, collision: CollisionSystem): void {
@@ -164,11 +260,11 @@ export class Monster {
     }
     // Drift back to the spawn point after losing the player.
     if (Math.hypot(this.home.x - this.pos.x, this.home.y - this.pos.y) > HOME_ARRIVE) {
-      this.moveToward(this.home.x, this.home.y, this.def.moveSpeed * HOME_SPEED_FACTOR, dt, collision, false);
+      this.moveToward(this.home.x, this.home.y, this.moveSpeed * HOME_SPEED_FACTOR, dt, collision, false);
     }
   }
 
-  private updateChase(dt: number, target: MonsterTarget, collision: CollisionSystem): void {
+  private updateChase(dt: number, target: MonsterTarget, collision: CollisionSystem, hooks: MonsterHooks): void {
     if (target.isDead) {
       this.enter('idle');
       return;
@@ -184,6 +280,11 @@ export class Monster {
     const reach = this.reachTo(target);
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
 
+    if (this.def.bossAttacks) {
+      this.chaseAsBoss(dt, target, collision, hooks, { reach, dist, sees });
+      return;
+    }
+
     if (this.def.behavior === 'ranged') {
       const keep = this.def.keepDistance ?? 0;
       if (reach < keep) {
@@ -191,7 +292,7 @@ export class Monster {
         this.moveToward(
           this.pos.x - (target.pos.x - this.pos.x),
           this.pos.y - (target.pos.y - this.pos.y),
-          this.def.moveSpeed,
+          this.moveSpeed,
           dt,
           collision,
           true,
@@ -199,44 +300,118 @@ export class Monster {
         return;
       }
       if (reach <= this.def.attackRange && sees && this.attack.canStart) {
-        this.beginAttack();
+        this.beginAttack(this.standardAttack('projectile'), target, hooks);
         return;
       }
       if (reach > this.def.attackRange * 0.9 || !sees) {
-        this.moveToward(target.pos.x, target.pos.y, this.def.moveSpeed, dt, collision, true);
+        this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
       }
       return;
     }
 
     // melee
     if (reach <= this.def.attackRange && this.attack.canStart) {
-      this.beginAttack();
+      this.beginAttack(this.standardAttack('melee'), target, hooks);
       return;
     }
     if (reach > this.def.attackRange * 0.9) {
-      this.moveToward(target.pos.x, target.pos.y, this.def.moveSpeed, dt, collision, true);
+      this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
     }
   }
 
-  private beginAttack(): void {
-    this.attack.start(this.def.attackDuration, this.def.attackCooldown, MONSTER_HIT_FRACTION);
+  /** A boss picks from its repertoire whenever it is ready; otherwise it closes the distance. */
+  private chaseAsBoss(
+    dt: number,
+    target: MonsterTarget,
+    collision: CollisionSystem,
+    hooks: MonsterHooks,
+    ctx: { reach: number; dist: number; sees: boolean },
+  ): void {
+    if (this.attack.canStart) {
+      const choice = chooseBossAttack(
+        this.def.bossAttacks!,
+        this.phase,
+        { ...ctx, meleeRange: this.def.attackRange },
+        this.rng,
+      );
+      if (choice) {
+        this.beginAttack(
+          {
+            kind: choice.kind,
+            duration: choice.duration,
+            hitFraction: choice.hitFraction ?? MONSTER_HIT_FRACTION,
+            damageMult: choice.damageMult,
+            radius: choice.radius ?? 0,
+            count: choice.count ?? 1,
+            spread: choice.spread ?? 0,
+          },
+          target,
+          hooks,
+        );
+        return;
+      }
+    }
+    // Keep pressing in until something is in range (and stand still while waiting out a cooldown up close).
+    if (ctx.reach > this.def.attackRange * 0.9) {
+      this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
+    }
+  }
+
+  private standardAttack(kind: 'melee' | 'projectile'): AttackSpec {
+    return {
+      kind,
+      duration: this.stats.attackDuration,
+      hitFraction: MONSTER_HIT_FRACTION,
+      damageMult: 1,
+      radius: 0,
+      count: 1,
+      spread: 0,
+    };
+  }
+
+  private beginAttack(spec: AttackSpec, target: MonsterTarget, hooks: MonsterHooks): void {
+    this.attack.start(spec.duration, Math.max(this.attackCooldown, spec.duration), spec.hitFraction);
     this.enter('attack');
+    this.currentAttack = spec;
+    if (spec.kind === 'nova') hooks.telegraph(this, spec.radius, spec.duration * spec.hitFraction);
+    this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
   }
 
   private updateAttack(dt: number, target: MonsterTarget, hooks: MonsterHooks): void {
+    const spec = this.currentAttack;
     const { hit, finished } = this.attack.update(dt);
-    if (hit && !target.isDead) {
-      const dx = target.pos.x - this.pos.x;
-      const dy = target.pos.y - this.pos.y;
-      this.face(dx, dy);
-      if (this.def.behavior === 'ranged') {
-        const len = Math.hypot(dx, dy) || 1;
-        hooks.fireProjectile(this, dx / len, dy / len);
-      } else {
-        hooks.meleeStrike(this);
+    if (hit && spec) this.strike(spec, target, hooks);
+    if (finished) this.enter(target.isDead ? 'idle' : 'chase');
+  }
+
+  /** The moment an attack lands. */
+  private strike(spec: AttackSpec, target: MonsterTarget, hooks: MonsterHooks): void {
+    if (spec.kind === 'nova') {
+      hooks.novaStrike(this, spec.radius, spec.damageMult); // a blast does not need a living target to go off
+      return;
+    }
+    if (target.isDead) return;
+    const dx = target.pos.x - this.pos.x;
+    const dy = target.pos.y - this.pos.y;
+    this.face(dx, dy);
+    const len = Math.hypot(dx, dy) || 1;
+    switch (spec.kind) {
+      case 'melee':
+      case 'cleave':
+        hooks.meleeStrike(this, spec.damageMult);
+        break;
+      case 'projectile':
+        hooks.fireProjectile(this, dx / len, dy / len, spec.damageMult);
+        break;
+      case 'fan': {
+        const base = Math.atan2(dy, dx);
+        for (let i = 0; i < spec.count; i++) {
+          const angle = base + (i - (spec.count - 1) / 2) * spec.spread;
+          hooks.fireProjectile(this, Math.cos(angle), Math.sin(angle), spec.damageMult);
+        }
+        break;
       }
     }
-    if (finished) this.enter(target.isDead ? 'idle' : 'chase');
   }
 
   private moveToward(

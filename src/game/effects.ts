@@ -7,11 +7,15 @@ export class EffectAssets {
   readonly barGeometry = new THREE.PlaneGeometry(1, 1).translate(0.5, 0, 0);
   readonly barBg = flatMaterial('#120c10', 0.85);
   readonly barFill = flatMaterial('#d8483c', 1);
+  readonly barFillElite = flatMaterial('#e0b84a', 1);
+  readonly barFillBoss = flatMaterial('#b44ae0', 1);
 
   dispose(): void {
     this.barGeometry.dispose();
     this.barBg.dispose();
     this.barFill.dispose();
+    this.barFillElite.dispose();
+    this.barFillBoss.dispose();
   }
 }
 
@@ -35,11 +39,12 @@ export class HealthBar {
   private readonly bg: THREE.Mesh;
   private readonly fill: THREE.Mesh;
 
-  constructor(assets: EffectAssets) {
+  constructor(assets: EffectAssets, variant: 'normal' | 'elite' | 'boss' = 'normal') {
     this.bg = new THREE.Mesh(assets.barGeometry, assets.barBg);
     this.bg.scale.set(BAR_WIDTH + 2, BAR_HEIGHT + 2, 1);
     this.bg.position.x = -BAR_WIDTH / 2 - 1;
-    this.fill = new THREE.Mesh(assets.barGeometry, assets.barFill);
+    const fillMaterial = { normal: assets.barFill, elite: assets.barFillElite, boss: assets.barFillBoss }[variant];
+    this.fill = new THREE.Mesh(assets.barGeometry, fillMaterial);
     this.fill.scale.set(BAR_WIDTH, BAR_HEIGHT, 1);
     this.fill.position.x = -BAR_WIDTH / 2;
     this.group.add(this.bg, this.fill);

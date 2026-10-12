@@ -3,6 +3,7 @@ import { BRANDING } from '../config/branding';
 import type { GameSnapshot } from '../game/Game';
 import { EquipmentSummary } from './EquipmentPanel';
 import { Inventory, type InventoryActions } from './Inventory';
+import { BossBar } from './BossBar';
 import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
@@ -92,6 +93,13 @@ export function HUD({
           {snapshot.buffs.frenzy && <span className="buff buff-frenzy">狂熱 +攻速</span>}
         </div>
       )}
+      {snapshot.boss && <BossBar boss={snapshot.boss} />}
+      {snapshot.bossDefeated && (
+        <div className="victory-banner">
+          <strong>Boss 已被擊敗</strong>
+          <span>拾取戰利品（點擊名稱或按 F）</span>
+        </div>
+      )}
       <SkillBar skills={snapshot.skills} />
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
@@ -118,7 +126,7 @@ export function HUD({
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
           <br />
-          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送
         </div>
       )}
     </div>

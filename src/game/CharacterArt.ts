@@ -56,14 +56,14 @@ function poseFor(row: number, col: number): Pose {
 type Draw = (ctx: CanvasRenderingContext2D, pose: Pose) => void;
 
 /** Builds a 6x5 sheet; `draw` paints one pose with the origin at the feet and y pointing down. */
-function buildSheet(draw: Draw): HTMLCanvasElement {
-  const [canvas, ctx] = makeCanvas(FRAME * COLS, FRAME * ROWS);
+function buildSheet(draw: Draw, frame = FRAME): HTMLCanvasElement {
+  const [canvas, ctx] = makeCanvas(frame * COLS, frame * ROWS);
   for (let row = 0; row < ROWS; row++) {
     const frames = [4, 6, 4, 2, 5][row]!;
     for (let col = 0; col < frames; col++) {
       const pose = poseFor(row, col);
       ctx.save();
-      ctx.translate(col * FRAME + FRAME / 2, row * FRAME + 60);
+      ctx.translate(col * frame + frame / 2, row * frame + frame - 4);
       if (pose.fall > 0) {
         // Topple over around the feet and sink slightly.
         ctx.rotate(pose.fall * Math.PI * 0.48);
@@ -255,6 +255,26 @@ const SHADE_STYLE: HumanoidStyle = {
   weapon: 'orb',
   hood: true,
 };
+
+const ARCHON_STYLE: HumanoidStyle = {
+  cloak: '#5a1d2e',
+  cloakDark: '#1b070d',
+  skin: '#c9a98a',
+  eye: '#ff5a3a',
+  accent: '#d8b04a',
+  scale: 1.5,
+  hunch: 0,
+  floating: false,
+  weapon: 'sword',
+  hood: true,
+};
+
+/** The boss uses a 96x96 frame so its larger body is not cropped. */
+export const BOSS_FRAME = 96;
+
+export function drawArchonSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, ARCHON_STYLE), BOSS_FRAME);
+}
 
 export function drawPlayerSheet(): HTMLCanvasElement {
   return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, PLAYER_STYLE));

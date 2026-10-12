@@ -58,6 +58,16 @@ export interface SkillView {
   ready: boolean;
 }
 
+/** The boss health bar, shown once the boss has noticed the player. */
+export interface BossView {
+  name: string;
+  hp: number;
+  maxHp: number;
+  /** 0-based current phase. */
+  phase: number;
+  phaseCount: number;
+}
+
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
 export interface GameSnapshot {
   phase: GamePhase;
@@ -85,6 +95,9 @@ export interface GameSnapshot {
   /** Timed buffs from legendary effects, for the HUD badges. */
   buffs: { haste: boolean; frenzy: boolean };
   skills: readonly SkillView[];
+  boss: BossView | null;
+  /** True from the moment the boss dies until the next restart. */
+  bossDefeated: boolean;
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -123,6 +136,8 @@ const INITIAL: GameSnapshot = {
   inventory: EMPTY_INVENTORY,
   buffs: { haste: false, frenzy: false },
   skills: [],
+  boss: null,
+  bossDefeated: false,
 };
 
 /** Everything that exists once a map has loaded. */
@@ -140,6 +155,10 @@ interface World {
   slash: SlashEffect;
   spinFx: SlashEffect;
   slamFx: SlashEffect;
+  /** Ground warning shown while a boss blast winds up, and the flash when it goes off. */
+  telegraphFx: SlashEffect;
+  novaFx: SlashEffect;
+  nameplateLayer: HTMLDivElement;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -161,6 +180,10 @@ export class Game {
   private noticeSeq = 0;
   private hitSeq = 0;
   private kills = 0;
+  private bossDefeated = false;
+  /** The boss currently winding up a blast (so its warning can be removed if it is interrupted). */
+  private telegraphOwner: Monster | null = null;
+  private teleportIndex = 0;
   private inventoryOpen = false;
   /** The ground item the player was told to walk to and pick up. */
   private pickupTarget: LootDrop | null = null;
@@ -234,7 +257,11 @@ export class Game {
     const w = this.world;
     if (!w) return;
     w.player.respawn(w.map.spawns.player);
-    w.monsters.spawnAll(w.map.spawns.monsters);
+    w.monsters.spawnAll(w.map.spawns, defaultRng);
+    w.telegraphFx.hide();
+    w.novaFx.hide();
+    this.telegraphOwner = null;
+    this.bossDefeated = false;
     w.projectiles.clear();
     w.skillBolts.clear();
     w.numbers.clear();
@@ -267,6 +294,9 @@ export class Game {
       w.slash.dispose();
       w.spinFx.dispose();
       w.slamFx.dispose();
+      w.telegraphFx.dispose();
+      w.novaFx.dispose();
+      w.nameplateLayer.remove();
       w.lightning.dispose();
       w.numbers.dispose();
       w.effects.dispose();
@@ -331,6 +361,11 @@ export class Game {
     const slash = new SlashEffect();
     const spinFx = new SlashEffect({ color: '#ffe08a', inner: 0.7 });
     const slamFx = new SlashEffect({ color: '#ff7a45', inner: 0 });
+    const telegraphFx = new SlashEffect({ color: '#ff3b30', inner: 0 });
+    const novaFx = new SlashEffect({ color: '#ffb070', inner: 0 });
+    const nameplateLayer = document.createElement('div');
+    nameplateLayer.className = 'nameplate-layer';
+    this.container.appendChild(nameplateLayer);
     const lightning = new LightningEffect();
     const numbers = new DamageNumbers(this.container);
     const groundLoot = new GroundLootSystem(assets, this.container, collision, defaultRng, (drop) =>
@@ -354,18 +389,33 @@ export class Game {
       lightningArc: (ax, ay, bx, by) => lightning.strike(ax, ay, bx, by),
       skillFx: (kind, x, y, radius) =>
         (kind === 'spin' ? spinFx : slamFx).trigger(x, y, 1, 0, radius, Math.PI, kind === 'spin' ? 0.35 : 0.45),
+      telegraph: (owner, x, y, radius, duration) => {
+        telegraphFx.telegraph(x, y, radius, duration);
+        this.telegraphOwner = owner;
+      },
+      novaFlash: (x, y, radius) => {
+        telegraphFx.hide();
+        this.telegraphOwner = null;
+        novaFx.trigger(x, y, 1, 0, radius, Math.PI, 0.35);
+      },
+      phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
       monsterKilled: (m: Monster) => {
         this.kills++;
-        for (const item of rollLoot(LOOT_TABLES[m.def.lootTable], defaultRng)) {
+        for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
+        if (m.isBoss) {
+          this.bossDefeated = true;
+          this.notify(`擊敗了${m.def.name}！`);
+        } else if (monsters.aliveCount === 0) {
+          this.notify('區域已清空！');
+        }
         this.publishVitals();
-        if (monsters.aliveCount === 0) this.notify('區域已清空！');
       },
       playerDied: () => this.publishVitals(),
     });
-    monsters = new MonsterAISystem(assets, effects, collision, combat);
-    monsters.spawnAll(map.spawns.monsters);
+    monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
+    monsters.spawnAll(map.spawns, defaultRng);
 
     player.hooks = {
       swingStarted: (dx, dy, duration) =>
@@ -389,6 +439,8 @@ export class Game {
       slash.mesh,
       spinFx.mesh,
       slamFx.mesh,
+      telegraphFx.mesh,
+      novaFx.mesh,
       lightning.group,
       moveMarker,
     );
@@ -406,6 +458,9 @@ export class Game {
       slash,
       spinFx,
       slamFx,
+      telegraphFx,
+      novaFx,
+      nameplateLayer,
       lightning,
       numbers,
       debug,
@@ -476,11 +531,34 @@ export class Game {
     const w = this.world;
     if (!w || w.player.isDead) return;
     w.player.hp = w.player.stats.maxHp;
-    w.monsters.spawnAll(w.map.spawns.monsters);
+    w.monsters.spawnAll(w.map.spawns, defaultRng);
     w.projectiles.clear();
+    w.telegraphFx.hide();
+    this.telegraphOwner = null;
+    this.bossDefeated = false;
     this.kills = 0;
     this.publishVitals();
     this.notify('除錯：已回滿血並重生怪物');
+  }
+
+  /** Debug (F3 mode + F8): jumps to the elite area, then the boss room, then back again. */
+  private debugTeleport(): void {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    const { elites, boss } = w.map.spawns;
+    const targets = [elites[0], boss].filter((p): p is Vec2 => p !== null && p !== undefined);
+    const target = targets[this.teleportIndex++ % targets.length];
+    if (!target) return;
+    // Stand a few tiles to the west of the target, on the first free spot (crates may be in the way).
+    const y = target.y;
+    const x =
+      [3.5, 4.5, 2.5, 5.5, 6.5].map((d) => target.x - d).find((cx) => !w.collision.collidesCircle(cx, y, w.player.radius)) ??
+      target.x - 3.5;
+    w.player.pos.x = x;
+    w.player.pos.y = y;
+    w.player.mover.stop();
+    this.cameraCtl.snapTo(worldToSceneX(x, y), worldToSceneY(x, y));
+    this.notify(target === boss ? '除錯：傳送到 Boss 房' : '除錯：傳送到菁英區');
   }
 
   // --- internals -------------------------------------------------------------------------
@@ -533,7 +611,21 @@ export class Game {
       monstersAlive: w.monsters.aliveCount,
       monstersTotal: w.monsters.total,
       kills: this.kills,
+      bossDefeated: this.bossDefeated,
+      boss: this.bossView(),
     });
+  }
+
+  private bossView(): BossView | null {
+    const boss = this.world?.monsters.boss;
+    if (!boss || !boss.engaged) return null;
+    return {
+      name: boss.def.name,
+      hp: Math.ceil(boss.hp),
+      maxHp: boss.maxHp,
+      phase: boss.phase,
+      phaseCount: (boss.def.phaseThresholds?.length ?? 0) + 1,
+    };
   }
 
   private handleResize(): void {
@@ -555,7 +647,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, combat, slash, spinFx, slamFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (input.wasPressed('debug')) {
@@ -565,6 +657,7 @@ export class Game {
     if (debug.visible && input.wasPressed('debugLoot')) this.debugDropLoot();
     if (debug.visible && input.wasPressed('debugEquip')) this.debugEquipLegendaries();
     if (debug.visible && input.wasPressed('debugReset')) this.debugResetBattlefield();
+    if (debug.visible && input.wasPressed('debugTeleport')) this.debugTeleport();
 
     if (input.wasPressed('inventory')) this.toggleInventory();
     if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);
@@ -634,6 +727,13 @@ export class Game {
     slash.update(dt);
     spinFx.update(dt);
     slamFx.update(dt);
+    telegraphFx.update(dt);
+    novaFx.update(dt);
+    // A blast warning disappears if the boss was interrupted or died before it went off.
+    if (this.telegraphOwner && this.telegraphOwner.state !== 'attack') {
+      telegraphFx.hide();
+      this.telegraphOwner = null;
+    }
     lightning.update(dt);
     groundLoot.update(dt, this.cameraCtl);
     numbers.update(dt, this.cameraCtl);

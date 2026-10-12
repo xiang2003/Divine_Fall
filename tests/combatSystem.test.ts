@@ -76,6 +76,9 @@ function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
     healed: (_x, _y, amount) => events.heals.push(amount),
     lightningArc: (ax, ay, bx, by) => events.arcs.push([ax, ay, bx, by]),
     skillFx: () => {},
+    telegraph: () => {},
+    novaFlash: () => {},
+    phaseChanged: () => {},
   };
   const combat = new CombatSystem(
     player as unknown as Player,

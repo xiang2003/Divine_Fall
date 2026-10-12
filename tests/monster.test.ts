@@ -47,6 +47,9 @@ class Rig {
     fireProjectile: (_m, dirX, dirY) => {
       this.projectiles.push({ dirX, dirY });
     },
+    novaStrike: () => {},
+    telegraph: () => {},
+    phaseChanged: () => {},
   };
   target: { pos: { x: number; y: number }; radius: number; isDead: boolean };
   constructor(

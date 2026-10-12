@@ -1,5 +1,6 @@
 import { MAX_MOVE_STEP } from '../config/gameConfig';
 import type { Vec2 } from '../game/iso';
+import type { Monster } from './Monster';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 
 export type ProjectileOutcome = 'hit' | 'wall' | 'expired' | null;
@@ -21,8 +22,20 @@ export class Projectile {
   damage = 0;
   /** Seconds before it disappears on its own. */
   life = 0;
+  /** Who fired it (so elite effects like lifesteal apply when it hits). */
+  owner: Monster | null = null;
 
-  launch(x: number, y: number, dirX: number, dirY: number, speed: number, damage: number, life: number): void {
+  launch(
+    x: number,
+    y: number,
+    dirX: number,
+    dirY: number,
+    speed: number,
+    damage: number,
+    life: number,
+    owner: Monster | null = null,
+  ): void {
+    this.owner = owner;
     this.active = true;
     this.pos.x = x;
     this.pos.y = y;

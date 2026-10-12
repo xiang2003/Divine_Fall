@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { monsterForSpawnIndex } from '../data/monsters';
+import type { MapSpawns } from '../data/mapData';
 import { Monster, type MonsterHooks, type MonsterTarget } from '../entities/Monster';
 import { MonsterView } from '../entities/MonsterView';
 import type { AssetLoader } from '../game/AssetLoader';
+import type { CameraController } from '../game/CameraController';
 import type { EffectAssets } from '../game/effects';
-import type { Vec2 } from '../game/iso';
 import type { CollisionSystem } from './CollisionSystem';
+import type { Rng } from './rng';
+import { planSpawns } from './spawnPlan';
 
 /** Owns every live monster and its view: spawning, per-tick AI, crowd separation and corpse cleanup. */
 export class MonsterAISystem {
@@ -19,6 +21,9 @@ export class MonsterAISystem {
     private readonly effects: EffectAssets,
     private readonly collision: CollisionSystem,
     private readonly hooks: MonsterHooks,
+    private readonly camera: CameraController,
+    /** Container for elite / boss name plates. */
+    private readonly nameplateLayer: HTMLElement,
   ) {}
 
   get all(): readonly Monster[] {
@@ -31,12 +36,20 @@ export class MonsterAISystem {
   get total(): number {
     return this.spawnedTotal;
   }
+  /** The boss, if it exists and is alive. */
+  get boss(): Monster | null {
+    return this.monsters.find((m) => m.isBoss && !m.isDead) ?? null;
+  }
 
-  /** Removes everything and spawns one normal monster per spawn point (types cycle deterministically). */
-  spawnAll(points: readonly Vec2[]): void {
+  /**
+   * Removes everything and spawns the whole map population: normal monsters, elites (with freshly rolled
+   * affixes) and the boss. `rng` drives affix rolls and boss attack choices.
+   */
+  spawnAll(spawns: MapSpawns, rng: Rng): void {
     this.clear();
-    points.forEach((p, i) => this.spawn(new Monster(monsterForSpawnIndex(i), p)));
-    this.spawnedTotal = points.length;
+    const plan = planSpawns(spawns, rng);
+    for (const entry of plan) this.spawn(new Monster(entry.def, entry.pos, { affixes: entry.affixes, rng }));
+    this.spawnedTotal = plan.length;
   }
 
   clear(): void {
@@ -68,7 +81,7 @@ export class MonsterAISystem {
 
   /** Updates sprites; call once per frame after update(). */
   syncViews(dt: number): void {
-    for (const view of this.views.values()) view.update(dt);
+    for (const view of this.views.values()) view.update(dt, this.camera);
   }
 
   dispose(): void {
@@ -76,7 +89,7 @@ export class MonsterAISystem {
   }
 
   private spawn(monster: Monster): void {
-    const view = new MonsterView(monster, this.assets, this.effects);
+    const view = new MonsterView(monster, this.assets, this.effects, this.nameplateLayer, this.camera);
     this.monsters.push(monster);
     this.views.set(monster, view);
     this.group.add(view.group);
@@ -113,9 +126,14 @@ export class MonsterAISystem {
         const min = a.def.radius + target.radius;
         const d2 = dx * dx + dy * dy;
         if (d2 < min * min) {
-          const d = Math.sqrt(d2) || 1e-3;
-          a.pos.x += (dx / d) * (min - d);
-          a.pos.y += (dy / d) * (min - d);
+          // Exactly on top of the player: pick any direction rather than not moving at all.
+          const coincident = d2 < 1e-8;
+          const d = coincident ? 1 : Math.sqrt(d2);
+          const nx = coincident ? 1 : dx / d;
+          const ny = coincident ? 0 : dy / d;
+          const dist = coincident ? 0 : d;
+          a.pos.x += nx * (min - dist);
+          a.pos.y += ny * (min - dist);
           this.collision.pushOut(a.pos, a.def.radius);
         }
       }

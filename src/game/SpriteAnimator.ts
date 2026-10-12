@@ -15,6 +15,8 @@ export class SpriteAnimator {
   private shownCol = 0;
   private shownRow = 0;
   private speed = 1;
+  private baseScale = 1;
+  private flipped = false;
 
   constructor(
     private readonly loader: AssetLoader,
@@ -56,7 +58,14 @@ export class SpriteAnimator {
   }
 
   setFlipX(flip: boolean): void {
-    this.mesh.scale.x = flip ? -1 : 1;
+    this.flipped = flip;
+    this.mesh.scale.x = flip ? -this.baseScale : this.baseScale;
+  }
+
+  /** Uniform size multiplier (elites and bosses are drawn larger). Keeps the current mirroring. */
+  setScale(scale: number): void {
+    this.baseScale = scale;
+    this.mesh.scale.set(this.flipped ? -scale : scale, scale, 1);
   }
 
   update(dt: number): void {

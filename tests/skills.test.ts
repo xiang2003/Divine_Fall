@@ -188,6 +188,9 @@ function setup(rngValue = 0.99) {
     healed: () => {},
     lightningArc: () => {},
     skillFx: (kind, x, y, radius) => fx.push({ kind, x, y, radius }),
+    telegraph: () => {},
+    novaFlash: () => {},
+    phaseChanged: () => {},
   };
   const bolts = {
     fire: (_x: number, _y: number, dx: number, dy: number, speed: number, range: number, mult: number) => {
@@ -276,7 +279,7 @@ describe('CombatSystem.castSkill', () => {
     combat.castSkill(slam, getSkillStats(slam), 1, 0, 8.5, 2.5);
     expect(m.state).toBe('hurt');
     const rig = { pos: { x: 5.5, y: 2.5 }, radius: 0.28, isDead: false };
-    const hooks = { meleeStrike() {}, fireProjectile() {} };
+    const hooks = { meleeStrike() {}, fireProjectile() {}, novaStrike() {}, telegraph() {}, phaseChanged() {} };
     const collision = new CollisionSystem(ROOM);
     for (let t = 0; t < slam.stunSeconds! - 0.1; t += 1 / 60) m.update(1 / 60, rig, collision, hooks as never);
     expect(m.state).toBe('hurt');
