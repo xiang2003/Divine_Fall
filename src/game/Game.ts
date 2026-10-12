@@ -61,6 +61,8 @@ export interface GameSnapshot {
   kills: number;
   inventoryOpen: boolean;
   inventory: InventoryView;
+  /** Timed buffs from legendary effects, for the HUD badges. */
+  buffs: { haste: boolean; frenzy: boolean };
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -97,6 +99,7 @@ const INITIAL: GameSnapshot = {
   kills: 0,
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
+  buffs: { haste: false, frenzy: false },
 };
 
 /** Everything that exists once a map has loaded. */
@@ -406,6 +409,29 @@ export class Game {
     this.notify('除錯：已掉落測試裝備');
   }
 
+  /** Debug (F3 mode + F6): puts all four legendaries straight onto the character. */
+  private debugEquipLegendaries(): void {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    for (const def of LEGENDARIES) {
+      const added = w.inventory.add(generateLegendary(def.id, defaultRng));
+      if (added.ok) w.inventory.equip(added.index);
+    }
+    this.notify('除錯：已穿上全部傳奇');
+  }
+
+  /** Debug (F3 mode + F7): full health and a fresh set of monsters; gear and floor items are kept. */
+  private debugResetBattlefield(): void {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    w.player.hp = w.player.stats.maxHp;
+    w.monsters.spawnAll(w.map.spawns.monsters);
+    w.projectiles.clear();
+    this.kills = 0;
+    this.publishVitals();
+    this.notify('除錯：已回滿血並重生怪物');
+  }
+
   // --- internals -------------------------------------------------------------------------
 
   private async fetchMap(): Promise<MapData> {
@@ -471,6 +497,8 @@ export class Game {
       this.publish({ debug: debug.visible });
     }
     if (debug.visible && input.wasPressed('debugLoot')) this.debugDropLoot();
+    if (debug.visible && input.wasPressed('debugEquip')) this.debugEquipLegendaries();
+    if (debug.visible && input.wasPressed('debugReset')) this.debugResetBattlefield();
 
     if (input.wasPressed('inventory')) this.toggleInventory();
     if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);
@@ -528,6 +556,12 @@ export class Game {
     groundLoot.update(dt, this.cameraCtl);
     numbers.update(dt, this.cameraCtl);
     debug.setPlayerCircle(player.pos.x, player.pos.y, player.radius);
+
+    const haste = player.buffs.moveActive;
+    const frenzy = player.buffs.attackActive;
+    if (haste !== this.snapshot.buffs.haste || frenzy !== this.snapshot.buffs.frenzy) {
+      this.publish({ buffs: { haste, frenzy } });
+    }
 
     const moveTarget = player.mover.currentTarget;
     moveMarker.visible = moveTarget !== null && this.pickupTarget === null;

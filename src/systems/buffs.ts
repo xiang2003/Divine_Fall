@@ -67,6 +67,13 @@ export class Buffs {
     this.attackBonus = bonus;
   }
 
+  get moveActive(): boolean {
+    return this.moveLeft > 0;
+  }
+  get attackActive(): boolean {
+    return this.attackLeft > 0;
+  }
+
   /** Multiplier applied to move speed (1 = no buff). */
   get moveMultiplier(): number {
     return this.moveLeft > 0 ? 1 + this.moveBonus : 1;

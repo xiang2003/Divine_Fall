@@ -11,7 +11,9 @@ export type InputAction =
   | 'pickup'
   | 'pause'
   | 'debug'
-  | 'debugLoot';
+  | 'debugLoot'
+  | 'debugEquip'
+  | 'debugReset';
 
 /** Skill actions in hotbar order. */
 export const SKILL_ACTIONS = ['skillQ', 'skillW', 'skillE', 'skillR', 'skillT'] as const satisfies readonly InputAction[];
@@ -33,6 +35,8 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   pause: ['Escape'],
   debug: ['F3'],
   debugLoot: ['F4'],
+  debugEquip: ['F6'],
+  debugReset: ['F7'],
 };
 
 export type MouseAction = 'move' | 'attack';

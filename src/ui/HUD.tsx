@@ -85,6 +85,12 @@ export function HUD({
       <div className="panel hud-kills">
         擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
       </div>
+      {(snapshot.buffs.haste || snapshot.buffs.frenzy) && (
+        <div className="hud-buffs">
+          {snapshot.buffs.haste && <span className="buff buff-haste">疾行 +移速</span>}
+          {snapshot.buffs.frenzy && <span className="buff buff-frenzy">狂熱 +攻速</span>}
+        </div>
+      )}
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       <Toast notice={snapshot.notice} />
@@ -109,6 +115,8 @@ export function HUD({
           FPS {snapshot.fps}
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
+          <br />
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物
         </div>
       )}
     </div>

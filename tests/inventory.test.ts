@@ -261,7 +261,10 @@ describe('DodgeController and Buffs', () => {
     expect(b.moveMultiplier).toBe(1);
     b.hasteAttack(3, 0.3);
     expect(b.attackSpeedMultiplier).toBeCloseTo(1.3, 9);
+    expect(b.attackActive).toBe(true);
+    expect(b.moveActive).toBe(false);
     b.clear();
     expect(b.attackSpeedMultiplier).toBe(1);
+    expect(b.attackActive).toBe(false);
   });
 });
