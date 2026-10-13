@@ -102,7 +102,7 @@ body,
 }
 
 .hud-toast {
-  bottom: 156px;
+  bottom: 178px;
   left: 50%;
   transform: translateX(-50%);
   color: var(--gold);
@@ -157,6 +157,29 @@ body,
   justify-content: center;
   font-size: 13px;
   text-shadow: 0 1px 2px #000;
+}
+
+.hud-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.xp-track {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  background: #12101a;
+  border: 1px solid #3d3560;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(#e7c35a, #a8832a);
+  transition: width 0.15s linear;
 }
 
 .hud-kills {
@@ -261,6 +284,12 @@ body,
 
 .damage-number.heal {
   color: #7be07b;
+}
+
+.damage-number.levelup {
+  color: var(--gold);
+  font-size: 30px;
+  letter-spacing: 2px;
 }
 
 .loot-layer {
@@ -528,7 +557,7 @@ body,
 
 .hud-skills {
   position: absolute;
-  bottom: 58px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

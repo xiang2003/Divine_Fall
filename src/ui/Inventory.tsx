@@ -95,7 +95,7 @@ export function Inventory({ view, onEquip, onUnequip, onDrop, onClose }: Invento
             transform: hover.x > window.innerWidth / 2 ? 'translateX(-100%)' : undefined,
           }}
         >
-          <ItemTooltip item={hover.item} equipment={view.equipment} equipped={hover.equipped} />
+          <ItemTooltip item={hover.item} equipment={view.equipment} equipped={hover.equipped} level={view.level} />
         </div>
       )}
     </div>

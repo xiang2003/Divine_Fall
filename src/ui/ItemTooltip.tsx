@@ -7,13 +7,15 @@ interface Props {
   equipment: Readonly<Equipment>;
   /** True when the item being hovered is itself currently worn. */
   equipped: boolean;
+  /** Character level, so the comparison uses the same stats as combat. */
+  level: number;
 }
 
 /** Item description, plus a "if you wear this" comparison against whatever is in the same slot. */
-export function ItemTooltip({ item, equipment, equipped }: Props) {
+export function ItemTooltip({ item, equipment, equipped, level }: Props) {
   const d = describeItem(item);
   const worn = equipment[item.slot];
-  const rows = !equipped ? diffRows(...diffArgs(equipment, item)) : [];
+  const rows = !equipped ? diffRows(...diffArgs(equipment, item, level)) : [];
 
   return (
     <div className="tooltip" style={{ borderColor: d.color }}>
@@ -60,7 +62,7 @@ export function ItemTooltip({ item, equipment, equipped }: Props) {
   );
 }
 
-function diffArgs(equipment: Readonly<Equipment>, item: ItemInstance) {
-  const { before, after } = statsIfEquipped(equipment, item);
+function diffArgs(equipment: Readonly<Equipment>, item: ItemInstance, level: number) {
+  const { before, after } = statsIfEquipped(equipment, item, level);
   return [before, after] as const;
 }

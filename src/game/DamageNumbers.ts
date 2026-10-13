@@ -1,7 +1,7 @@
 import type { CameraController } from './CameraController';
 import type { Vec2 } from './iso';
 
-export type DamageKind = 'dealt' | 'crit' | 'taken' | 'heal';
+export type DamageKind = 'dealt' | 'crit' | 'taken' | 'heal' | 'levelup';
 
 const POOL_SIZE = 32;
 const LIFETIME = 0.9;

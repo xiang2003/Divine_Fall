@@ -1,4 +1,5 @@
 import type { EliteAffixId } from '../data/eliteAffixes';
+import { ELITE_XP_MULT } from '../data/progression';
 import type { LootTableId } from '../data/lootTables';
 import type { BossAttackKind, MonsterDef } from '../data/monsters';
 import type { Vec2 } from '../game/iso';
@@ -139,6 +140,10 @@ export class Monster {
   }
   get scale(): number {
     return this.stats.scale;
+  }
+  /** Experience granted when this monster dies. */
+  get xpReward(): number {
+    return this.isElite ? Math.round(this.def.xp * ELITE_XP_MULT) : this.def.xp;
   }
   get lootTable(): LootTableId {
     return this.isElite ? 'elite' : this.def.lootTable;

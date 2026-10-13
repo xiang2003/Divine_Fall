@@ -83,6 +83,16 @@ export function HUD({
             {snapshot.playerHp} / {snapshot.playerMaxHp}
           </span>
         </div>
+        <div className="hud-level">
+          <span>Lv {snapshot.level}</span>
+          <div className="xp-track">
+            <div
+              className="xp-fill"
+              style={{ width: `${snapshot.xpToNext > 0 ? (100 * snapshot.xp) / snapshot.xpToNext : 100}%` }}
+            />
+          </div>
+          <span className="muted">{snapshot.xpToNext > 0 ? `${snapshot.xp} / ${snapshot.xpToNext}` : 'MAX'}</span>
+        </div>
       </div>
       <div className="panel hud-kills">
         擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
@@ -126,7 +136,7 @@ export function HUD({
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
           <br />
-          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級
         </div>
       )}
     </div>

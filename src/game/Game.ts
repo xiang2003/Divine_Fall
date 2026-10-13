@@ -9,6 +9,7 @@ import {
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { LOOT_TABLES } from '../data/lootTables';
 import { SKILLS, type SkillDef } from '../data/skills';
+import { MAX_LEVEL } from '../data/progression';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
@@ -18,6 +19,7 @@ import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
 import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
+import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { defaultRng } from '../systems/rng';
@@ -43,6 +45,8 @@ export interface InventoryView {
   slots: readonly (ItemInstance | null)[];
   equipment: Readonly<Equipment>;
   stats: Readonly<PlayerStats>;
+  /** Character level (the stats above already include its bonus). */
+  level: number;
 }
 
 /** What the skill bar needs to draw one skill slot. */
@@ -90,6 +94,10 @@ export interface GameSnapshot {
   monstersAlive: number;
   monstersTotal: number;
   kills: number;
+  /** Character level, experience toward the next level, and what the next level costs (0 at the cap). */
+  level: number;
+  xp: number;
+  xpToNext: number;
   inventoryOpen: boolean;
   inventory: InventoryView;
   /** Timed buffs from legendary effects, for the HUD badges. */
@@ -113,6 +121,7 @@ const EMPTY_INVENTORY: InventoryView = {
     critDamage: 0,
     moveSpeed: 0,
   },
+  level: 1,
 };
 
 const INITIAL: GameSnapshot = {
@@ -132,6 +141,9 @@ const INITIAL: GameSnapshot = {
   monstersAlive: 0,
   monstersTotal: 0,
   kills: 0,
+  level: 1,
+  xp: 0,
+  xpToNext: 0,
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
   buffs: { haste: false, frenzy: false },
@@ -180,6 +192,8 @@ export class Game {
   private noticeSeq = 0;
   private hitSeq = 0;
   private kills = 0;
+  /** Level and experience; kept across restarts like the inventory. */
+  private readonly progression = new Progression();
   private bossDefeated = false;
   /** The boss currently winding up a blast (so its warning can be removed if it is interrupted). */
   private telegraphOwner: Monster | null = null;
@@ -355,7 +369,7 @@ export class Game {
     inventory.add(createPlainItem(STARTER_WEAPON, defaultRng));
     inventory.equip(0);
 
-    const player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment));
+    const player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment, this.progression.level));
     const projectiles = new ProjectileSystem(assets);
     const skillBolts = new SkillProjectileSystem(assets);
     const slash = new SlashEffect();
@@ -401,6 +415,7 @@ export class Game {
       phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
       monsterKilled: (m: Monster) => {
         this.kills++;
+        this.gainXp(m.xpReward);
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
@@ -474,14 +489,41 @@ export class Game {
   private syncEquipment(): void {
     const w = this.world;
     if (!w) return; // fires once while the world is still being built; start() syncs afterwards
-    const stats = computeStats(w.inventory.equipment);
+    const stats = computeStats(w.inventory.equipment, this.progression.level);
     Object.assign(w.player.stats, stats);
     w.player.hp = Math.min(w.player.hp, stats.maxHp);
     w.player.setEffects(activeEffects(w.inventory.equipment));
     this.publish({
-      inventory: { slots: [...w.inventory.slots], equipment: { ...w.inventory.equipment }, stats: { ...stats } },
+      inventory: { slots: [...w.inventory.slots], equipment: { ...w.inventory.equipment }, stats: { ...stats }, level: this.progression.level },
     });
     this.publishVitals();
+  }
+
+  /** Adds experience; each level gained refreshes the stats, fully heals the player and announces itself. */
+  private gainXp(amount: number): void {
+    const w = this.world;
+    if (!w) return;
+    const gained = this.progression.addXp(amount);
+    if (gained > 0) {
+      this.syncEquipment();
+      if (!w.player.isDead) w.player.hp = w.player.stats.maxHp;
+      const { x, y } = w.player.pos;
+      w.numbers.spawn(x, y, 'LEVEL UP', 'levelup');
+      w.spinFx.trigger(x, y, 1, 0, 2, Math.PI, 0.5);
+      this.notify(`升級！等級 ${this.progression.level}${this.progression.atMaxLevel ? '（已達上限）' : ''}`);
+    }
+    this.publishVitals();
+  }
+
+  /** Debug (F3 mode + F9): grants exactly the experience needed for the next level. */
+  private debugLevelUp(): void {
+    const w = this.world;
+    if (!w || w.player.isDead) return;
+    if (this.progression.atMaxLevel) {
+      this.notify(`除錯：已達等級上限 ${MAX_LEVEL}`);
+      return;
+    }
+    this.gainXp(this.progression.xpToNext - this.progression.xp);
   }
 
   /** Called when a ground label is clicked: walk there and pick the item up. */
@@ -611,6 +653,9 @@ export class Game {
       monstersAlive: w.monsters.aliveCount,
       monstersTotal: w.monsters.total,
       kills: this.kills,
+      level: this.progression.level,
+      xp: this.progression.xp,
+      xpToNext: this.progression.xpToNext,
       bossDefeated: this.bossDefeated,
       boss: this.bossView(),
     });
@@ -658,6 +703,7 @@ export class Game {
     if (debug.visible && input.wasPressed('debugEquip')) this.debugEquipLegendaries();
     if (debug.visible && input.wasPressed('debugReset')) this.debugResetBattlefield();
     if (debug.visible && input.wasPressed('debugTeleport')) this.debugTeleport();
+    if (debug.visible && input.wasPressed('debugLevel')) this.debugLevelUp();
 
     if (input.wasPressed('inventory')) this.toggleInventory();
     if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);

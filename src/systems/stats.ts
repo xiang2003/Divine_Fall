@@ -10,6 +10,7 @@ import {
   type StatMods,
 } from '../data/items';
 import type { LegendaryEffectId } from '../data/legendaryEffects';
+import { levelBonus } from './progression';
 
 export interface PlayerStats {
   maxHp: number;
@@ -47,8 +48,9 @@ export function itemMods(item: ItemInstance): StatMods {
  *
  * Flat stats (maxHp, damage, armor) add; `...Pct` stats are whole percentages that scale the base value
  * (attack speed, move speed) or add to the base probability / multiplier (crit chance, crit damage).
+ * `level` adds the per-level bonus (max life, damage, armor) on top of the level-1 base.
  */
-export function computeStats(equipment: Equipment): PlayerStats {
+export function computeStats(equipment: Equipment, level = 1): PlayerStats {
   const sum: Record<StatKey, number> = {
     maxHp: 0,
     damage: 0,
@@ -64,12 +66,13 @@ export function computeStats(equipment: Equipment): PlayerStats {
     for (const [key, value] of Object.entries(itemMods(item)) as [StatKey, number][]) sum[key] += value;
   }
   const base = PLAYER_CONFIG.baseStats;
+  const lv = levelBonus(level);
   return {
-    maxHp: base.maxHp + sum.maxHp,
-    damage: base.damage + sum.damage,
+    maxHp: base.maxHp + lv.maxHp + sum.maxHp,
+    damage: base.damage + lv.damage + sum.damage,
     attackSpeed: base.attackSpeed * (1 + sum.attackSpeedPct / 100),
     attackRange: base.attackRange,
-    armor: base.armor + sum.armor,
+    armor: base.armor + lv.armor + sum.armor,
     critChance: Math.min(MAX_CRIT_CHANCE, base.critChance + sum.critChancePct / 100),
     critDamage: base.critDamage + sum.critDamagePct / 100,
     moveSpeed: base.moveSpeed * (1 + sum.moveSpeedPct / 100),
@@ -92,9 +95,9 @@ export interface StatChange {
 }
 
 /** What the stats would be if `candidate` replaced whatever is in its slot. Used by the tooltip. */
-export function statsIfEquipped(equipment: Equipment, candidate: ItemInstance): StatChange {
+export function statsIfEquipped(equipment: Equipment, candidate: ItemInstance, level = 1): StatChange {
   return {
-    before: computeStats(equipment),
-    after: computeStats({ ...equipment, [candidate.slot]: candidate }),
+    before: computeStats(equipment, level),
+    after: computeStats({ ...equipment, [candidate.slot]: candidate }, level),
   };
 }
