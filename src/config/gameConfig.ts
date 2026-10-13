@@ -9,6 +9,7 @@ export type InputAction =
   | 'dodge'
   | 'inventory'
   | 'quests'
+  | 'map'
   | 'pickup'
   | 'pause'
   | 'debug'
@@ -42,6 +43,7 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   dodge: ['Space'],
   inventory: ['KeyI', 'KeyB'],
   quests: ['KeyJ'],
+  map: ['KeyM'],
   pickup: ['KeyF'],
   pause: ['Escape'],
   debug: ['F3'],

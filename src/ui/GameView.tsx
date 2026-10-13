@@ -40,6 +40,7 @@ function HudBridge({ game }: { game: Game }) {
         onClose: () => game.setInventoryOpen(false),
       }}
       onCloseQuestLog={() => game.setQuestLogOpen(false)}
+      onCloseWorldMap={() => game.setWorldMapOpen(false)}
       onDismissChapterEnd={game.dismissChapterEnd}
       dialogueActions={{
         onAdvance: game.advanceDialogue,

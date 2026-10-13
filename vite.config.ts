@@ -8,6 +8,6 @@ export default defineConfig({
   base: process.env.VITE_BASE ?? './',
   plugins: [react()],
   build: {
-    chunkSizeWarningLimit: 900,
+    chunkSizeWarningLimit: 1000,
   },
 });

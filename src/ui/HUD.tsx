@@ -6,6 +6,7 @@ import { Inventory, type InventoryActions } from './Inventory';
 import { BossBar } from './BossBar';
 import { DialogueBox, type DialogueActions } from './DialogueBox';
 import { QuestLog, QuestTracker } from './QuestPanels';
+import { WorldMapPanel } from './WorldMapPanel';
 import { getNpc } from '../data/npcs';
 import { assetUrl } from '../game/AssetLoader';
 import { SkillBar } from './SkillBar';
@@ -53,6 +54,7 @@ export function HUD({
   inventoryActions,
   dialogueActions,
   onCloseQuestLog,
+  onCloseWorldMap,
   onDismissChapterEnd,
 }: {
   snapshot: GameSnapshot;
@@ -60,6 +62,7 @@ export function HUD({
   inventoryActions: InventoryActions;
   dialogueActions: DialogueActions;
   onCloseQuestLog: () => void;
+  onCloseWorldMap: () => void;
   onDismissChapterEnd: () => void;
 }) {
   if (snapshot.phase === 'loading') {
@@ -89,7 +92,7 @@ export function HUD({
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · F 拾取 / 交談 / 調查 · Q W E 技能 · F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · M 地圖 · F 拾取 / 交談 / 調查 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
@@ -137,6 +140,7 @@ export function HUD({
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       <QuestTracker quests={snapshot.quests} npcName={npcName} />
+      {snapshot.worldMapOpen && <WorldMapPanel graph={snapshot.worldMap} onClose={onCloseWorldMap} />}
       {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
       {snapshot.chapterEnd && (
         <div className="chapter-end" onContextMenu={(e) => e.preventDefault()}>

@@ -15,6 +15,15 @@ export type WorldMapId = keyof typeof WORLD_MAP_FILES;
 export const START_MAP_ID: WorldMapId = 'pure_village';
 export const START_ENTRANCE = DEFAULT_ENTRANCE;
 
+/** Where each map is drawn on the world-map screen (percent of the panel) and what kind of place it is. */
+export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: string }> = {
+  pure_village: { x: 20, y: 50, kind: '村落' },
+  pure_forest: { x: 50, y: 50, kind: '野外' },
+  pure_spring_cave: { x: 50, y: 17, kind: '洞窟' },
+  pure_ruins: { x: 80, y: 50, kind: '遺跡' },
+  pure_coast: { x: 20, y: 84, kind: '海岸' },
+};
+
 export function isWorldMapId(id: string): id is WorldMapId {
   return Object.prototype.hasOwnProperty.call(WORLD_MAP_FILES, id);
 }

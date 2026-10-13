@@ -10,7 +10,8 @@ import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance
 import { LOOT_TABLES } from '../data/lootTables';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
-import { START_MAP_ID, WORLD_MAP_FILES, isWorldMapId } from '../data/worldMaps';
+import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isWorldMapId } from '../data/worldMaps';
+import { buildWorldGraph, type WorldGraphView } from '../systems/worldGraph';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
@@ -135,6 +136,9 @@ export interface GameSnapshot {
   /** Quests that were accepted: ready ones first, then active, then completed. */
   quests: readonly QuestView[];
   questLogOpen: boolean;
+  /** The world map (M) is open; `worldMap` is null while the map data is still loading. */
+  worldMapOpen: boolean;
+  worldMap: WorldGraphView | null;
   /** The chapter-complete screen is showing. */
   chapterEnd: boolean;
 }
@@ -185,6 +189,8 @@ const INITIAL: GameSnapshot = {
   dialogue: null,
   quests: [],
   questLogOpen: false,
+  worldMapOpen: false,
+  worldMap: null,
   chapterEnd: false,
 };
 
@@ -260,6 +266,9 @@ export class Game {
   private teleportIndex = 0;
   private inventoryOpen = false;
   private questLogOpen = false;
+  private worldMapOpen = false;
+  /** Maps the player has entered (the world map dims the others). */
+  private readonly visitedMaps = new Set<string>([START_MAP_ID]);
   private readonly quests = new QuestLog(QUESTS);
   /** The conversation in progress (the world keeps running behind it, but the player's input is ignored). */
   private dialogue: { runner: DialogueRunner; name: string; pos: Vec2 } | null = null;
@@ -385,14 +394,44 @@ export class Game {
   setInventoryOpen = (open: boolean): void => {
     this.inventoryOpen = open;
     if (open && this.questLogOpen) this.setQuestLogOpen(false);
+    if (open && this.worldMapOpen) this.setWorldMapOpen(false);
     this.publish({ inventoryOpen: open });
   };
 
   setQuestLogOpen = (open: boolean): void => {
     this.questLogOpen = open;
     if (open && this.inventoryOpen) this.setInventoryOpen(false);
+    if (open && this.worldMapOpen) this.setWorldMapOpen(false);
     this.publish({ questLogOpen: open });
   };
+
+  setWorldMapOpen = (open: boolean): void => {
+    this.worldMapOpen = open;
+    if (!open) {
+      this.publish({ worldMapOpen: false, worldMap: null });
+      return;
+    }
+    if (this.inventoryOpen) this.setInventoryOpen(false);
+    if (this.questLogOpen) this.setQuestLogOpen(false);
+    this.publish({ worldMapOpen: true, worldMap: null });
+    void this.refreshWorldMap();
+  };
+
+  toggleWorldMap = (): void => this.setWorldMapOpen(!this.worldMapOpen);
+
+  /** Loads every map (they are small and cached) and publishes the graph of how they connect. */
+  private async refreshWorldMap(): Promise<void> {
+    try {
+      const maps = await Promise.all(Object.keys(WORLD_MAP_FILES).map((id) => this.loadMapData(id)));
+      if (!this.worldMapOpen || this.disposed) return;
+      this.publish({ worldMap: buildWorldGraph(maps, WORLD_MAP_LAYOUT, this.flags, this.visitedMaps, this.mapId) });
+    } catch (err) {
+      console.error(err);
+      this.worldMapOpen = false;
+      this.publish({ worldMapOpen: false, worldMap: null });
+      this.notify('無法載入地圖資料。');
+    }
+  }
 
   toggleQuestLog = (): void => this.setQuestLogOpen(!this.questLogOpen);
 
@@ -841,6 +880,7 @@ export class Game {
     w.player.mover.stop();
     this.setInventoryOpen(false);
     this.setQuestLogOpen(false);
+    this.setWorldMapOpen(false);
     this.dialogue = {
       runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name),
       name: npc.def.name,
@@ -868,6 +908,7 @@ export class Game {
     w.player.mover.stop();
     this.setInventoryOpen(false);
     this.setQuestLogOpen(false);
+    this.setWorldMapOpen(false);
     this.dialogue = {
       runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), it.def.name),
       name: it.def.name,
@@ -1004,6 +1045,8 @@ export class Game {
     const world = this.buildWorld(map, assets, { player: old.player, inventory: old.inventory });
     this.world = world;
     this.mapId = map.id;
+    this.visitedMaps.add(map.id);
+    if (this.worldMapOpen) void this.refreshWorldMap();
     world.player.enterMap(world.collision, at ?? map.spawns.player);
     if (debugWasOn) world.debug.toggle();
 
@@ -1130,8 +1173,10 @@ export class Game {
     const talking = this.dialogue !== null;
     if (input.wasPressed('inventory') && !talking) this.toggleInventory();
     if (input.wasPressed('quests') && !talking) this.toggleQuestLog();
+    if (input.wasPressed('map') && !talking) this.toggleWorldMap();
     if (input.wasPressed('pause')) {
       if (talking) this.endDialogue();
+      else if (this.worldMapOpen) this.setWorldMapOpen(false);
       else if (this.questLogOpen) this.setQuestLogOpen(false);
       else if (this.inventoryOpen) this.setInventoryOpen(false);
     }
