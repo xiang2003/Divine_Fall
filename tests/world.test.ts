@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MapParseError, TileType, parseMap, tileAt, type MapData } from '../src/data/mapData';
 import { START_MAP_ID, WORLD_MAP_FILES, checkWorldLinks } from '../src/data/worldMaps';
+import { BUILDING_VARIANTS, buildingCanvasSize, isBuildingVariant } from '../src/game/BuildingArt';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../src/systems/portals';
 
@@ -215,6 +216,56 @@ describe('map themes and tree tiles', () => {
     expect(map.spawns.monsters.length).toBeGreaterThanOrEqual(8);
     for (const m of map.spawns.monsters) {
       expect(Math.hypot(m.x - map.entrances.from_village!.x, m.y - map.entrances.from_village!.y)).toBeGreaterThan(8);
+    }
+  });
+});
+
+describe('buildings', () => {
+  const layout = ['########', '#P.....#', '#.###..#', '#.###..#', '#......#', '########'];
+  const base = { id: 'a', name: 'A', layout };
+
+  it('parses a building over solid tiles', () => {
+    const map = parseMap({ ...base, buildings: [{ style: 'home', x: 2, y: 2, w: 3, h: 2 }] });
+    expect(map.buildings).toEqual([{ style: 'home', x: 2, y: 2, w: 3, h: 2 }]);
+    expect(parseMap(base).buildings).toEqual([]);
+  });
+
+  it('rejects a building over floor, a building over the edge, bad numbers and overlapping buildings', () => {
+    expect(() => parseMap({ ...base, buildings: [{ style: 'home', x: 1, y: 1, w: 3, h: 2 }] })).toThrow(/not a solid/);
+    expect(() => parseMap({ ...base, buildings: [{ style: 'home', x: 6, y: 2, w: 3, h: 2 }] })).toThrow(/not a solid/);
+    expect(() => parseMap({ ...base, buildings: [{ style: 'home', x: 2, y: 2, w: 1.5, h: 2 }] })).toThrow(/integer/);
+    expect(() => parseMap({ ...base, buildings: [{ x: 2, y: 2, w: 1, h: 1 }] })).toThrow(/style/);
+    expect(() =>
+      parseMap({ ...base, buildings: [{ style: 'a', x: 2, y: 2, w: 2, h: 2 }, { style: 'b', x: 3, y: 3, w: 1, h: 1 }] }),
+    ).toThrow(/overlap/);
+  });
+
+  it('every building on the real maps has a drawn sprite of exactly that style and size, and nothing walkable stands on it', () => {
+    for (const file of Object.values(WORLD_MAP_FILES)) {
+      const map = parseMap(JSON.parse(readFileSync(new URL(`../public/${file}`, import.meta.url), 'utf8')) as unknown);
+      const collision = new CollisionSystem(map);
+      for (const b of map.buildings) {
+        expect(isBuildingVariant(b.style, b.w, b.h), `${map.id}: ${b.style} ${b.w}x${b.h} has no sprite`).toBe(true);
+        for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) expect(collision.isTileBlocked(x, y)).toBe(true);
+        const inside = (p: { x: number; y: number }) => p.x >= b.x && p.x < b.x + b.w && p.y >= b.y && p.y < b.y + b.h;
+        for (const p of [map.spawns.player, ...Object.values(map.entrances), ...map.spawns.monsters, ...map.npcs.map((n) => n.pos)]) {
+          expect(inside(p), `${map.id}: something stands inside ${b.style}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('every building sprite fits its canvas with the pivot inside it', () => {
+    for (const v of BUILDING_VARIANTS) {
+      const size = buildingCanvasSize(v.w, v.h);
+      expect(size.centerX).toBeGreaterThan(0);
+      expect(size.centerX).toBeLessThan(size.width);
+      expect(size.centerY).toBeGreaterThan(0);
+      expect(size.centerY).toBeLessThan(size.height);
+      // The whole footprint diamond is inside the canvas.
+      expect(size.centerX - (v.w + v.h) * 16).toBeGreaterThanOrEqual(0);
+      expect(size.centerX + (v.w + v.h) * 16).toBeLessThanOrEqual(size.width);
+      expect(size.centerY + (v.w + v.h) * 8).toBeLessThanOrEqual(size.height);
     }
   });
 });

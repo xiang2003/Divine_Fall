@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
 import { GRASS_KEYS, GRASS_PICK, SpriteKey, TREE_KEYS } from './assetManifest';
+import { buildingKey } from './BuildingArt';
 import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY } from './iso';
 
 /** Stable pseudo-random number per tile, so a map always looks the same (variant of grass, kind of tree). */
@@ -36,8 +37,9 @@ export class MapView {
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = tileAt(map, x, y);
-        // Trees stand on grass, so outdoor maps get a ground tile under them too.
-        if (tile !== TileType.FLOOR && !(grass && tile === TileType.TREE)) continue;
+        // Trees and buildings stand on grass, so outdoor maps get a ground tile under them too.
+        const underBuilding = map.buildings.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+        if (tile !== TileType.FLOOR && !(grass && (tile === TileType.TREE || underBuilding))) continue;
         const variant = grass ? GRASS_PICK[tileHash(x, y) % GRASS_PICK.length]! : (x + y) % 2;
         tilesPerVariant[variant]!.push({ x, y });
       }
@@ -59,12 +61,24 @@ export class MapView {
   }
 
   private buildWallsAndProps(map: MapData, assets: AssetLoader): void {
+    const covered = new Set<number>();
+    for (const b of map.buildings) {
+      for (let ty = b.y; ty < b.y + b.h; ty++) for (let tx = b.x; tx < b.x + b.w; tx++) covered.add(ty * map.width + tx);
+      const key = buildingKey(b.style, b.w, b.h);
+      const sprite = new THREE.Mesh(assets.sharedGeometry(key), assets.material(key));
+      // Sorted at the middle of its footprint, like every other object.
+      placeAt(sprite, Layer.OBJECT, b.x + b.w / 2, b.y + b.h / 2);
+      sprite.matrixAutoUpdate = false;
+      sprite.updateMatrix();
+      this.root.add(sprite);
+    }
     const wallGeo = assets.sharedGeometry(SpriteKey.WALL);
     const wallMat = assets.material(SpriteKey.WALL);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = tileAt(map, x, y);
         if (tile !== TileType.WALL && tile !== TileType.TREE) continue;
+        if (covered.has(y * map.width + x)) continue; // drawn by its building sprite
         const treeKey = TREE_KEYS[tileHash(x, y) % TREE_KEYS.length]!;
         const wall =
           tile === TileType.TREE

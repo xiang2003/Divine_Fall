@@ -14,6 +14,8 @@ export interface DungeonMapFile {
   entrances?: Record<string, { x: number; y: number }>;
   /** Walk-in doors to other maps. */
   portals?: PortalFile[];
+  /** Buildings drawn over a rectangle of solid ("#") tiles. `style` and size must be one of BUILDING_VARIANTS. */
+  buildings?: { style: string; x: number; y: number; w: number; h: number }[];
   /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). */
   npcs?: { id: string; x: number; y: number }[];
 }
@@ -71,6 +73,16 @@ export interface Portal {
   blockedText?: string;
 }
 
+/** A building: a sprite drawn over a rectangle of solid tiles (the tiles do the blocking). */
+export interface Building {
+  style: string;
+  /** Top-left tile and size, in tiles. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 /** An NPC standing somewhere on a map. */
 export interface NpcPlacement {
   id: string;
@@ -103,6 +115,7 @@ export interface MapData {
   entrances: Record<string, Vec2>;
   portals: Portal[];
   npcs: NpcPlacement[];
+  buildings: Building[];
 }
 
 const CRATE_HALF = 0.36;
@@ -254,8 +267,28 @@ export function parseMap(raw: unknown): MapData {
     npcs.push({ id: n.id, pos: { x: n.x + 0.5, y: n.y + 0.5 } });
   }
 
+  const buildings: Building[] = [];
+  for (const b of file.buildings ?? []) {
+    if (typeof b?.style !== 'string' || ![b.x, b.y, b.w, b.h].every(Number.isInteger) || b.w < 1 || b.h < 1) {
+      throw new MapParseError('Every building needs a string "style" and integer x / y / w / h');
+    }
+    for (let ty = b.y; ty < b.y + b.h; ty++) {
+      for (let tx = b.x; tx < b.x + b.w; tx++) {
+        if (tileAtRaw(tiles, width, height, tx, ty) !== TileType.WALL) {
+          throw new MapParseError(`Building "${b.style}" at (${b.x}, ${b.y}) covers (${tx}, ${ty}), which is not a solid "#" tile`);
+        }
+      }
+    }
+    for (const o of buildings) {
+      if (b.x < o.x + o.w && o.x < b.x + b.w && b.y < o.y + o.h && o.y < b.y + b.h) {
+        throw new MapParseError(`Buildings at (${b.x}, ${b.y}) and (${o.x}, ${o.y}) overlap`);
+      }
+    }
+    buildings.push({ style: b.style, x: b.x, y: b.y, w: b.w, h: b.h });
+  }
+
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs };
+  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings };
 }

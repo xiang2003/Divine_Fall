@@ -16,6 +16,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
+import { BUILDING_VARIANTS, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock, makeCanvas } from './PlaceholderArt';
 
 export interface SpriteAssetDef {
@@ -113,7 +114,23 @@ function treeSprite(index: number): SpriteAssetDef {
   };
 }
 
+/** Buildings are drawn by BuildingArt at SUPERSAMPLE x resolution and shown at 1 / SUPERSAMPLE. */
+function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: number, h: number): SpriteAssetDef {
+  const size = buildingCanvasSize(w, h);
+  return {
+    key: buildingKey(style, w, h),
+    frameWidth: size.width * SUPERSAMPLE,
+    frameHeight: size.height * SUPERSAMPLE,
+    displayScale: 1 / SUPERSAMPLE,
+    smooth: true,
+    // The pivot is the middle of the footprint on the ground.
+    anchor: { x: size.centerX / size.width, y: (size.height - size.centerY) / size.height },
+    placeholder: () => drawBuilding(style, w, h),
+  };
+}
+
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
+  ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),
   ...TREE_KEYS.map((_, i) => treeSprite(i)),
   {
