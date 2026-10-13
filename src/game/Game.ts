@@ -20,6 +20,9 @@ import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
 import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
+import { getDialogue } from '../data/dialogues';
+import { DialogueRunner, pickDialogue, type DialogueContext } from '../systems/dialogue';
+import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
@@ -77,6 +80,17 @@ export interface BossView {
   phaseCount: number;
 }
 
+/** The conversation on screen. */
+export interface DialogueSnapshot {
+  npcName: string;
+  speaker: string;
+  text: string;
+  /** Choices on offer, or null when the line simply continues. */
+  choices: readonly string[] | null;
+  /** True when continuing closes the conversation. */
+  last: boolean;
+}
+
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
 export interface GameSnapshot {
   phase: GamePhase;
@@ -113,6 +127,7 @@ export interface GameSnapshot {
   bossDefeated: boolean;
   /** Black overlay opacity (0-1) while moving between maps. */
   fade: number;
+  dialogue: DialogueSnapshot | null;
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -158,6 +173,7 @@ const INITIAL: GameSnapshot = {
   boss: null,
   bossDefeated: false,
   fade: 0,
+  dialogue: null,
 };
 
 /** What survives a map change: the character itself. */
@@ -195,6 +211,7 @@ interface World {
   telegraphFx: SlashEffect;
   novaFx: SlashEffect;
   nameplateLayer: HTMLDivElement;
+  npcs: NpcSystem;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -229,6 +246,10 @@ export class Game {
   private telegraphOwner: Monster | null = null;
   private teleportIndex = 0;
   private inventoryOpen = false;
+  /** The conversation in progress (the world keeps running behind it, but the player's input is ignored). */
+  private dialogue: { runner: DialogueRunner; npc: Npc } | null = null;
+  /** The NPC the player was told to walk to and talk to. */
+  private talkTarget: Npc | null = null;
   /** The ground item the player was told to walk to and pick up. */
   private pickupTarget: LootDrop | null = null;
   /** A skill key pressed while busy, cast as soon as the player is free (see SKILL_INPUT_BUFFER). */
@@ -318,6 +339,7 @@ export class Game {
     w.lightning.clear();
     w.groundLoot.clear();
     this.pickupTarget = null;
+    this.endDialogue();
     this.kills = 0;
     this.cameraCtl.snapTo(worldToSceneX(w.player.pos.x, w.player.pos.y), worldToSceneY(w.player.pos.x, w.player.pos.y));
     this.publishVitals();
@@ -387,12 +409,14 @@ export class Game {
     w.telegraphFx.dispose();
     w.novaFx.dispose();
     w.nameplateLayer.remove();
+    w.npcs.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
     w.effects.dispose();
     if (keepPlayer) {
       this.scene.scene.remove(
         w.groundLoot.group,
+        w.npcs.group,
         w.monsters.group,
         w.projectiles.group,
         w.skillBolts.group,
@@ -410,7 +434,7 @@ export class Game {
   }
 
   private buildWorld(map: MapData, assets: AssetLoader, carry: Carry | null): World {
-    const collision = new CollisionSystem(map);
+    const collision = new CollisionSystem(map, map.npcs.map((n) => npcBounds(n.pos)));
     const debug = this.scene.loadMap(map, assets);
     const effects = new EffectAssets();
 
@@ -432,6 +456,7 @@ export class Game {
     const slamFx = new SlashEffect({ color: '#ff7a45', inner: 0 });
     const telegraphFx = new SlashEffect({ color: '#ff3b30', inner: 0 });
     const novaFx = new SlashEffect({ color: '#ffb070', inner: 0 });
+    const npcs = new NpcSystem(map.npcs, assets, this.container, this.cameraCtl, (npc) => this.requestTalk(npc));
     const nameplateLayer = document.createElement('div');
     nameplateLayer.className = 'nameplate-layer';
     this.container.appendChild(nameplateLayer);
@@ -502,6 +527,7 @@ export class Game {
 
     this.scene.scene.add(
       groundLoot.group,
+      npcs.group,
       monsters.group,
       projectiles.group,
       skillBolts.group,
@@ -531,6 +557,7 @@ export class Game {
       telegraphFx,
       novaFx,
       nameplateLayer,
+      npcs,
       lightning,
       numbers,
       debug,
@@ -691,6 +718,72 @@ export class Game {
     return map;
   }
 
+  // --- NPCs and dialogue ---------------------------------------------------------------------
+
+  /** A name tag was clicked: walk over and talk. */
+  private requestTalk(npc: Npc): void {
+    const w = this.world;
+    if (!w || w.player.isDead || this.dialogue || this.transition) return;
+    this.talkTarget = npc;
+    this.pickupTarget = null;
+  }
+
+  private startTalk(npc: Npc): void {
+    const w = this.world;
+    if (!w || w.player.isDead || this.dialogue) return;
+    this.talkTarget = null;
+    const graphId = pickDialogue(npc.def.dialogue, this.currentDialogueContext());
+    if (!graphId) return;
+    w.player.mover.stop();
+    this.setInventoryOpen(false);
+    this.dialogue = { runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name), npc };
+    this.publishDialogue();
+  }
+
+  /** The dialogue context with the live character level. */
+  private currentDialogueContext(): DialogueContext {
+    return { hasFlag: (name) => this.flags.has(name), setFlag: (name, on) => this.setFlag(name, on), level: this.progression.level };
+  }
+
+  advanceDialogue = (): void => {
+    const d = this.dialogue;
+    if (!d) return;
+    d.runner.advance();
+    this.afterDialogueStep();
+  };
+
+  chooseDialogueOption = (index: number): void => {
+    const d = this.dialogue;
+    if (!d) return;
+    d.runner.choose(index);
+    this.afterDialogueStep();
+  };
+
+  closeDialogue = (): void => this.endDialogue();
+
+  private afterDialogueStep(): void {
+    if (this.dialogue?.runner.finished) this.endDialogue();
+    else this.publishDialogue();
+  }
+
+  private endDialogue(): void {
+    this.talkTarget = null;
+    if (!this.dialogue) return;
+    this.dialogue.runner.close();
+    this.dialogue = null;
+    this.publish({ dialogue: null });
+  }
+
+  private publishDialogue(): void {
+    const d = this.dialogue;
+    const view = d?.runner.view;
+    if (!d || !view) {
+      this.publish({ dialogue: null });
+      return;
+    }
+    this.publish({ dialogue: { npcName: d.npc.def.name, ...view } });
+  }
+
   // --- changing maps ---------------------------------------------------------------------------
 
   /** Flags are plain on/off switches for world progress. */
@@ -758,6 +851,7 @@ export class Game {
     if (debugWasOn) world.debug.toggle();
 
     this.pickupTarget = null;
+    this.endDialogue();
     this.pendingSkill = null;
     this.telegraphOwner = null;
     this.bossDefeated = false;
@@ -853,7 +947,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -874,31 +968,56 @@ export class Game {
     if (debug.visible && input.wasPressed('debugLevel')) this.debugLevelUp();
     if (debug.visible && input.wasPressed('debugFlag')) this.debugToggleRuinsFlag();
 
-    if (input.wasPressed('inventory')) this.toggleInventory();
-    if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);
+    const talking = this.dialogue !== null;
+    if (input.wasPressed('inventory') && !talking) this.toggleInventory();
+    if (input.wasPressed('pause')) {
+      if (talking) this.endDialogue();
+      else if (this.inventoryOpen) this.setInventoryOpen(false);
+    }
 
     const aim = input.pointerInside
       ? this.cameraCtl.pointerToWorld(input.pointer.x, input.pointer.y, this.aimWorld)
       : null;
 
-    if (!player.isDead) {
+    if (!player.isDead && !talking) {
       // wasMousePressed also covers a click whose press and release land within one frame.
       const attackHeld = input.isMouseDown('attack') || input.wasMousePressed('attack');
       const moveHeld = input.isMouseDown('move') || input.wasMousePressed('move');
       // Any fresh gameplay input cancels a pending walk-to-pickup.
       if (attackHeld || moveHeld || input.wasPressed('dodge')) this.pickupTarget = null;
 
+      // Clicking an NPC (rather than the empty ground next to it) means "go and talk".
+      const pressedMove = input.wasMousePressed('move');
+      const npcAtAim = pressedMove && aim ? npcs.nearest(aim, NPC_CLICK_RADIUS) : null;
+      if (attackHeld || input.wasPressed('dodge') || (pressedMove && !npcAtAim)) this.talkTarget = null;
+      if (npcAtAim) {
+        this.talkTarget = npcAtAim;
+        this.pickupTarget = null;
+      }
+
       if (input.wasPressed('dodge')) player.startDodge(aim?.x ?? player.pos.x, aim?.y ?? player.pos.y);
 
       // Right button: swing toward the cursor (hold to keep swinging). It stops the player in place
       // and takes priority over walking, so holding both never drags the player mid-swing.
       if (attackHeld && aim) player.startAttack(aim.x, aim.y);
-      else if (moveHeld && aim) player.moveTo(aim.x, aim.y);
+      else if (moveHeld && aim && !this.talkTarget) player.moveTo(aim.x, aim.y);
 
-      // F: pick up the nearest item within reach.
+      // F: pick up the nearest item within reach, otherwise talk to the nearest NPC.
       if (input.wasPressed('pickup')) {
         const near = groundLoot.nearest(player.pos, LOOT_CONFIG.keyPickupRange);
+        const npcNear = npcs.nearest(player.pos, NPC_TALK_RANGE);
         if (near) this.tryPickup(near);
+        else if (npcNear) this.startTalk(npcNear);
+      }
+
+      // Walking toward a clicked NPC.
+      const talkTarget = this.talkTarget;
+      if (talkTarget) {
+        if (Math.hypot(talkTarget.pos.x - player.pos.x, talkTarget.pos.y - player.pos.y) <= NPC_TALK_RANGE) {
+          this.startTalk(talkTarget);
+        } else if (!player.isSwinging && !player.mover.hasTarget) {
+          player.moveTo(talkTarget.pos.x, talkTarget.pos.y);
+        }
       }
 
       // Walking toward a clicked ground item.
@@ -933,6 +1052,13 @@ export class Game {
     } else {
       this.pickupTarget = null;
       this.pendingSkill = null;
+      if (player.isDead) this.talkTarget = null;
+    }
+    if (talking) {
+      // A conversation ends if the player dies or somehow ends up far from the speaker.
+      const d = this.dialogue;
+      if (player.isDead) this.endDialogue();
+      else if (d && Math.hypot(d.npc.pos.x - player.pos.x, d.npc.pos.y - player.pos.y) > NPC_TALK_RANGE + 1.5) this.endDialogue();
     }
 
     player.update(dt);
@@ -940,6 +1066,7 @@ export class Game {
     monsters.update(dt, player);
     combat.update(dt);
     monsters.syncViews(dt);
+    npcs.update(dt, player.pos);
     slash.update(dt);
     spinFx.update(dt);
     slamFx.update(dt);

@@ -733,3 +733,99 @@ body,
   font-size: 13px;
   color: var(--text);
 }
+
+/* --- NPCs and dialogue ----------------------------------------------------------------- */
+
+.npc-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.npc-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 1px 8px 2px;
+  text-align: center;
+  white-space: nowrap;
+  background: rgba(10, 8, 14, 0.7);
+  border: 1px solid rgba(160, 220, 190, 0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.npc-tag:hover {
+  background: rgba(24, 40, 32, 0.92);
+  border-color: #a6e3c0;
+}
+
+.npc-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b8f0cf;
+}
+
+.npc-title {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dialogue-box {
+  position: absolute;
+  left: 50%;
+  bottom: 150px;
+  transform: translateX(-50%);
+  width: 640px;
+  max-width: calc(100% - 40px);
+  padding: 14px 18px 12px;
+  cursor: default;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.dialogue-speaker {
+  font-size: 15px;
+  font-weight: 700;
+  color: #b8f0cf;
+  margin-bottom: 6px;
+}
+
+.dialogue-text {
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 54px;
+}
+
+.dialogue-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.dialogue-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dialogue-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.dialogue-choice-key {
+  display: inline-block;
+  min-width: 18px;
+  color: var(--gold);
+  font-weight: 700;
+}

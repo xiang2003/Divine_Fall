@@ -3,6 +3,10 @@ import type { AnimationSet } from './AnimationClock';
 import {
   BOSS_FRAME,
   drawArchonSheet,
+  drawBoatwrightSheet,
+  drawElderSheet,
+  drawHunterSheet,
+  drawWatererSheet,
   drawBolt,
   drawGhoulSheet,
   drawHoundSheet,
@@ -53,6 +57,10 @@ export const SpriteKey = {
   SHADE: 'monster.shade',
   HOUND: 'monster.hound',
   BOSS: 'monster.boss',
+  NPC_ELDER: 'npc.elder',
+  NPC_HUNTER: 'npc.hunter',
+  NPC_WATERER: 'npc.waterer',
+  NPC_BOATWRIGHT: 'npc.boatwright',
 } as const;
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
@@ -136,6 +144,10 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   characterSprite(SpriteKey.SHADE, 8, drawShadeSheet),
   characterSprite(SpriteKey.HOUND, 8, drawHoundSheet),
   characterSprite(SpriteKey.BOSS, 8, drawArchonSheet, BOSS_FRAME),
+  characterSprite(SpriteKey.NPC_ELDER, 8, drawElderSheet),
+  characterSprite(SpriteKey.NPC_HUNTER, 8, drawHunterSheet),
+  characterSprite(SpriteKey.NPC_WATERER, 8, drawWatererSheet),
+  characterSprite(SpriteKey.NPC_BOATWRIGHT, 8, drawBoatwrightSheet),
 ];
 
 /** Ground sprite for an item icon, standing on its bottom edge. */

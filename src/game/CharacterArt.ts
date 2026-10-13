@@ -89,8 +89,14 @@ interface HumanoidStyle {
   hunch: number;
   /** Floating cloak with no legs (shade). */
   floating: boolean;
-  weapon: 'sword' | 'claw' | 'orb';
+  weapon: 'sword' | 'claw' | 'orb' | 'none' | 'staff' | 'bow';
   hood: boolean;
+  /** Hair colour drawn over the head when there is no hood. */
+  hair?: string;
+  /** Beard colour drawn under the face. */
+  beard?: string;
+  /** A lit cigar at the corner of the mouth. */
+  cigar?: boolean;
 }
 
 function hurtTint(color: string, hurt: boolean): string {
@@ -162,6 +168,21 @@ function drawHumanoid(ctx: CanvasRenderingContext2D, pose: Pose, st: HumanoidSty
   ctx.fillStyle = st.eye;
   ctx.fillRect(lean + 0, top + 2, 2, 2);
   ctx.fillRect(lean + 3, top + 2, 2, 2);
+  if (st.hair && !st.hood) {
+    ctx.fillStyle = st.hair;
+    ctx.fillRect(-5 + lean, top - 4, 11, 4);
+    ctx.fillRect(-5 + lean, top - 1, 2, 6);
+  }
+  if (st.beard) {
+    ctx.fillStyle = st.beard;
+    ctx.fillRect(-4 + lean, top + 5, 9, 5);
+  }
+  if (st.cigar) {
+    ctx.fillStyle = '#d8c9a0';
+    ctx.fillRect(lean + 4, top + 5, 6, 2);
+    ctx.fillStyle = '#ff7a2a';
+    ctx.fillRect(lean + 10, top + 5, 2, 2);
+  }
 
   // weapon arm: raised on windup, swung through on the strike frames
   const shoulderX = 9 + lean;
@@ -205,7 +226,28 @@ function drawHumanoid(ctx: CanvasRenderingContext2D, pose: Pose, st: HumanoidSty
       ctx.lineTo(tipX + Math.cos(angle + off) * 8, tipY + Math.sin(angle + off) * 8);
       ctx.stroke();
     }
-  } else {
+  } else if (st.weapon === 'staff') {
+    ctx.strokeStyle = '#8a6a3c';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY + 16);
+    ctx.lineTo(tipX, tipY - 22);
+    ctx.stroke();
+    ctx.fillStyle = '#c9e7d6';
+    ctx.fillRect(tipX - 3, tipY - 26, 6, 6);
+  } else if (st.weapon === 'bow') {
+    ctx.strokeStyle = '#6b4a2a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(tipX + 2, tipY - 2, 15, -Math.PI * 0.45, Math.PI * 0.45);
+    ctx.stroke();
+    ctx.strokeStyle = '#d8d0b8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tipX + 2 + Math.cos(-Math.PI * 0.45) * 15, tipY - 2 + Math.sin(-Math.PI * 0.45) * 15);
+    ctx.lineTo(tipX + 2 + Math.cos(Math.PI * 0.45) * 15, tipY - 2 + Math.sin(Math.PI * 0.45) * 15);
+    ctx.stroke();
+  } else if (st.weapon === 'orb') {
     // orb of dark light, brighter while charging / casting
     const glow = pose.attack >= 0 ? 1 : 0.5;
     ctx.fillStyle = `rgba(190,120,255,${0.25 * glow + 0.15})`;
@@ -268,6 +310,81 @@ const ARCHON_STYLE: HumanoidStyle = {
   weapon: 'sword',
   hood: true,
 };
+
+const ELDER_STYLE: HumanoidStyle = {
+  cloak: '#d8d2c0',
+  cloakDark: '#6b6454',
+  skin: '#d6b896',
+  eye: '#2a2118',
+  accent: '#7fa38a',
+  scale: 1,
+  hunch: 2,
+  floating: false,
+  weapon: 'staff',
+  hood: false,
+  hair: '#eeeeee',
+};
+
+const HUNTER_STYLE: HumanoidStyle = {
+  cloak: '#5c4a33',
+  cloakDark: '#241b11',
+  skin: '#b98a63',
+  eye: '#1a1410',
+  accent: '#2f5d3a',
+  scale: 1,
+  hunch: 0,
+  floating: false,
+  weapon: 'bow',
+  hood: false,
+  hair: '#2a1d12',
+  beard: '#2a1d12',
+};
+
+const WATERER_STYLE: HumanoidStyle = {
+  cloak: '#6aa3b8',
+  cloakDark: '#274a58',
+  skin: '#e0bf9c',
+  eye: '#1a1410',
+  accent: '#e8d9a0',
+  scale: 1,
+  hunch: 0,
+  floating: false,
+  weapon: 'none',
+  hood: false,
+  hair: '#3a2a22',
+};
+
+const BOATWRIGHT_STYLE: HumanoidStyle = {
+  cloak: '#8a4a2a',
+  cloakDark: '#3a1c0e',
+  skin: '#c79574',
+  eye: '#1a1410',
+  accent: '#d8a64a',
+  scale: 1.1,
+  hunch: 0,
+  floating: false,
+  weapon: 'none',
+  hood: false,
+  hair: '#a0522d',
+  beard: '#a0522d',
+  cigar: true,
+};
+
+export function drawElderSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, ELDER_STYLE));
+}
+
+export function drawHunterSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, HUNTER_STYLE));
+}
+
+export function drawWatererSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, WATERER_STYLE));
+}
+
+export function drawBoatwrightSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, BOATWRIGHT_STYLE));
+}
 
 /** The boss uses a 96x96 frame so its larger body is not cropped. */
 export const BOSS_FRAME = 96;

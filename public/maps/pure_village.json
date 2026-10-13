@@ -40,5 +40,27 @@
     "entrance": "from_village"
    }
   }
+ ],
+ "npcs": [
+  {
+   "id": "elder_qiyi",
+   "x": 7,
+   "y": 4
+  },
+  {
+   "id": "hunter_yanya",
+   "x": 12,
+   "y": 10
+  },
+  {
+   "id": "waterer_xi",
+   "x": 19,
+   "y": 5
+  },
+  {
+   "id": "boatwright_laodu",
+   "x": 16,
+   "y": 12
+  }
  ]
 }

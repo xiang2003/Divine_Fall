@@ -4,6 +4,7 @@ import type { GameSnapshot } from '../game/Game';
 import { EquipmentSummary } from './EquipmentPanel';
 import { Inventory, type InventoryActions } from './Inventory';
 import { BossBar } from './BossBar';
+import { DialogueBox, type DialogueActions } from './DialogueBox';
 import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
@@ -39,10 +40,12 @@ export function HUD({
   snapshot,
   onRestart,
   inventoryActions,
+  dialogueActions,
 }: {
   snapshot: GameSnapshot;
   onRestart: () => void;
   inventoryActions: InventoryActions;
+  dialogueActions: DialogueActions;
 }) {
   if (snapshot.phase === 'loading') {
     return (
@@ -70,7 +73,7 @@ export function HUD({
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 · Q W E 技能 · F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 / 交談 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
@@ -114,6 +117,7 @@ export function HUD({
       <SkillBar skills={snapshot.skills} />
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
+      {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} {...dialogueActions} />}
       <Toast notice={snapshot.notice} />
       {snapshot.playerDead && (
         <div className="death-screen">

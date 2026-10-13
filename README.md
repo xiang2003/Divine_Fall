@@ -4,7 +4,7 @@
 
 > 世界曾由古老神祇統治。一場名為「神墜」的災變讓神明隕落，神性碎片散落各處……
 
-**目前進度：Phase 5 進行中（已完成經驗與升級、多地圖與傳送門；存檔、NPC 與任務尚未實作）。** 可以在地城裡移動、閃避、施放三個技能、與怪物和菁英戰鬥、挑戰三階段的 Boss、撿裝備、換裝；
+**目前進度：Phase 5 進行中（已完成經驗與升級、多地圖與傳送門、NPC 與對話；存檔與任務系統尚未實作）。** 可以在地城裡移動、閃避、施放三個技能、與怪物和菁英戰鬥、挑戰三階段的 Boss、撿裝備、換裝；
 但存檔、升級強化選擇、R / T 技能、出口與重新進場、音效與選單都**尚未實作**，還不是完整的遊戲。下方「開發進度」逐項標示實際狀態。
 
 ## 快速開始
@@ -124,7 +124,13 @@ npm run preview    # 預覽 production build
   - 換圖時黑幕淡出 / 淡入；角色（背包、裝備、生命、冷卻、等級經驗）帶過去，怪物、地上的掉落物、特效是**每張地圖重新建立**的
   - 林道通往遺跡的「封石」需要旗標 `ruins_open`（除錯 F10 切換；之後由任務開啟）
   - **村子與林道目前只是簡陋的暫代地圖**（空房間加幾隻怪），用來驗證機制；正式地圖在第一章設計的第 4 步
-- [ ] NPC 與對話、任務系統、正式的第一章地圖與劇情（見設計文件）
+- [x] **NPC 與對話**（第一章設計的第 2 步）：
+  - 地圖 JSON 的 `npcs` 放置 NPC，NPC 本身（名字、頭銜、外觀、依旗標決定的對話）在 [npcs.ts](src/data/npcs.ts)，台詞在 [dialogues.ts](src/data/dialogues.ts)
+  - 對話是「節點圖」資料：每個節點有台詞，結尾是 `next`（繼續）、`choices`（選項，可用旗標或等級條件隱藏）或 `end`；節點進入時可開 / 關世界旗標（[dialogue.ts](src/systems/dialogue.ts)，純邏輯，沒有表達式語言）
+  - 互動：點 NPC 的名牌或本體 → 走過去 → 開始對話；或靠近按 F。對話中：點擊 / Enter / Space 繼續，數字鍵 1–9 選擇，Esc 離開；對話期間玩家的移動、攻擊、技能、背包都不受理，死亡或離太遠會自動結束
+  - NPC 是實心的（不能穿過去），會轉向玩家；第一次與之後的對話不同（以 `met_*` 旗標切換）
+  - 四位 NPC（祈漪、岩牙、汐、老舵）站在胎息村；台詞是依設計文件人設寫的初稿，**還沒有接任務**
+- [ ] 任務系統、正式的第一章地圖與劇情（見設計文件）
 - [ ] 存檔 / 讀檔 / 重置、Esc 暫停選單
 - [ ] 升級時的技能強化三選一；R / T 技能改成向 NPC 購買或學習（之後設計）
 
@@ -150,10 +156,10 @@ src/game/                    Game 主迴圈、SceneManager、CameraController、
                              Input、MapView、DebugOverlay、iso 投影與排序、effects（血條 / 劍氣）、
                              DamageNumbers、CharacterArt / ItemArt / PlaceholderArt（佔位圖）
 src/entities/                Player、Monster（純邏輯狀態機）、MonsterView（畫面）、Projectile（純邏輯）
-src/systems/                 CollisionSystem、movement、AttackTimer、combatMath、stats、rng、buffs、skills、elite、bossAI、spawnPlan、
+src/systems/                 dialogue（對話節點圖與執行器）、CollisionSystem、movement、AttackTimer、combatMath、stats、rng、buffs、skills、elite、bossAI、spawnPlan、
                              LootSystem（產生裝備）、InventorySystem、itemText（皆為純邏輯）；
-                             CombatSystem、MonsterAISystem、ProjectileSystem、SkillProjectileSystem、GroundLootSystem
-src/ui/                      React：GameView（掛載遊戲）、HUD、Inventory、EquipmentPanel、ItemTooltip、SkillBar、BossBar
+                             CombatSystem、MonsterAISystem、NpcSystem、ProjectileSystem、SkillProjectileSystem、GroundLootSystem
+src/ui/                      React：GameView（掛載遊戲）、HUD、Inventory、EquipmentPanel、ItemTooltip、SkillBar、BossBar、DialogueBox
 tests/                       Vitest 單元測試
 ```
 
@@ -178,6 +184,23 @@ Phase 5 會新增 `storage/`（存檔）。
 - **TypeScript 7.0.2**：目前 npm 上的最新穩定版（原生編譯器）；`tsc` 僅用於型別檢查，打包由 Vite 處理。
 
 ## 驗證紀錄
+
+### Phase 5（NPC 與對話）
+
+| 項目 | 結果 |
+| --- | --- |
+| `npm run typecheck` / `npm test` | 通過；239 個單元測試（新增 21 個：條件判斷、對話執行器的繼續 / 選項 / 旗標 / 越界 / 全部選項被隱藏 / 斷鏈、對話圖驗證（缺節點、無出口、不可達、無法結束的迴圈）、全部已寫台詞通過驗證、每位 NPC 第一次與之後的對話不同、NPC 地圖解析與拒絕、NPC 阻擋移動、NPC 都有定義且不重複且四周有空位） |
+| 點名牌互動 | 點「祈漪」名牌：玩家走過去，對話框自動出現 |
+| 點本體互動 | 滑鼠移到岩牙身上按左鍵：玩家走過去並開始對話（我的第一版腳本沒先移動滑鼠所以沒觸發，是腳本問題；補上移動後正常） |
+| 對話操作 | Enter 繼續、數字鍵 1 選第一個選項、點擊繼續與點選項都可行；選擇後旗標 `met_elder` 被設定；結束後再互動是「重複」版對話；Esc 離開 |
+| 對話期間 | 按 Q、右鍵、I 都沒有效果（技能冷卻維持 0、背包沒開） |
+| NPC 實心 | 玩家從祈漪左邊走向右邊，被擋在祈漪前面 |
+| 死亡 | 對話中死亡：對話框關閉；重新開始後旗標保留 |
+| 換圖 | 去林道再回村：NPC 名牌圖層被正確拆除與重建（不重複） |
+
+**實測時發現並修正的問題**：對話框一開始被畫布擋住，**滑鼠點不到**（HUD 層預設不接收點擊，已補 `pointer-events: auto`）；對話框一度蓋住技能列（已上移）。
+
+**尚未驗證 / 限制**：沒有人實際玩過整段對話的閱讀體驗；台詞是初稿；旗標（含 met_*）還沒存檔，重新整理頁面會全部消失；沒有 NPC 動畫（站著不動，只有轉向）；沒有頭像或語音；鍵盤選擇只支援 1–9。
 
 ### Phase 5（多地圖與傳送門）
 
@@ -325,6 +348,14 @@ Phase 5 會新增 `storage/`（存檔）。
 - 沒有測試過長時間遊玩的記憶體變化（目前沒有動態生成物件，風險低，但未量測）。
 
 ## 人工驗收步驟
+
+### Phase 5（NPC 與對話）
+
+1. 在胎息村，四個人物站在地上，頭上有綠色名牌（祈漪／村長、岩牙／獵人、汐／汲水人、老舵／船匠）。
+2. 點祈漪的名牌（或直接點祈漪本人）：角色走過去，下方出現對話框。按 Enter 或點擊繼續；出現選項時按 1 / 2 / 3 或點選項。
+3. 對話結束後再找祈漪：換成另一段對話。如果已經認識汐，祈漪多一個「您認識汐嗎？」的選項。
+4. 對話中試著按 Q、I、右鍵、Space：都沒有反應。按 Esc 離開。
+5. 試著走過 NPC：會被擋住。
 
 ### Phase 5（多地圖與傳送門）
 

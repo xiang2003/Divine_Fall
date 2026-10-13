@@ -12,6 +12,8 @@ export interface DungeonMapFile {
   entrances?: Record<string, { x: number; y: number }>;
   /** Walk-in doors to other maps. */
   portals?: PortalFile[];
+  /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). */
+  npcs?: { id: string; x: number; y: number }[];
 }
 
 /** On-disk portal: a tile rectangle that moves the player to `to.entrance` of map `to.map`. */
@@ -62,6 +64,13 @@ export interface Portal {
   blockedText?: string;
 }
 
+/** An NPC standing somewhere on a map. */
+export interface NpcPlacement {
+  id: string;
+  /** Centre of its tile, in world units. */
+  pos: Vec2;
+}
+
 /** The entrance every map has: where a new game (or a restart) puts the player. */
 export const DEFAULT_ENTRANCE = 'start';
 
@@ -85,6 +94,7 @@ export interface MapData {
   /** Named arrival points in world units (centre of the tile). Does not include the implicit "start". */
   entrances: Record<string, Vec2>;
   portals: Portal[];
+  npcs: NpcPlacement[];
 }
 
 const CRATE_HALF = 0.36;
@@ -218,5 +228,20 @@ export function parseMap(raw: unknown): MapData {
     });
   }
 
-  return { id: file.id, name: file.name, width, height, tiles, props, spawns, entrances, portals };
+  const npcs: NpcPlacement[] = [];
+  for (const n of file.npcs ?? []) {
+    if (typeof n?.id !== 'string' || !Number.isInteger(n.x) || !Number.isInteger(n.y)) {
+      throw new MapParseError('Every NPC needs a string "id" and integer tile x / y');
+    }
+    if (npcs.some((o) => o.id === n.id)) throw new MapParseError(`NPC "${n.id}" is placed twice`);
+    if (tileAtRaw(tiles, width, height, n.x, n.y) !== TileType.FLOOR) {
+      throw new MapParseError(`NPC "${n.id}" at (${n.x}, ${n.y}) is not on a floor tile`);
+    }
+    if (props.some((p) => p.tileX === n.x && p.tileY === n.y)) {
+      throw new MapParseError(`NPC "${n.id}" at (${n.x}, ${n.y}) stands on a crate`);
+    }
+    npcs.push({ id: n.id, pos: { x: n.x + 0.5, y: n.y + 0.5 } });
+  }
+
+  return { id: file.id, name: file.name, width, height, tiles, props, spawns, entrances, portals, npcs };
 }

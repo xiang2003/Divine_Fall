@@ -13,8 +13,9 @@ const EPSILON = 1e-6;
 export class CollisionSystem {
   private readonly propRects: Rect[];
 
-  constructor(private readonly map: MapData) {
-    this.propRects = map.props.map((p) => p.bounds);
+  /** `extraSolids` are further blocking rectangles (characters that stand still, such as NPCs). */
+  constructor(private readonly map: MapData, extraSolids: readonly Rect[] = []) {
+    this.propRects = [...map.props.map((p) => p.bounds), ...extraSolids];
   }
 
   /** True if the tile at (x, y) cannot be walked on. Out of bounds counts as blocked. */

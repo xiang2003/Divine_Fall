@@ -39,6 +39,11 @@ function HudBridge({ game }: { game: Game }) {
         onDrop: game.dropFromInventory,
         onClose: () => game.setInventoryOpen(false),
       }}
+      dialogueActions={{
+        onAdvance: game.advanceDialogue,
+        onChoose: game.chooseDialogueOption,
+        onClose: game.closeDialogue,
+      }}
     />
   );
 }
