@@ -5,7 +5,7 @@ import { NO_UPGRADE, type SkillDef, type SkillUpgrade } from '../data/skills';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
-import { SpriteAnimator } from '../game/SpriteAnimator';
+import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
 import { Buffs, DodgeController } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
@@ -49,7 +49,7 @@ export class Player {
   hp: number;
   isDead = false;
 
-  private readonly animator: SpriteAnimator;
+  private readonly animator: DirectionalAnimator;
   private readonly shadow: THREE.Mesh;
   private readonly attack = new AttackTimer();
   private readonly swingDir: Vec2 = { x: 1, y: 1 };
@@ -68,7 +68,7 @@ export class Player {
   ) {
     this.pos = { x: spawn.x, y: spawn.y };
     this.hp = stats.maxHp;
-    this.animator = new SpriteAnimator(assets, SpriteKey.PLAYER, 'idle');
+    this.animator = new DirectionalAnimator(assets, SpriteKey.HERO_IDLE, SpriteKey.HERO_RUN);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
     this.group.add(this.shadow, this.animator.mesh);
     this.syncVisuals();
@@ -216,6 +216,7 @@ export class Player {
 
   update(dt: number): void {
     if (this.isDead) {
+      this.animator.setHurtFlash(false);
       this.animator.update(dt);
       this.syncVisuals();
       return;
@@ -223,6 +224,7 @@ export class Player {
 
     this.sinceDamaged += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
+    this.animator.setHurtFlash(this.hurtTimer > 0);
     if (this.sinceDamaged > PLAYER_CONFIG.regenDelay && this.hp < this.stats.maxHp) {
       this.hp = Math.min(this.stats.maxHp, this.hp + PLAYER_CONFIG.regenPerSecond * dt);
     }
@@ -270,8 +272,7 @@ export class Player {
   }
 
   private faceWorld(dx: number, dy: number): void {
-    const screenX = dx - dy;
-    if (Math.abs(screenX) > 1e-3) this.animator.setFlipX(screenX < 0);
+    this.animator.setFacingWorld(dx, dy);
   }
 
   private syncVisuals(): void {
@@ -279,6 +280,8 @@ export class Player {
     // layer so it never sorts over walls; the body is in the object layer sorted by depth.
     placeAt(this.shadow, Layer.GROUND_DECAL, this.pos.x, this.pos.y);
     placeAt(this.animator.mesh, this.isDead ? Layer.GROUND_DECAL : Layer.OBJECT, this.pos.x, this.pos.y);
+    this.animator.mesh.position.x += this.animator.offsetX;
+    this.animator.mesh.position.y += this.animator.offsetY;
     this.shadow.visible = !this.isDead;
   }
 

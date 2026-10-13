@@ -44,6 +44,31 @@
 | public/assets/tiles/grass_0 – grass_5.png | 草地地面（128×64，顯示為 64×32） | [stylized grassland tileset](https://opengameart.org/content/stylized-grassland-tileset)（`ground_grasses.png`） | rubberduck | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | 從大圖裁出 6 塊素樸的菱形，未改色 |
 | public/assets/trees/tree_0 – tree_6.png | 樹（闊葉樹 ×3、杉樹 ×4；256×256，顯示為 128×128） | [Free isometric plants-pack](https://opengameart.org/content/free-isometric-plants-pack)（`bigtree01-03`、`pine-none01-04`） | rubberduck（打包），模型與貼圖來自 yughues | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | 原圖幾乎全黑，已調亮並微調飽和度 |
 
+## 第二批第三方素材：房屋、道具、地面、角色（2026-10-13 加入）
+
+**上面「目前使用中（Phase 1）」表格裡的玩家、NPC、房屋、道具、沙灘／洞窟／海水地面現在都改用下列圖片；
+原本的程式繪製佔位圖留作「圖片載入失敗時的備援」。** 怪物、遺跡的牆、洞窟的石筍與大石頭、水井、渡船仍是佔位圖。
+
+四個作品都是 OpenGameArt 上標示 **CC0 1.0** 的素材（我讀作品頁面確認標示，下載的壓縮檔沒有附授權文字檔，沒有法律意見）。
+處理腳本：[tools/prepare_assets.py](tools/prepare_assets.py)（地面、道具、房屋、植物）與
+[tools/prepare_characters.py](tools/prepare_characters.py)（角色）。原始下載不放進專案。
+
+| 專案內檔案 | 用途 | 原作品 | 作者 | 授權 | 修改 |
+| --- | --- | --- | --- | --- | --- |
+| public/assets/buildings/cabin_home / elder / store / boat / shed.png | 五種木屋（家、祈漪、雜貨、老舵、小棚） | [isometric log cabins](https://opengameart.org/content/isometric-log-cabins)（`wooden_buildings_01.png`） | rubberduck | CC0 | 從 4×4 的大圖裁出，調亮 |
+| public/assets/buildings/prop_tent.png、prop_campfire.png | 獵人營地的帳篷與營火 | [isometric props and tents](https://opengameart.org/content/isometric-props-and-tents)（`props_tilesets.zip`） | rubberduck | CC0 | 裁切、調亮 |
+| public/assets/props/prop_*.png | 木箱、木桶與其堆疊（障礙物，依格子位置挑一種） | 同上 | rubberduck | CC0 | 裁切、調亮 |
+| public/assets/props/decor_stump_*.png、decor_firewood_*.png | 樹樁、柴堆（裝飾，不擋路） | 同上 | rubberduck | CC0 | 裁切、調亮 |
+| public/assets/props/decor_cauldron.png | 鐵鍋（裝飾） | 同上；作者在頁面註明這件取自 [Lowpoly Medieval Village Pack](https://opengameart.org/content/lowpoly-medieval-village-pack) | rubberduck（原模型作者頁面未列名） | 作者標示整包為 CC0；**原包的授權我沒有另外查證** | 裁切、調亮 |
+| public/assets/tiles/dirt_*.png、dirt_edge_*.png | 土路（中間整格、兩側帶柔邊的補丁） | [updated grassland tileset (stylized)](https://opengameart.org/content/updated-grassland-tileset-stylized)（`dirt_tiles.png`） | rubberduck | CC0 | 裁切、調亮 |
+| public/assets/tiles/sand_*.png、sea_*.png | 沙灘地面、海水（128×64，顯示為 64×32） | 同上（`sand_tiles.png`、`water_v01.png`） | rubberduck | CC0 | 裁切、調亮 |
+| public/assets/tiles/cave_*.png | 洞窟地面 | 同上（`dirt_tiles.png` 的石板色調，重新上色成藍灰） | rubberduck | CC0 | 裁切、改色 |
+| public/assets/props/plant_*.png | 灌木、矮樹叢、草叢、雜草、棕櫚、熱帶植物（草地與沙灘的散布裝飾） | [Free isometric plants-pack](https://opengameart.org/content/free-isometric-plants-pack) | rubberduck（打包），模型與貼圖 yughues | CC0 | 調亮 |
+| public/assets/characters/hero_idle.png、hero_run.png、elder_idle.png、hunter_idle.png、waterer_idle.png、boatwright_idle.png | 主角與四位 NPC（8 個方向；主角另有 10 格跑步動作） | [Isometric Miniature Dungeon](https://opengameart.org/content/isometric-miniature-dungeon)（`Characters/Male`） | Kenney（kenney.nl） | CC0（頁面請求署名但註明非強制；這裡仍然署名） | 同一個男性人形，各角色只重新上色衣服與頭髮 |
+
+**角色的限制**：五個人共用同一個身體，只有衣服與髮色不同（所以汐的「女性、矮小」外觀做不到）；素材沒有攻擊、受傷、死亡的畫格，
+這三個動作由程式演出（攻擊＝跑步姿勢加往前衝、受傷＝變紅、死亡＝倒下淡出）；主角沒有武器圖。
+
 ## 本機 AI 生成的角色圖（2026-10-13）
 
 在這台電腦的 ComfyUI 上以 **Z-Image-Turbo**（Tongyi-MAI / Z-Image Team，Hugging Face 頁面標示 **Apache-2.0**，未限制商用與輸出）

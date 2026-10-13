@@ -67,6 +67,17 @@ export function drawSandTile(variant: number): HTMLCanvasElement {
   }, 3000 + variant);
 }
 
+/** Packed brown earth: the stand-in for the dirt path tile if its image cannot be loaded. */
+export function drawDirtTile(variant: number): HTMLCanvasElement {
+  const base = ['#8d6a3f', '#85633a'][variant % 2] ?? '#8d6a3f';
+  return diamondTile(base, base, (ctx, rand) => {
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = rand() > 0.5 ? 'rgba(255,230,180,0.18)' : 'rgba(40,24,8,0.25)';
+      ctx.fillRect(rand() * 64, rand() * 32, 1.4, 1);
+    }
+  }, 7000 + variant);
+}
+
 /** Damp dark cave floor: blue-grey slate with cracks and faint wet highlights. */
 export function drawCaveTile(variant: number): HTMLCanvasElement {
   const base = ['#323a47', '#2c3441'][variant] ?? '#323a47';

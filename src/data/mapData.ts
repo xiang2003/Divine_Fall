@@ -20,6 +20,8 @@ export interface DungeonMapFile {
   buildings?: { style: string; x: number; y: number; w: number; h: number }[];
   /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). A character can be on two maps if one placement is hidden by the flag that shows the other. */
   npcs?: { id: string; x: number; y: number; requiresFlag?: string; hiddenByFlag?: string }[];
+  /** Loose decoration (not solid): `kind` is a key of DECOR_KINDS in game/assetManifest.ts; x / y are world units (fractions allowed). */
+  decor?: { kind: string; x: number; y: number }[];
   /** Things to examine (tile coordinates; the definition lives in data/interactables.ts). */
   interactables?: { id: string; x: number; y: number }[];
 }
@@ -107,6 +109,14 @@ export interface NpcPlacement {
   hiddenByFlag?: string;
 }
 
+/** A piece of non-solid decoration (a stump, a stack of firewood...). */
+export interface DecorPlacement {
+  kind: string;
+  /** World units. */
+  x: number;
+  y: number;
+}
+
 /** A thing to examine standing somewhere on a map. */
 export interface InteractablePlacement {
   id: string;
@@ -132,6 +142,8 @@ export interface MapData {
   height: number;
   /** Row-major, index = y * width + x. */
   tiles: Uint8Array;
+  /** Row-major like `tiles`: 1 where the ground is a dirt path (a "," in the layout), else 0. */
+  ground: Uint8Array;
   props: Prop[];
   spawns: MapSpawns;
   /** Named arrival points in world units (centre of the tile). Does not include the implicit "start". */
@@ -142,6 +154,7 @@ export interface MapData {
   /** Null means the default monster mix. */
   population: Population | null;
   interactables: InteractablePlacement[];
+  decor: DecorPlacement[];
 }
 
 const CRATE_HALF = 0.36;
@@ -174,6 +187,7 @@ export function parseMap(raw: unknown): MapData {
   if (width === 0) throw new MapParseError('Map rows must not be empty');
 
   const tiles = new Uint8Array(width * height);
+  const ground = new Uint8Array(width * height);
   const props: Prop[] = [];
   const spawns: MapSpawns = { player: { x: 0, y: 0 }, monsters: [], elites: [], boss: null, exit: null };
   let playerSet = false;
@@ -201,6 +215,9 @@ export function parseMap(raw: unknown): MapData {
           tile = TileType.WATER;
           break;
         case '.':
+          break;
+        case ',':
+          ground[y * width + x] = 1; // a walkable dirt path
           break;
         case 'P':
           if (playerSet) throw new MapParseError('Map has more than one player spawn "P"');
@@ -340,8 +357,19 @@ export function parseMap(raw: unknown): MapData {
     population = { monsters: list(file.population.monsters, 'monsters'), elites: list(file.population.elites, 'elites'), boss: boss ?? null };
   }
 
+  const decor: DecorPlacement[] = [];
+  for (const d of file.decor ?? []) {
+    if (typeof d?.kind !== 'string' || !Number.isFinite(d.x) || !Number.isFinite(d.y)) {
+      throw new MapParseError('Every decor entry needs a string "kind" and numeric x / y');
+    }
+    if (tileAtRaw(tiles, width, height, Math.floor(d.x), Math.floor(d.y)) !== TileType.FLOOR) {
+      throw new MapParseError(`Decor "${d.kind}" at (${d.x}, ${d.y}) is not on a floor tile`);
+    }
+    decor.push({ kind: d.kind, x: d.x, y: d.y });
+  }
+
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings, population, interactables };
+  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor };
 }

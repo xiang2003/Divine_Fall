@@ -31,7 +31,8 @@ export class AssetLoader {
   async loadAll(): Promise<void> {
     const loader = new THREE.TextureLoader();
     await Promise.all(
-      this.defs.map(async (def) => {
+      this.defs.map(async (original) => {
+        let def = original;
         let texture: THREE.Texture | null = null;
         if (def.url) {
           try {
@@ -43,6 +44,7 @@ export class AssetLoader {
         texture ??= new THREE.CanvasTexture(def.placeholder());
         this.configureTexture(texture, def.smooth === true);
         const image = texture.image as { width: number; height: number };
+        if (def.measure) def = { ...def, frameWidth: image.width, frameHeight: image.height };
         const material = new THREE.MeshBasicMaterial({
           map: texture,
           transparent: true,

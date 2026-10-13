@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
-import { SpriteKey, THEME_ART } from './assetManifest';
+import { DECOR_KINDS, DIRT_EDGE_KEYS, DIRT_KEYS, PROP_KEYS, SpriteKey, THEME_ART, THEME_SCATTER } from './assetManifest';
 import { buildingKey } from './BuildingArt';
 import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY } from './iso';
 
@@ -22,6 +22,7 @@ export class MapView {
   constructor(map: MapData, assets: AssetLoader) {
     this.buildFloor(map, assets);
     this.buildWallsAndProps(map, assets);
+    this.buildDecor(map, assets);
     if (map.spawns.exit) this.buildExit(map.spawns.exit, assets);
     for (const portal of map.portals) {
       for (let y = portal.rect.minY; y < portal.rect.maxY; y++) {
@@ -51,6 +52,23 @@ export class MapView {
         const underBuilding = map.buildings.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
         if (tile !== TileType.FLOOR && !(!stone && (tile === TileType.TREE || underBuilding))) continue;
         const index = art.floorPick ? art.floorPick[tileHash(x, y) % art.floorPick.length]! : (x + y) % 2;
+        if (tile === TileType.FLOOR && map.ground[y * map.width + x] === 1 && !stone) {
+          // A dirt path: whole tiles in the middle; along its sides the grass stays and a soft-edged patch is laid over it.
+          const dirtAt = (dx: number, dy: number) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= map.width || ny >= map.height) return true;
+            return map.ground[ny * map.width + nx] === 1 || tileAt(map, nx, ny) !== TileType.FLOOR;
+          };
+          const inside = dirtAt(1, 0) && dirtAt(-1, 0) && dirtAt(0, 1) && dirtAt(0, -1) && dirtAt(1, 1) && dirtAt(-1, -1) && dirtAt(1, -1) && dirtAt(-1, 1);
+          if (inside) {
+            add(DIRT_KEYS[tileHash(x, y) % DIRT_KEYS.length]!, x, y);
+          } else {
+            add(art.floor[index]!, x, y);
+            add(DIRT_EDGE_KEYS[tileHash(y, x) % DIRT_EDGE_KEYS.length]!, x, y);
+          }
+          continue;
+        }
         add(art.floor[index]!, x, y);
       }
     }
@@ -63,7 +81,8 @@ export class MapView {
       });
       mesh.instanceMatrix.needsUpdate = true;
       mesh.frustumCulled = false;
-      mesh.renderOrder = sortKey(Layer.GROUND, 0, 0);
+      // path edges are laid over the grass tile of the same cell
+      mesh.renderOrder = sortKey(Layer.GROUND, 0, 0) + (DIRT_EDGE_KEYS.includes(key) ? 1 : 0);
       this.root.add(mesh);
     }
   }
@@ -99,14 +118,72 @@ export class MapView {
         this.root.add(wall);
       }
     }
-    const crateGeo = assets.sharedGeometry(SpriteKey.CRATE);
-    const crateMat = assets.material(SpriteKey.CRATE);
     for (const prop of map.props) {
-      const crate = new THREE.Mesh(crateGeo, crateMat);
+      const propKey = PROP_KEYS[tileHash(prop.tileX, prop.tileY) % PROP_KEYS.length]!;
+      const crate = new THREE.Mesh(assets.sharedGeometry(propKey), assets.material(propKey));
       placeAt(crate, Layer.OBJECT, prop.tileX + 0.5, prop.tileY + 0.5);
       crate.matrixAutoUpdate = false;
       crate.updateMatrix();
       this.root.add(crate);
+    }
+  }
+
+  /**
+   * Loose decoration: what the map lists under "decor", plus nature sprinkled over open ground (never on a path, on a prop or
+   * a building, or near anything the player needs to find: entrances, doors, characters, things to examine, spawns).
+   */
+  private buildDecor(map: MapData, assets: AssetLoader): void {
+    const place = (kind: string, x: number, y: number, pick: number): void => {
+      const def = DECOR_KINDS[kind];
+      if (!def) return;
+      const key = def.keys[pick % def.keys.length]!;
+      const sprite = new THREE.Mesh(assets.sharedGeometry(key), assets.material(key));
+      placeAt(sprite, Layer.OBJECT, x, y);
+      sprite.matrixAutoUpdate = false;
+      sprite.updateMatrix();
+      this.root.add(sprite);
+    };
+    map.decor.forEach((d, i) => place(d.kind, d.x, d.y, tileHash(Math.floor(d.x * 7) + i, Math.floor(d.y * 7))));
+
+    const scatter = THEME_SCATTER[map.theme];
+    if (!scatter) return;
+    const keepClear: { x: number; y: number }[] = [
+      map.spawns.player,
+      ...Object.values(map.entrances),
+      ...map.npcs.map((n) => n.pos),
+      ...map.interactables.map((i) => i.pos),
+      ...map.portals.map((p) => ({ x: (p.rect.minX + p.rect.maxX) / 2, y: (p.rect.minY + p.rect.maxY) / 2 })),
+      ...map.spawns.monsters,
+      ...map.spawns.elites,
+    ];
+    if (map.spawns.boss) keepClear.push(map.spawns.boss);
+    const crates = new Set(map.props.map((p) => p.tileY * map.width + p.tileX));
+    for (let y = 0; y < map.height; y++) {
+      for (let x = 0; x < map.width; x++) {
+        if (tileAt(map, x, y) !== TileType.FLOOR || map.ground[y * map.width + x] === 1 || crates.has(y * map.width + x)) continue;
+        const h = tileHash(x * 3 + 11, y * 5 + 7);
+        if ((h % 10000) / 10000 >= scatter.density) continue;
+        // keep it out of the way: portals are rectangles, so measure from their tiles as well
+        const cx = x + 0.5;
+        const cy = y + 0.5;
+        if (keepClear.some((p) => Math.hypot(p.x - cx, p.y - cy) < 1.6)) continue;
+        if (map.portals.some((p) => cx > p.rect.minX - 1.2 && cx < p.rect.maxX + 1.2 && cy > p.rect.minY - 1.2 && cy < p.rect.maxY + 1.2)) continue;
+        // a neighbouring wall, tree or building would swallow the sprite
+        let blocked = false;
+        for (let dy = -1; dy <= 1 && !blocked; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (tileAt(map, x + dx, y + dy) !== TileType.FLOOR) {
+              blocked = true;
+              break;
+            }
+          }
+        }
+        if (blocked) continue;
+        const kind = scatter.kinds[(h >>> 8) % scatter.kinds.length]!;
+        const ox = ((h >>> 16) % 100) / 100 - 0.5;
+        const oy = ((h >>> 22) % 100) / 100 - 0.5;
+        place(kind, cx + ox * 0.5, cy + oy * 0.5, h >>> 4);
+      }
     }
   }
 

@@ -6,7 +6,7 @@ import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import type { CameraController } from '../game/CameraController';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
-import { SpriteAnimator } from '../game/SpriteAnimator';
+import { DirectionalAnimator } from '../game/DirectionalAnimator';
 
 /** Half the side of the square an NPC blocks (world units). */
 export const NPC_HALF = 0.3;
@@ -32,7 +32,7 @@ export function npcBounds(pos: Vec2): Rect {
 export class Npc {
   readonly def: NpcDef;
   readonly pos: Vec2;
-  private readonly animator: SpriteAnimator;
+  private readonly animator: DirectionalAnimator;
   private readonly shadow: THREE.Mesh;
   private readonly tag: HTMLDivElement;
   private readonly marker: HTMLSpanElement;
@@ -47,7 +47,7 @@ export class Npc {
   ) {
     this.def = getNpc(placement.id);
     this.pos = { ...placement.pos };
-    this.animator = new SpriteAnimator(assets, this.def.spriteKey, 'idle');
+    this.animator = new DirectionalAnimator(assets, this.def.spriteKey);
     this.animator.setScale(this.def.scale);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
     this.shadow.scale.setScalar(0.95 * this.def.scale);
@@ -86,10 +86,7 @@ export class Npc {
 
   /** Turns to face a point (the player) and keeps the name tag on the sprite. */
   update(dt: number, camera: CameraController, face: Vec2 | null): void {
-    if (face) {
-      const screenDx = face.x - this.pos.x - (face.y - this.pos.y);
-      if (Math.abs(screenDx) > 0.05) this.animator.setFlipX(screenDx < 0);
-    }
+    if (face) this.animator.setFacingWorld(face.x - this.pos.x, face.y - this.pos.y);
     this.animator.update(dt);
     camera.worldToScreen(this.pos.x, this.pos.y, this.screen);
     const lift = NAME_HEIGHT * this.def.scale * CAMERA_CONFIG.zoom;

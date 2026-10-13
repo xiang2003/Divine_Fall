@@ -20,8 +20,8 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { BUILDING_VARIANTS, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
-import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
+import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
+import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
 import type { MapTheme } from '../data/mapData';
 import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock, makeCanvas } from './PlaceholderArt';
 
@@ -38,6 +38,8 @@ export interface SpriteAssetDef {
   frameHeight: number;
   /** Scene pixels per image pixel (default 1). 0.5 shows a 128x64 painted tile on the 64x32 grid. */
   displayScale?: number;
+  /** The frame is the whole image: take frameWidth / frameHeight from the loaded image (for single sprites of varying size). */
+  measure?: boolean;
   /** Smooth (linear) filtering for painted art; pixel art keeps the default nearest filtering. */
   smooth?: boolean;
   /** Foot / pivot point as a fraction of the frame, measured from the bottom-left. */
@@ -64,6 +66,8 @@ export const SpriteKey = {
   ICON_BOOTS: 'item.boots',
   ICON_RING: 'item.ring',
   PLAYER: 'char.player',
+  HERO_IDLE: 'char.hero_idle',
+  HERO_RUN: 'char.hero_run',
   GHOUL: 'monster.ghoul',
   SHADE: 'monster.shade',
   HOUND: 'monster.hound',
@@ -88,9 +92,35 @@ export const GRASS_KEYS = [0, 1, 2, 3, 4, 5].map((i) => `tile.grass_${i}`);
 export const GRASS_PICK = [0, 1, 2, 3, 4, 5] as const;
 export const TREE_KEYS = [0, 1, 2, 3, 4, 5, 6].map((i) => `tree.tree_${i}`);
 
-export const SAND_KEYS = [0, 1].map((i) => `terrain.sand_${i}`);
-export const CAVE_KEYS = [0, 1].map((i) => `terrain.cave_${i}`);
-export const SEA_KEYS = [0, 1].map((i) => `terrain.sea_${i}`);
+export const SAND_KEYS = [0, 1, 2, 3].map((i) => `terrain.sand_${i}`);
+export const CAVE_KEYS = [0, 1, 2].map((i) => `terrain.cave_${i}`);
+export const SEA_KEYS = [0, 1, 2, 3].map((i) => `terrain.sea_${i}`);
+/** Dirt path: full tiles for the middle of a path, soft-edged patches (drawn over grass) along its sides. */
+export const DIRT_KEYS = [0, 1, 2, 3].map((i) => `terrain.dirt_${i}`);
+export const DIRT_EDGE_KEYS = [0, 1, 2, 3, 4, 5].map((i) => `terrain.dirt_edge_${i}`);
+/** Solid props that stand on "c" tiles (crates, barrels and stacks of them), chosen per tile. */
+export const PROP_NAMES = ['crate_a', 'crate_b', 'barrel', 'barrel_crate', 'barrel_crate_b', 'barrels', 'crates_pair', 'crates_stack'] as const;
+export const PROP_KEYS = PROP_NAMES.map((n) => `prop.${n}`);
+/**
+ * Loose decoration. A map names kinds in its "decor" list; each kind is one image, or one of several chosen per spot.
+ * `scatter` lists the kinds sprinkled automatically over the ground of each theme (nature only, never on paths or near anything).
+ */
+export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: number }> = {
+  stump: { keys: ['decor.stump_a', 'decor.stump_b', 'decor.stump_c', 'decor.stump_d'], scale: 0.6 },
+  firewood: { keys: ['decor.firewood_a', 'decor.firewood_b', 'decor.firewood_c'], scale: 0.6 },
+  cauldron: { keys: ['decor.cauldron'], scale: 0.6 },
+  bush: { keys: ['plant.bush01', 'plant.bush03', 'plant.bush05'], scale: 0.5 },
+  shrub: { keys: ['plant.shrub1-01', 'plant.shrub1-03', 'plant.shrub2-01'], scale: 0.5 },
+  tuft: { keys: ['plant.grasses01', 'plant.grasses03', 'plant.grasses05', 'plant.weed01', 'plant.weed03'], scale: 0.5 },
+  palm: { keys: ['plant.palm01', 'plant.palm03', 'plant.palm05'], scale: 0.5 },
+  tropical: { keys: ['plant.tropical01'], scale: 0.5 },
+};
+export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density: number } | null> = {
+  stone: null,
+  grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
+  sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
+  cave: null,
+};
 export const MURK_KEYS = [0, 1].map((i) => `terrain.murk_${i}`);
 export const BOULDER_KEYS = [0, 1, 2].map((i) => `terrain.boulder_${i}`);
 export const PILLAR_KEYS = [0, 1, 2].map((i) => `terrain.pillar_${i}`);
@@ -113,15 +143,34 @@ export const THEME_ART: Record<MapTheme, ThemeArt> = {
 };
 
 /** A procedural terrain sprite drawn at TERRAIN_SUPERSAMPLE x and shown at 1 / TERRAIN_SUPERSAMPLE with smoothing. */
-function terrainSprite(key: string, width: number, height: number, anchorY: number, draw: () => HTMLCanvasElement): SpriteAssetDef {
+function terrainSprite(key: string, width: number, height: number, anchorY: number, draw: () => HTMLCanvasElement, url?: string): SpriteAssetDef {
   return {
     key,
+    url,
     frameWidth: width * TERRAIN_SUPERSAMPLE,
     frameHeight: height * TERRAIN_SUPERSAMPLE,
     displayScale: 1 / TERRAIN_SUPERSAMPLE,
     smooth: true,
     anchor: { x: 0.5, y: anchorY },
     placeholder: draw,
+  };
+}
+
+/**
+ * A third-party prop image (barrel, stump, bush...) standing on the ground, drawn at `scale` of its pixel size.
+ * The frame size is not known here, so it is read from the image itself when it loads (see AssetLoader, \`measure\`).
+ */
+function propSprite(key: string, url: string, scale: number, anchorY: number): SpriteAssetDef {
+  return {
+    key,
+    url,
+    frameWidth: 0,
+    frameHeight: 0,
+    measure: true,
+    displayScale: scale,
+    smooth: true,
+    anchor: { x: 0.5, y: anchorY },
+    placeholder: () => drawCrate(),
   };
 }
 
@@ -165,6 +214,20 @@ function treeSprite(index: number): SpriteAssetDef {
 
 /** Buildings are drawn by BuildingArt at SUPERSAMPLE x resolution and shown at 1 / SUPERSAMPLE. */
 function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: number, h: number): SpriteAssetDef {
+  const cabin = CABIN_SPRITES[style];
+  if (cabin) {
+    // Third-party render (shown at half size); if the image fails to load, the procedural drawing is stretched into its place.
+    return {
+      key: buildingKey(style, w, h),
+      url: cabin.url,
+      frameWidth: cabin.width,
+      frameHeight: cabin.height,
+      displayScale: 0.5,
+      smooth: true,
+      anchor: { x: 0.5, y: cabin.anchorY },
+      placeholder: enlarged(() => drawBuilding(style, w, h), cabin.width, cabin.height),
+    };
+  }
   const size = buildingCanvasSize(w, h);
   return {
     key: buildingKey(style, w, h),
@@ -178,12 +241,20 @@ function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: n
   };
 }
 
+/** Frame size of the 8-direction character sheets and how much they are shrunk (see directionalCharacters below). */
+const CHARACTER_FRAME = { width: 132, height: 164, scale: 0.33 };
+
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
   terrainSprite(SpriteKey.SHARD, 64, 64, 0.25, drawShard),
   terrainSprite(SpriteKey.RELIC, 64, 64, 0.25, drawRelic),
-  ...SAND_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawSandTile(i))),
-  ...CAVE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i))),
-  ...SEA_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('sea', i))),
+  // third-party tiles (rubberduck, CC0; see ASSETS.md): 128 x 64 images shown at half size
+  ...SAND_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawSandTile(i % 2), `assets/tiles/sand_${i}.png`)),
+  ...CAVE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i % 2), `assets/tiles/cave_${i}.png`)),
+  ...SEA_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('sea', i % 2), `assets/tiles/sea_${i}.png`)),
+  ...DIRT_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_${i}.png`)),
+  ...DIRT_EDGE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_edge_${i}.png`)),
+  ...PROP_NAMES.map((name) => propSprite(`prop.${name}`, `assets/props/prop_${name}.png`, 1, 0.22)),
+  ...Object.values(DECOR_KINDS).flatMap((k) => k.keys.map((key) => propSprite(key, `assets/props/${key.replace('.', '_')}.png`, k.scale, 0.2))),
   ...MURK_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('murk', i))),
   ...BOULDER_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('boulder', i))),
   ...PILLAR_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('pillar', i))),
@@ -265,7 +336,6 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   itemIcon(SpriteKey.ICON_CHEST, 'chest'),
   itemIcon(SpriteKey.ICON_BOOTS, 'boots'),
   itemIcon(SpriteKey.ICON_RING, 'ring'),
-  characterSprite(SpriteKey.PLAYER, 12, drawPlayerSheet),
   characterSprite(SpriteKey.GHOUL, 8, drawGhoulSheet),
   characterSprite(SpriteKey.SHADE, 8, drawShadeSheet),
   characterSprite(SpriteKey.HOUND, 8, () => drawHoundSheet()),
@@ -274,10 +344,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   characterSprite(SpriteKey.WATER_SHADE, 8, drawWaterShadeSheet),
   characterSprite(SpriteKey.ECHO, 8, drawEchoSheet, 64),
   characterSprite(SpriteKey.BOSS, 8, drawArchonSheet, BOSS_FRAME),
-  characterSprite(SpriteKey.NPC_ELDER, 8, drawElderSheet),
-  characterSprite(SpriteKey.NPC_HUNTER, 8, drawHunterSheet),
-  characterSprite(SpriteKey.NPC_WATERER, 8, drawWatererSheet),
-  characterSprite(SpriteKey.NPC_BOATWRIGHT, 8, drawBoatwrightSheet),
+  ...directionalCharacters(),
 ];
 
 /** Ground sprite for an item icon, standing on its bottom edge. */
@@ -306,6 +373,50 @@ function characterSprite(
     animations: characterAnimations(attackFps),
     placeholder,
   };
+}
+
+/**
+ * Characters with 8 facing directions (Kenney's isometric figure, re-coloured; see ASSETS.md and tools/prepare_characters.py).
+ * Idle sheets are 8 frames in a row (one per direction); the hero also has a run sheet of 8 rows x 10 frames.
+ * Frames are 132 x 164 px, shown at a third of that size. If an image fails to load, the old procedural figure stands in.
+ */
+
+function directionalPlaceholder(base: () => HTMLCanvasElement, columns: number, rows: number): () => HTMLCanvasElement {
+  return () => {
+    const frame = base(); // the procedural sheets start with a 64 x 64 idle frame
+    const [canvas, ctx] = makeCanvas(CHARACTER_FRAME.width * columns, CHARACTER_FRAME.height * rows);
+    ctx.imageSmoothingEnabled = false;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < columns; c++) {
+        ctx.drawImage(frame, 0, 0, 64, 64, c * CHARACTER_FRAME.width + 2, (r + 1) * CHARACTER_FRAME.height - 128 - 2, 128, 128);
+      }
+    }
+    return canvas;
+  };
+}
+
+function directionalSheet(key: string, url: string, columns: number, rows: number, base: () => HTMLCanvasElement): SpriteAssetDef {
+  return {
+    key,
+    url,
+    frameWidth: CHARACTER_FRAME.width,
+    frameHeight: CHARACTER_FRAME.height,
+    displayScale: CHARACTER_FRAME.scale,
+    smooth: true,
+    anchor: { x: 0.5, y: 4 / CHARACTER_FRAME.height },
+    placeholder: directionalPlaceholder(base, columns, rows),
+  };
+}
+
+function directionalCharacters(): SpriteAssetDef[] {
+  return [
+    directionalSheet(SpriteKey.HERO_IDLE, 'assets/characters/hero_idle.png', 8, 1, drawPlayerSheet),
+    directionalSheet(SpriteKey.HERO_RUN, 'assets/characters/hero_run.png', 10, 8, drawPlayerSheet),
+    directionalSheet(SpriteKey.NPC_ELDER, 'assets/characters/elder_idle.png', 8, 1, drawElderSheet),
+    directionalSheet(SpriteKey.NPC_HUNTER, 'assets/characters/hunter_idle.png', 8, 1, drawHunterSheet),
+    directionalSheet(SpriteKey.NPC_WATERER, 'assets/characters/waterer_idle.png', 8, 1, drawWatererSheet),
+    directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'assets/characters/boatwright_idle.png', 8, 1, drawBoatwrightSheet),
+  ];
 }
 
 /** Which ground sprite shows an item of each equipment slot. */

@@ -6,7 +6,7 @@ import { makeCanvas } from './PlaceholderArt';
  * so edges stay clean on the 64x32 tile grid.
  */
 
-export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'well' | 'ferry';
+export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry';
 
 /** One building sprite: its style and footprint. The manifest registers one asset per entry. */
 export interface BuildingVariant {
@@ -21,9 +21,27 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
   { style: 'elder', w: 4, h: 3 },
   { style: 'store', w: 3, h: 3 },
   { style: 'boat', w: 4, h: 3 },
+  { style: 'shed', w: 2, h: 2 },
+  { style: 'tent', w: 2, h: 2 },
+  { style: 'campfire', w: 2, h: 2 },
   { style: 'well', w: 2, h: 2 },
   { style: 'ferry', w: 5, h: 3 },
 ];
+
+/**
+ * Buildings that use third-party art (log cabins by rubberduck, CC0; see ASSETS.md) instead of the procedural drawing.
+ * `anchorY` is measured from the bottom of the image up to the middle of the footprint on the ground; the images are
+ * 128x64-tile renders shown at half size. These numbers come from tools/prepare_assets.py (a test checks them against the files).
+ */
+export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: number; height: number; anchorY: number }>> = {
+  home: { url: 'assets/buildings/cabin_home.png', width: 392, height: 370, anchorY: 0.2973 },
+  elder: { url: 'assets/buildings/cabin_elder.png', width: 498, height: 398, anchorY: 0.3166 },
+  store: { url: 'assets/buildings/cabin_store.png', width: 405, height: 336, anchorY: 0.3274 },
+  boat: { url: 'assets/buildings/cabin_boat.png', width: 549, height: 377, anchorY: 0.3342 },
+  shed: { url: 'assets/buildings/cabin_shed.png', width: 288, height: 235, anchorY: 0.3319 },
+  tent: { url: 'assets/buildings/prop_tent.png', width: 240, height: 229, anchorY: 0.332 },
+  campfire: { url: 'assets/buildings/prop_campfire.png', width: 147, height: 90, anchorY: 0.5 },
+};
 
 export function buildingKey(style: string, w: number, h: number): string {
   return `building.${style}_${w}x${h}`;
@@ -51,7 +69,7 @@ interface Palette {
   trim: string;
 }
 
-const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry'>, Palette> = {
+const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'shed' | 'tent' | 'campfire'>, Palette> = {
   home: { wallLeft: '#a8774b', wallRight: '#835a38', wallLine: '#5b3d25', roofLeft: '#d2ad56', roofRight: '#b08b3c', roofStroke: '#7d6026', door: '#4a2f1b', trim: '#5b3d25' },
   elder: { wallLeft: '#c3a57c', wallRight: '#9c8160', wallLine: '#6e583f', roofLeft: '#8fa874', roofRight: '#6f8858', roofStroke: '#46583a', door: '#4a3a28', trim: '#6e583f' },
   store: { wallLeft: '#8a6644', wallRight: '#6b4e33', wallLine: '#43301f', roofLeft: '#a85d42', roofRight: '#864830', roofStroke: '#53291a', door: '#35261a', trim: '#43301f' },
@@ -146,7 +164,7 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
     return canvas;
   }
 
-  const pal = PALETTES[style];
+  const pal = PALETTES[style === 'shed' || style === 'tent' || style === 'campfire' ? 'home' : style];
   const H = WALL_HEIGHT;
   const R = ROOF_HEIGHT;
   const o = OVERHANG;
