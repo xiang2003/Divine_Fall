@@ -7,6 +7,7 @@ import { BossBar } from './BossBar';
 import { DialogueBox, type DialogueActions } from './DialogueBox';
 import { QuestLog, QuestTracker } from './QuestPanels';
 import { getNpc } from '../data/npcs';
+import { assetUrl } from '../game/AssetLoader';
 import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
@@ -62,6 +63,7 @@ export function HUD({
   if (snapshot.phase === 'loading') {
     return (
       <div className="screen">
+        <img className="title-art" src={assetUrl('assets/art/hero_full.webp')} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
         <h1 className="title">{BRANDING.titleZh}</h1>
         <div className="subtitle">{BRANDING.titleEn}</div>
         <p className="muted">載入中…</p>
@@ -90,6 +92,8 @@ export function HUD({
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
       <div className="panel hud-hp">
+        <img className="hero-portrait" src={assetUrl('assets/art/hero_pixel.png')} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+        <div className="hud-hp-main">
         <div className="hp-track">
           <div
             className="hp-fill"
@@ -108,6 +112,7 @@ export function HUD({
             />
           </div>
           <span className="muted">{snapshot.xpToNext > 0 ? `${snapshot.xp} / ${snapshot.xpToNext}` : 'MAX'}</span>
+        </div>
         </div>
       </div>
       <div className="panel hud-kills">

@@ -260,16 +260,18 @@ function drawHumanoid(ctx: CanvasRenderingContext2D, pose: Pose, st: HumanoidSty
 }
 
 const PLAYER_STYLE: HumanoidStyle = {
-  cloak: '#35506b',
-  cloakDark: '#14212e',
-  skin: '#d9b48c',
+  // Matches the character illustration: teal tunic with cream trim, dark messy hair, bare tanned skin.
+  cloak: '#2f8a86',
+  cloakDark: '#12302f',
+  skin: '#c99468',
   eye: '#1a1410',
-  accent: '#8a6a2c',
+  accent: '#e3d3a4',
   scale: 1,
   hunch: 0,
   floating: false,
   weapon: 'sword',
-  hood: true,
+  hood: false,
+  hair: '#2a1d16',
 };
 
 const GHOUL_STYLE: HumanoidStyle = {

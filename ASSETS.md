@@ -39,6 +39,26 @@
 | public/assets/tiles/grass_0 – grass_5.png | 草地地面（128×64，顯示為 64×32） | [stylized grassland tileset](https://opengameart.org/content/stylized-grassland-tileset)（`ground_grasses.png`） | rubberduck | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | 從大圖裁出 6 塊素樸的菱形，未改色 |
 | public/assets/trees/tree_0 – tree_6.png | 樹（闊葉樹 ×3、杉樹 ×4；256×256，顯示為 128×128） | [Free isometric plants-pack](https://opengameart.org/content/free-isometric-plants-pack)（`bigtree01-03`、`pine-none01-04`） | rubberduck（打包），模型與貼圖來自 yughues | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | 原圖幾乎全黑，已調亮並微調飽和度 |
 
+## 本機 AI 生成的角色圖（2026-10-13）
+
+在這台電腦的 ComfyUI 上以 **Z-Image-Turbo**（Tongyi-MAI / Z-Image Team，Hugging Face 頁面標示 **Apache-2.0**，未限制商用與輸出）
+生成，工作流程是 ComfyUI 內建的 `image_z_image_turbo` 範本（文字編碼器 qwen_3_4b、VAE ae.safetensors）。
+**我只確認了主模型頁面的授權標示；VAE 與文字編碼器的授權沒有逐一查證。** 生成圖是否可享著作權保護因地區而異，這點沒有法律意見。
+生成流程與工具本身沒有花費（本機執行，沒有使用付費 API）。
+
+| 專案內檔案 | 內容 | 生成設定 | 後處理 |
+| --- | --- | --- | --- |
+| public/assets/art/hero_full.webp | 主角的精緻全身插畫（640×935） | 832×1216、8 步、seed 20261013 | 縮小並存成 WebP |
+| public/assets/art/hero_pixel.png | 主角的像素小人（37×53，透明背景） | 1024×1024、8 步、seed 7771，粉紅色純色背景 | 縮成 64×64 取樣、去背與地面陰影、裁切、22 色調色盤（[tools/prepare_character_art.py](tools/prepare_character_art.py)） |
+
+**提示詞（英文原文）**
+
+- 全身圖：*Full-body character concept art of a young wanderer from a remote primordial island, androgynous, short messy dark hair, calm determined eyes, wearing a layered teal and cream linen tunic with brown leather straps and wrapped forearms, faint glowing golden veins along both forearms (ancient divine blood), a rusty iron short sword at the hip, simple leather sandals, standing pose, three-quarter view, entire body from head to toe visible, dark fantasy, highly detailed painterly illustration, soft rim light, plain flat light gray studio background, no text, no watermark*
+- 像素小人：*Pixel art game sprite of a chibi young adventurer, short messy dark hair, teal and cream tunic with brown leather straps, golden glowing lines on forearms, small rusty short sword at the hip, big head small body, full body, standing, front three-quarter view, crisp 1-pixel dark outline, flat shading, limited color palette, 16-bit RPG style, centered, solid flat pure magenta background*
+
+**使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。遊戲內的主角佔位圖已改成相同的配色（青綠上衣、黑髮）。
+像素小人**只是一張靜態圖**，沒有行走或攻擊動畫，所以不能直接取代遊戲內角色的動畫表。
+
 **下載過、評估後沒有採用的**（沒有放進專案）：
 
 | 作品 | 授權（頁面標示） | 為什麼沒用 |
