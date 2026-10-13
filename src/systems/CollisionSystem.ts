@@ -40,13 +40,14 @@ export class CollisionSystem {
     return false;
   }
 
-  /** True if no wall / void tile lies on the straight segment between two points (props don't block sight). */
+  /** True if no wall / tree / void tile lies on the straight segment between two points (props and water don't block sight). */
   hasLineOfSight(ax: number, ay: number, bx: number, by: number): boolean {
     const dist = Math.hypot(bx - ax, by - ay);
     const steps = Math.max(1, Math.ceil(dist / 0.2));
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      if (this.isTileBlocked(Math.floor(ax + (bx - ax) * t), Math.floor(ay + (by - ay) * t))) return false;
+      const tile = tileAt(this.map, Math.floor(ax + (bx - ax) * t), Math.floor(ay + (by - ay) * t));
+      if (tile !== TileType.FLOOR && tile !== TileType.WATER) return false;
     }
     return true;
   }

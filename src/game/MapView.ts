@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
-import { GRASS_KEYS, GRASS_PICK, SpriteKey, TREE_KEYS } from './assetManifest';
+import { SpriteKey, THEME_ART } from './assetManifest';
 import { buildingKey } from './BuildingArt';
 import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY } from './iso';
 
@@ -31,23 +31,31 @@ export class MapView {
   }
 
   private buildFloor(map: MapData, assets: AssetLoader): void {
-    const grass = map.theme === 'grass';
-    const variants = grass ? GRASS_KEYS : [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B];
-    const tilesPerVariant: { x: number; y: number }[][] = variants.map(() => []);
+    const art = THEME_ART[map.theme];
+    const stone = map.theme === 'stone';
+    // tiles to draw per sprite key (floor variants and water variants)
+    const groups = new Map<string, { x: number; y: number }[]>();
+    const add = (key: string, x: number, y: number) => {
+      const list = groups.get(key);
+      if (list) list.push({ x, y });
+      else groups.set(key, [{ x, y }]);
+    };
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = tileAt(map, x, y);
-        // Trees and buildings stand on grass, so outdoor maps get a ground tile under them too.
+        if (tile === TileType.WATER) {
+          add(art.water[tileHash(x, y) % art.water.length]!, x, y);
+          continue;
+        }
+        // Obstacles ("T") and buildings stand on the ground of outdoor maps, so those get a floor tile under them too.
         const underBuilding = map.buildings.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
-        if (tile !== TileType.FLOOR && !(grass && (tile === TileType.TREE || underBuilding))) continue;
-        const variant = grass ? GRASS_PICK[tileHash(x, y) % GRASS_PICK.length]! : (x + y) % 2;
-        tilesPerVariant[variant]!.push({ x, y });
+        if (tile !== TileType.FLOOR && !(!stone && (tile === TileType.TREE || underBuilding))) continue;
+        const index = art.floorPick ? art.floorPick[tileHash(x, y) % art.floorPick.length]! : (x + y) % 2;
+        add(art.floor[index]!, x, y);
       }
     }
     const m = new THREE.Matrix4();
-    variants.forEach((key, i) => {
-      const tiles = tilesPerVariant[i]!;
-      if (tiles.length === 0) return;
+    for (const [key, tiles] of groups) {
       const mesh = new THREE.InstancedMesh(assets.sharedGeometry(key), assets.material(key), tiles.length);
       tiles.forEach((t, n) => {
         m.makeTranslation(worldToSceneX(t.x + 0.5, t.y + 0.5), worldToSceneY(t.x + 0.5, t.y + 0.5), 0);
@@ -57,7 +65,7 @@ export class MapView {
       mesh.frustumCulled = false;
       mesh.renderOrder = sortKey(Layer.GROUND, 0, 0);
       this.root.add(mesh);
-    });
+    }
   }
 
   private buildWallsAndProps(map: MapData, assets: AssetLoader): void {
@@ -79,10 +87,11 @@ export class MapView {
         const tile = tileAt(map, x, y);
         if (tile !== TileType.WALL && tile !== TileType.TREE) continue;
         if (covered.has(y * map.width + x)) continue; // drawn by its building sprite
-        const treeKey = TREE_KEYS[tileHash(x, y) % TREE_KEYS.length]!;
+        const obstacles = THEME_ART[map.theme].obstacles;
+        const obstacleKey = obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
         const wall =
-          tile === TileType.TREE
-            ? new THREE.Mesh(assets.sharedGeometry(treeKey), assets.material(treeKey))
+          tile === TileType.TREE && obstacleKey
+            ? new THREE.Mesh(assets.sharedGeometry(obstacleKey), assets.material(obstacleKey))
             : new THREE.Mesh(wallGeo, wallMat);
         placeAt(wall, Layer.OBJECT, x + 0.5, y + 0.5);
         wall.matrixAutoUpdate = false;

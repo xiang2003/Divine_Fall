@@ -6,7 +6,7 @@ import { makeCanvas } from './PlaceholderArt';
  * so edges stay clean on the 64x32 tile grid.
  */
 
-export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'well';
+export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'well' | 'ferry';
 
 /** One building sprite: its style and footprint. The manifest registers one asset per entry. */
 export interface BuildingVariant {
@@ -22,6 +22,7 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
   { style: 'store', w: 3, h: 3 },
   { style: 'boat', w: 4, h: 3 },
   { style: 'well', w: 2, h: 2 },
+  { style: 'ferry', w: 5, h: 3 },
 ];
 
 export function buildingKey(style: string, w: number, h: number): string {
@@ -50,7 +51,7 @@ interface Palette {
   trim: string;
 }
 
-const PALETTES: Record<Exclude<BuildingStyle, 'well'>, Palette> = {
+const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry'>, Palette> = {
   home: { wallLeft: '#a8774b', wallRight: '#835a38', wallLine: '#5b3d25', roofLeft: '#d2ad56', roofRight: '#b08b3c', roofStroke: '#7d6026', door: '#4a2f1b', trim: '#5b3d25' },
   elder: { wallLeft: '#c3a57c', wallRight: '#9c8160', wallLine: '#6e583f', roofLeft: '#8fa874', roofRight: '#6f8858', roofStroke: '#46583a', door: '#4a3a28', trim: '#6e583f' },
   store: { wallLeft: '#8a6644', wallRight: '#6b4e33', wallLine: '#43301f', roofLeft: '#a85d42', roofRight: '#864830', roofStroke: '#53291a', door: '#35261a', trim: '#43301f' },
@@ -138,6 +139,10 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
 
   if (style === 'well') {
     drawWell(ctx, pt, w, h);
+    return canvas;
+  }
+  if (style === 'ferry') {
+    drawFerry(ctx, pt, w, h);
     return canvas;
   }
 
@@ -244,6 +249,78 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
     poly([[cx, cy, H + 34], [cx + 0.35, cy, H + 34], [cx + 0.35, cy + 0.35, H + 34], [cx, cy + 0.35, H + 34]], '#3a3835');
   }
   return canvas;
+}
+
+/**
+ * The stranded ferry: a hull of grey metal plates over pale bone ribs, a bare mast and a cold blue lantern at the prow.
+ * It is deliberately "not made on the island" (see the chapter 1 design).
+ */
+function drawFerry(
+  ctx: CanvasRenderingContext2D,
+  pt: (x: number, y: number, z: number) => [number, number],
+  w: number,
+  h: number,
+): void {
+  const shape = (pts: readonly (readonly [number, number, number])[], fill: string, stroke = '#2a3036') => {
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const [sx, sy] = pt(p[0], p[1], p[2]);
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    });
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  };
+  const seg = (a: readonly [number, number, number], b: readonly [number, number, number], color: string, width: number) => {
+    const [x0, y0] = pt(a[0], a[1], a[2]);
+    const [x1, y1] = pt(b[0], b[1], b[2]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  };
+  const y0 = 0.2;
+  const y1 = h - 0.2;
+  const bow = w - 0.9;
+  const top = 28;
+
+  // hull sides: south face, then the two faces of the prow
+  const south: [number, number, number][] = [[0.3, y1, 5], [bow, y1, 5], [bow, y1, top], [0.3, y1, top]];
+  shape(south, '#6f7b86');
+  shape([[bow, y1, 5], [w, h / 2, 11], [w, h / 2, top + 6], [bow, y1, top]], '#808d98');
+  shape([[w, h / 2, 11], [bow, y0, 5], [bow, y0, top], [w, h / 2, top + 6]], '#55616b');
+
+  // bone ribs and riveted bands on the south face
+  for (let u = 0.6; u < bow; u += 0.55) seg([u, y1, 6], [u, y1, top - 1], '#e6e0cc', 2.2);
+  seg([0.3, y1, 12], [bow, y1, 12], '#3b444c', 1.4);
+  seg([0.3, y1, 22], [bow, y1, 22], '#3b444c', 1.4);
+  for (let u = 0.45; u < bow; u += 0.55) {
+    const [rx, ry] = pt(u, y1, 17);
+    ctx.fillStyle = '#c8d0d6';
+    ctx.fillRect(rx - 0.8, ry - 0.8, 1.6, 1.6);
+  }
+
+  // deck
+  shape([[0.3, y0, top], [bow, y0, top], [w, h / 2, top + 6], [bow, y1, top], [0.3, y1, top]], '#8a7656');
+  for (let v = 0.55; v < h - 0.3; v += 0.5) seg([0.35, v, top], [bow - 0.05, v, top], 'rgba(0,0,0,0.25)', 1);
+
+  // mast, boom and a lantern
+  seg([1.4, h / 2, top], [1.4, h / 2, top + 58], '#4a4036', 3);
+  seg([0.7, h / 2, top + 44], [2.4, h / 2, top + 44], '#4a4036', 2);
+  const [lx, ly] = pt(w - 0.7, h / 2, top + 10);
+  const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, 12);
+  glow.addColorStop(0, 'rgba(150,230,255,0.95)');
+  glow.addColorStop(1, 'rgba(150,230,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(lx - 12, ly - 12, 24, 24);
+  ctx.fillStyle = '#d8f6ff';
+  ctx.fillRect(lx - 1.5, ly - 1.5, 3, 3);
 }
 
 function drawWell(

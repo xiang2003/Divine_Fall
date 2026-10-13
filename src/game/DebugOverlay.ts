@@ -37,7 +37,7 @@ export class DebugOverlay {
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const t = tileAt(map, x, y);
-        if (t === TileType.WALL || t === TileType.TREE) box(x, y, x + 1, y + 1, COLOR_BLOCK);
+        if (t === TileType.WALL || t === TileType.TREE || t === TileType.WATER) box(x, y, x + 1, y + 1, COLOR_BLOCK);
       }
     }
     for (const p of map.props) box(p.bounds.minX, p.bounds.minY, p.bounds.maxX, p.bounds.maxY, COLOR_PROP);

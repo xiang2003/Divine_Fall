@@ -160,7 +160,7 @@ export function HUD({
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
           <br />
-          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級 · F10 開關封石
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級 · F10 開關封石與海岸路
         </div>
       )}
     </div>

@@ -619,11 +619,12 @@ export class Game {
     this.publishVitals();
   }
 
-  /** Debug (F3 mode + F10): opens / closes the sealed stone between the forest and the ruins. */
+  /** Debug (F3 mode + F10): opens / closes the sealed stone to the ruins and the village road to the coast. */
   private debugToggleRuinsFlag(): void {
     const open = !this.hasFlag('ruins_open');
     this.setFlag('ruins_open', open);
-    this.notify(open ? '除錯：封石已開啟' : '除錯：封石已封閉');
+    this.setFlag('coast_open', open);
+    this.notify(open ? '除錯：封石與海岸路已開啟' : '除錯：封石與海岸路已封閉');
   }
 
   /** Debug (F3 mode + F9): grants exactly the experience needed for the next level. */

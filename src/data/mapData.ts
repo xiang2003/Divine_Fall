@@ -4,7 +4,7 @@ import type { Vec2 } from '../game/iso';
 export interface DungeonMapFile {
   id: string;
   name: string;
-  /** Look of the floor: "stone" (default, dungeon) or "grass" (outdoors, where "T" tiles are trees). */
+  /** Look of the map: "stone" (default, dungeon), "grass", "sand" or "cave" (where "T" tiles are trees, boulders or rock pillars). */
   theme?: MapTheme;
   /** Human-readable legend; informational only. */
   legend?: Record<string, string>;
@@ -35,15 +35,18 @@ export interface PortalFile {
   blockedText?: string;
 }
 
-export type MapTheme = 'stone' | 'grass';
-export const MAP_THEMES: readonly MapTheme[] = ['stone', 'grass'];
+/** stone: dungeon bricks; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water and "T" art. */
+export type MapTheme = 'stone' | 'grass' | 'sand' | 'cave';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'grass', 'sand', 'cave'];
 
 export const TileType = {
   VOID: 0,
   FLOOR: 1,
   WALL: 2,
-  /** Blocks like a wall but is drawn as a tree ("T" in a layout). */
+  /** Blocks like a wall but is drawn as a tree, boulder or rock pillar depending on the theme ("T" in a layout). */
   TREE: 3,
+  /** Sea or pool water ("W"): blocks walking, not sight. */
+  WATER: 4,
 } as const;
 export type TileType = (typeof TileType)[keyof typeof TileType];
 
@@ -170,6 +173,9 @@ export function parseMap(raw: unknown): MapData {
           break;
         case 'T':
           tile = TileType.TREE;
+          break;
+        case 'W':
+          tile = TileType.WATER;
           break;
         case '.':
           break;

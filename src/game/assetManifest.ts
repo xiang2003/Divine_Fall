@@ -17,6 +17,8 @@ import {
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
 import { BUILDING_VARIANTS, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
+import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawRock, drawSandTile, drawWaterTile } from './TerrainArt';
+import type { MapTheme } from '../data/mapData';
 import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock, makeCanvas } from './PlaceholderArt';
 
 export interface SpriteAssetDef {
@@ -76,6 +78,43 @@ export const GRASS_KEYS = [0, 1, 2, 3, 4, 5].map((i) => `tile.grass_${i}`);
 export const GRASS_PICK = [0, 1, 2, 3, 4, 5] as const;
 export const TREE_KEYS = [0, 1, 2, 3, 4, 5, 6].map((i) => `tree.tree_${i}`);
 
+export const SAND_KEYS = [0, 1].map((i) => `terrain.sand_${i}`);
+export const CAVE_KEYS = [0, 1].map((i) => `terrain.cave_${i}`);
+export const SEA_KEYS = [0, 1].map((i) => `terrain.sea_${i}`);
+export const MURK_KEYS = [0, 1].map((i) => `terrain.murk_${i}`);
+export const BOULDER_KEYS = [0, 1, 2].map((i) => `terrain.boulder_${i}`);
+export const PILLAR_KEYS = [0, 1, 2].map((i) => `terrain.pillar_${i}`);
+
+/** What a map theme is made of: floor tiles, what a "T" tile looks like, and its water. */
+export interface ThemeArt {
+  /** Floor tile keys; `floorPick` (if given) lists which to use, repeated for frequency, otherwise a checkerboard of two. */
+  floor: readonly string[];
+  floorPick?: readonly number[];
+  /** Sprites for "T" tiles; null means they are drawn like walls. */
+  obstacles: readonly string[] | null;
+  water: readonly string[];
+}
+
+export const THEME_ART: Record<MapTheme, ThemeArt> = {
+  stone: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS },
+  grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
+  sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
+  cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: PILLAR_KEYS, water: MURK_KEYS },
+};
+
+/** A procedural terrain sprite drawn at TERRAIN_SUPERSAMPLE x and shown at 1 / TERRAIN_SUPERSAMPLE with smoothing. */
+function terrainSprite(key: string, width: number, height: number, anchorY: number, draw: () => HTMLCanvasElement): SpriteAssetDef {
+  return {
+    key,
+    frameWidth: width * TERRAIN_SUPERSAMPLE,
+    frameHeight: height * TERRAIN_SUPERSAMPLE,
+    displayScale: 1 / TERRAIN_SUPERSAMPLE,
+    smooth: true,
+    anchor: { x: 0.5, y: anchorY },
+    placeholder: draw,
+  };
+}
+
 /** Draws a small procedural canvas onto a larger one (placeholder for a bigger image that failed to load). */
 function enlarged(source: () => HTMLCanvasElement, width: number, height: number): () => HTMLCanvasElement {
   return () => {
@@ -130,6 +169,12 @@ function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: n
 }
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
+  ...SAND_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawSandTile(i))),
+  ...CAVE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i))),
+  ...SEA_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('sea', i))),
+  ...MURK_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('murk', i))),
+  ...BOULDER_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('boulder', i))),
+  ...PILLAR_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('pillar', i))),
   ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),
   ...TREE_KEYS.map((_, i) => treeSprite(i)),

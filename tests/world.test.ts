@@ -269,3 +269,55 @@ describe('buildings', () => {
     }
   });
 });
+
+describe('beach and cave maps', () => {
+  const load = (id: keyof typeof WORLD_MAP_FILES) =>
+    parseMap(JSON.parse(readFileSync(new URL(`../public/${WORLD_MAP_FILES[id]}`, import.meta.url), 'utf8')) as unknown);
+
+  it('water blocks walking but not sight', () => {
+    const map = parseMap({ id: 'a', name: 'A', theme: 'sand', layout: ['#####', '#PWW#', '#...#', '#####'] });
+    expect(tileAt(map, 2, 1)).toBe(TileType.WATER);
+    const collision = new CollisionSystem(map);
+    expect(collision.isTileBlocked(2, 1)).toBe(true);
+    expect(collision.hasLineOfSight(1.5, 1.5, 3.5, 1.5)).toBe(true);
+  });
+
+  it('the coast is a sand map with sea and the stranded ferry; the cave is a cave map with a pool, an elite and enough monsters', () => {
+    const coast = load('pure_coast');
+    expect(coast.theme).toBe('sand');
+    expect(coast.buildings.map((b) => b.style)).toEqual(['ferry']);
+    expect(coast.spawns.monsters).toHaveLength(0); // a safe place
+    let water = 0;
+    for (let y = 0; y < coast.height; y++) for (let x = 0; x < coast.width; x++) if (tileAt(coast, x, y) === TileType.WATER) water++;
+    expect(water).toBeGreaterThan(100);
+
+    const cave = load('pure_spring_cave');
+    expect(cave.theme).toBe('cave');
+    expect(cave.spawns.elites).toHaveLength(1);
+    expect(cave.spawns.monsters.length).toBeGreaterThanOrEqual(8);
+    let pool = 0;
+    for (let y = 0; y < cave.height; y++) for (let x = 0; x < cave.width; x++) if (tileAt(cave, x, y) === TileType.WATER) pool++;
+    expect(pool).toBeGreaterThan(20);
+  });
+
+  it('the beach and the cave are sealed: no floor touches void or the map edge', () => {
+    for (const id of ['pure_coast', 'pure_spring_cave'] as const) {
+      const map = load(id);
+      for (let y = 0; y < map.height; y++) {
+        for (let x = 0; x < map.width; x++) {
+          if (tileAt(map, x, y) !== TileType.FLOOR) continue;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+            expect(tileAt(map, x + dx, y + dy), `${id} leaks at ${x},${y}`).not.toBe(TileType.VOID);
+          }
+        }
+      }
+    }
+  });
+
+  it('the road to the coast is closed until the "coast_open" flag, and the cave is open from the forest', () => {
+    const village = load('pure_village');
+    expect(village.portals.find((p) => p.to.map === 'pure_coast')?.requiresFlag).toBe('coast_open');
+    const forest = load('pure_forest');
+    expect(forest.portals.find((p) => p.to.map === 'pure_spring_cave')?.requiresFlag).toBeUndefined();
+  });
+});

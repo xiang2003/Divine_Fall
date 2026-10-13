@@ -18,9 +18,9 @@
   "              TTTTTTTT              TTTTTTTT                    ",
   "            TTT......TTT         TTTT......TTTT                 ",
   "           TT..........TT       TT............TT                ",
-  "          TT............TT     TT.......TT.....TT               ",
+  "          TT............TT     TT..............TT               ",
   "          T......TT.TT.m.T     T............m...T               ",
-  "          T.....m...T....T     T....m.....T.....T               ",
+  "          T.....m...T....T     T....m...........T               ",
   "          T....T....TT...T     T....T.....TT....T               ",
   "          T......TT..m...T     T.......T..mTT...T               ",
   "          TT............TT     TT.....m........TT               ",
@@ -59,9 +59,24 @@
   "from_ruins": {
    "x": 57,
    "y": 20
+  },
+  "from_cave": {
+   "x": 40,
+   "y": 9
   }
  },
  "portals": [
+  {
+   "id": "to_cave",
+   "x": 39,
+   "y": 7,
+   "w": 3,
+   "h": 1,
+   "to": {
+    "map": "pure_spring_cave",
+    "entrance": "from_forest"
+   }
+  },
   {
    "id": "to_village",
    "x": 2,

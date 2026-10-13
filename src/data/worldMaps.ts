@@ -5,6 +5,8 @@ export const WORLD_MAP_FILES = {
   pure_village: 'maps/pure_village.json',
   pure_forest: 'maps/pure_forest.json',
   pure_ruins: 'maps/pure_ruins.json',
+  pure_spring_cave: 'maps/pure_spring_cave.json',
+  pure_coast: 'maps/pure_coast.json',
 } as const satisfies Record<string, string>;
 
 export type WorldMapId = keyof typeof WORLD_MAP_FILES;

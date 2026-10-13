@@ -47,6 +47,10 @@
   "from_forest": {
    "x": 42,
    "y": 16
+  },
+  "from_coast": {
+   "x": 23,
+   "y": 27
   }
  },
  "portals": [
@@ -60,6 +64,19 @@
     "map": "pure_forest",
     "entrance": "from_village"
    }
+  },
+  {
+   "id": "to_coast",
+   "x": 22,
+   "y": 29,
+   "w": 3,
+   "h": 1,
+   "to": {
+    "map": "pure_coast",
+    "entrance": "from_village"
+   },
+   "requiresFlag": "coast_open",
+   "blockedText": "海岸那邊，現在還不是去的時候。"
   }
  ],
  "buildings": [
