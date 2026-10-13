@@ -41,7 +41,7 @@ export class AssetLoader {
           }
         }
         texture ??= new THREE.CanvasTexture(def.placeholder());
-        this.configureTexture(texture);
+        this.configureTexture(texture, def.smooth === true);
         const image = texture.image as { width: number; height: number };
         const material = new THREE.MeshBasicMaterial({
           map: texture,
@@ -87,7 +87,9 @@ export class AssetLoader {
   /** A new quad (anchored at the sprite's pivot) showing the given frame. Caller must dispose it. */
   createGeometry(key: string, col: number, row: number): THREE.BufferGeometry {
     const s = this.get(key);
-    const { frameWidth: fw, frameHeight: fh, anchor } = s.def;
+    const { frameWidth, frameHeight, anchor, displayScale = 1 } = s.def;
+    const fw = frameWidth * displayScale;
+    const fh = frameHeight * displayScale;
     const geo = new THREE.PlaneGeometry(fw, fh);
     geo.translate((0.5 - anchor.x) * fw, (0.5 - anchor.y) * fh, 0);
     this.setFrameUv(geo, key, col, row);
@@ -126,10 +128,10 @@ export class AssetLoader {
     return s;
   }
 
-  private configureTexture(t: THREE.Texture): void {
+  private configureTexture(t: THREE.Texture, smooth: boolean): void {
     t.colorSpace = THREE.SRGBColorSpace;
-    t.magFilter = THREE.NearestFilter;
-    t.minFilter = THREE.NearestFilter;
+    t.magFilter = smooth ? THREE.LinearFilter : THREE.NearestFilter;
+    t.minFilter = smooth ? THREE.LinearFilter : THREE.NearestFilter;
     t.generateMipmaps = false;
     t.needsUpdate = true;
   }

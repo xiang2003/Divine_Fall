@@ -1,8 +1,15 @@
 import * as THREE from 'three';
 import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
-import { SpriteKey } from './assetManifest';
+import { GRASS_KEYS, GRASS_PICK, SpriteKey, TREE_KEYS } from './assetManifest';
 import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY } from './iso';
+
+/** Stable pseudo-random number per tile, so a map always looks the same (variant of grass, kind of tree). */
+function tileHash(x: number, y: number): number {
+  let h = Math.imul(x + 1, 73856093) ^ Math.imul(y + 1, 19349663);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
 
 /**
  * Builds the static scene objects for a map: floor (instanced), walls and props (individually
@@ -23,11 +30,16 @@ export class MapView {
   }
 
   private buildFloor(map: MapData, assets: AssetLoader): void {
-    const variants = map.theme === 'grass' ? [SpriteKey.GRASS_A, SpriteKey.GRASS_B] : [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B];
-    const tilesPerVariant: { x: number; y: number }[][] = [[], []];
+    const grass = map.theme === 'grass';
+    const variants = grass ? GRASS_KEYS : [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B];
+    const tilesPerVariant: { x: number; y: number }[][] = variants.map(() => []);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
-        if (tileAt(map, x, y) === TileType.FLOOR) tilesPerVariant[(x + y) % 2]!.push({ x, y });
+        const tile = tileAt(map, x, y);
+        // Trees stand on grass, so outdoor maps get a ground tile under them too.
+        if (tile !== TileType.FLOOR && !(grass && tile === TileType.TREE)) continue;
+        const variant = grass ? GRASS_PICK[tileHash(x, y) % GRASS_PICK.length]! : (x + y) % 2;
+        tilesPerVariant[variant]!.push({ x, y });
       }
     }
     const m = new THREE.Matrix4();
@@ -49,13 +61,15 @@ export class MapView {
   private buildWallsAndProps(map: MapData, assets: AssetLoader): void {
     const wallGeo = assets.sharedGeometry(SpriteKey.WALL);
     const wallMat = assets.material(SpriteKey.WALL);
-    const treeGeo = assets.sharedGeometry(SpriteKey.TREE);
-    const treeMat = assets.material(SpriteKey.TREE);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = tileAt(map, x, y);
         if (tile !== TileType.WALL && tile !== TileType.TREE) continue;
-        const wall = tile === TileType.TREE ? new THREE.Mesh(treeGeo, treeMat) : new THREE.Mesh(wallGeo, wallMat);
+        const treeKey = TREE_KEYS[tileHash(x, y) % TREE_KEYS.length]!;
+        const wall =
+          tile === TileType.TREE
+            ? new THREE.Mesh(assets.sharedGeometry(treeKey), assets.material(treeKey))
+            : new THREE.Mesh(wallGeo, wallMat);
         placeAt(wall, Layer.OBJECT, x + 0.5, y + 0.5);
         wall.matrixAutoUpdate = false;
         wall.updateMatrix();

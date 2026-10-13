@@ -16,7 +16,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock } from './PlaceholderArt';
+import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock, makeCanvas } from './PlaceholderArt';
 
 export interface SpriteAssetDef {
   key: string;
@@ -29,6 +29,10 @@ export interface SpriteAssetDef {
   /** Size of one frame in pixels. For single-image sprites this is the whole image. */
   frameWidth: number;
   frameHeight: number;
+  /** Scene pixels per image pixel (default 1). 0.5 shows a 128x64 painted tile on the 64x32 grid. */
+  displayScale?: number;
+  /** Smooth (linear) filtering for painted art; pixel art keeps the default nearest filtering. */
+  smooth?: boolean;
   /** Foot / pivot point as a fraction of the frame, measured from the bottom-left. */
   anchor: { x: number; y: number };
   animations?: AnimationSet;
@@ -40,9 +44,6 @@ export const SpriteKey = {
   FLOOR_A: 'tile.floor_a',
   FLOOR_B: 'tile.floor_b',
   FLOOR_EXIT: 'tile.floor_exit',
-  GRASS_A: 'tile.grass_a',
-  GRASS_B: 'tile.grass_b',
-  TREE: 'tile.tree',
   WALL: 'tile.wall',
   CRATE: 'prop.crate',
   SHADOW: 'fx.shadow',
@@ -66,7 +67,55 @@ export const SpriteKey = {
   NPC_BOATWRIGHT: 'npc.boatwright',
 } as const;
 
+/**
+ * Ground and tree art for outdoor maps (third-party, see ASSETS.md). A grass tile and a tree variant are chosen per tile
+ * position with a stable hash, so a map always looks the same.
+ */
+export const GRASS_KEYS = [0, 1, 2, 3, 4, 5].map((i) => `tile.grass_${i}`);
+export const GRASS_PICK = [0, 1, 2, 3, 4, 5] as const;
+export const TREE_KEYS = [0, 1, 2, 3, 4, 5, 6].map((i) => `tree.tree_${i}`);
+
+/** Draws a small procedural canvas onto a larger one (placeholder for a bigger image that failed to load). */
+function enlarged(source: () => HTMLCanvasElement, width: number, height: number): () => HTMLCanvasElement {
+  return () => {
+    const src = source();
+    const [canvas, ctx] = makeCanvas(width, height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, 0, 0, width, height);
+    return canvas;
+  };
+}
+
+function groundTile(index: number): SpriteAssetDef {
+  return {
+    key: GRASS_KEYS[index]!,
+    url: `assets/tiles/grass_${index}.png`,
+    frameWidth: 128,
+    frameHeight: 64,
+    displayScale: 0.5,
+    smooth: true,
+    anchor: { x: 0.5, y: 0.5 },
+    placeholder: enlarged(() => drawGrassTile(index % 2), 128, 64),
+  };
+}
+
+function treeSprite(index: number): SpriteAssetDef {
+  return {
+    key: TREE_KEYS[index]!,
+    url: `assets/trees/tree_${index}.png`,
+    frameWidth: 256,
+    frameHeight: 256,
+    displayScale: 0.5,
+    smooth: true,
+    // The trunk stands on the base diamond, 64 of the 256 pixels above the bottom edge.
+    anchor: { x: 0.5, y: 0.25 },
+    placeholder: enlarged(drawTreeBlock, 256, 256),
+  };
+}
+
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
+  ...GRASS_KEYS.map((_, i) => groundTile(i)),
+  ...TREE_KEYS.map((_, i) => treeSprite(i)),
   {
     key: SpriteKey.FLOOR_A,
     frameWidth: 64,
@@ -80,27 +129,6 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
     frameHeight: 32,
     anchor: { x: 0.5, y: 0.5 },
     placeholder: () => drawFloorTile(1),
-  },
-  {
-    key: SpriteKey.GRASS_A,
-    frameWidth: 64,
-    frameHeight: 32,
-    anchor: { x: 0.5, y: 0.5 },
-    placeholder: () => drawGrassTile(0),
-  },
-  {
-    key: SpriteKey.GRASS_B,
-    frameWidth: 64,
-    frameHeight: 32,
-    anchor: { x: 0.5, y: 0.5 },
-    placeholder: () => drawGrassTile(1),
-  },
-  {
-    key: SpriteKey.TREE,
-    frameWidth: 64,
-    frameHeight: 64,
-    anchor: { x: 0.5, y: 0.25 },
-    placeholder: drawTreeBlock,
   },
   {
     key: SpriteKey.FLOOR_EXIT,
