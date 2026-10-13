@@ -5,9 +5,19 @@ import { EquipmentSummary } from './EquipmentPanel';
 import { Inventory, type InventoryActions } from './Inventory';
 import { BossBar } from './BossBar';
 import { DialogueBox, type DialogueActions } from './DialogueBox';
+import { QuestLog, QuestTracker } from './QuestPanels';
+import { getNpc } from '../data/npcs';
 import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
+
+function npcName(id: string): string {
+  try {
+    return getNpc(id).name;
+  } catch {
+    return id;
+  }
+}
 
 /** Red screen-edge flash each time the player takes damage (restarts on every new hit). */
 function HitFlash({ hitSeq }: { hitSeq: number }) {
@@ -41,11 +51,13 @@ export function HUD({
   onRestart,
   inventoryActions,
   dialogueActions,
+  onCloseQuestLog,
 }: {
   snapshot: GameSnapshot;
   onRestart: () => void;
   inventoryActions: InventoryActions;
   dialogueActions: DialogueActions;
+  onCloseQuestLog: () => void;
 }) {
   if (snapshot.phase === 'loading') {
     return (
@@ -73,7 +85,7 @@ export function HUD({
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 / 交談 · Q W E 技能 · F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · F 拾取 / 交談 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
@@ -117,6 +129,8 @@ export function HUD({
       <SkillBar skills={snapshot.skills} />
       <EquipmentSummary equipment={snapshot.inventory.equipment} />
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
+      <QuestTracker quests={snapshot.quests} npcName={npcName} />
+      {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
       {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} {...dialogueActions} />}
       <Toast notice={snapshot.notice} />
       {snapshot.playerDead && (

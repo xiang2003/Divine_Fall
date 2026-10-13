@@ -28,7 +28,13 @@ export const NPCS: Record<string, NpcDef> = {
     title: '獵人',
     spriteKey: SpriteKey.NPC_HUNTER,
     scale: 1.1,
-    dialogue: [{ if: { flag: 'met_yanya' }, graph: 'hunter_repeat' }, { graph: 'hunter_intro' }],
+    dialogue: [
+      { if: { quest: 'q1_first_hunt', state: 'ready' }, graph: 'hunter_turnin' },
+      { if: { quest: 'q1_first_hunt', state: 'active' }, graph: 'hunter_active' },
+      { if: { all: [{ flag: 'met_yanya' }, { quest: 'q1_first_hunt', state: 'available' }] }, graph: 'hunter_offer' },
+      { if: { flag: 'met_yanya' }, graph: 'hunter_repeat' },
+      { graph: 'hunter_intro' },
+    ],
   },
   waterer_xi: {
     id: 'waterer_xi',

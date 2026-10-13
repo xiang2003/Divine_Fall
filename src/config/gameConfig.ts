@@ -8,6 +8,7 @@ export type InputAction =
   | 'skillT'
   | 'dodge'
   | 'inventory'
+  | 'quests'
   | 'pickup'
   | 'pause'
   | 'debug'
@@ -40,6 +41,7 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   skillT: ['KeyT'],
   dodge: ['Space'],
   inventory: ['KeyI', 'KeyB'],
+  quests: ['KeyJ'],
   pickup: ['KeyF'],
   pause: ['Escape'],
   debug: ['F3'],

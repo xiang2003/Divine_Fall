@@ -1,3 +1,5 @@
+import type { QuestState } from './quests';
+
 /**
  * Branching dialogue as plain data plus a tiny state machine. No rendering, no game objects:
  * the game gives the runner a `DialogueContext` (flags, level) and shows what `view` returns.
@@ -11,6 +13,8 @@ export type Condition =
   | { flag: string }
   | { notFlag: string }
   | { minLevel: number }
+  /** A quest is in one of these states. */
+  | { quest: string; state: QuestState | readonly QuestState[] }
   | { all: readonly Condition[] };
 
 export interface DialogueChoice {
@@ -29,6 +33,10 @@ export interface DialogueNode {
   /** World flags switched on / off when this node is shown. */
   set?: readonly string[];
   clear?: readonly string[];
+  /** Accepts this quest when the node is shown (only if it is available). */
+  startQuest?: string;
+  /** Turns this quest in when the node is shown (only if it is ready); rewards are paid by the game. */
+  completeQuest?: string;
   choices?: readonly DialogueChoice[];
   next?: string;
   end?: boolean;
@@ -51,18 +59,27 @@ export interface DialogueContext {
   hasFlag(name: string): boolean;
   setFlag(name: string, on: boolean): void;
   readonly level: number;
+  questState(id: string): QuestState;
+  startQuest(id: string): void;
+  completeQuest(id: string): void;
 }
 
-export function evalCondition(cond: Condition | undefined, ctx: Pick<DialogueContext, 'hasFlag' | 'level'>): boolean {
+type ConditionContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState'>;
+
+export function evalCondition(cond: Condition | undefined, ctx: ConditionContext): boolean {
   if (!cond) return true;
   if ('flag' in cond) return ctx.hasFlag(cond.flag);
   if ('notFlag' in cond) return !ctx.hasFlag(cond.notFlag);
   if ('minLevel' in cond) return ctx.level >= cond.minLevel;
+  if ('quest' in cond) {
+    const states: readonly QuestState[] = Array.isArray(cond.state) ? cond.state : [cond.state as QuestState];
+    return states.includes(ctx.questState(cond.quest));
+  }
   return cond.all.every((c) => evalCondition(c, ctx));
 }
 
 /** The conversation id an NPC offers right now, or null if no rule matches. */
-export function pickDialogue(rules: readonly DialogueRule[], ctx: Pick<DialogueContext, 'hasFlag' | 'level'>): string | null {
+export function pickDialogue(rules: readonly DialogueRule[], ctx: ConditionContext): string | null {
   for (const rule of rules) if (evalCondition(rule.if, ctx)) return rule.graph;
   return null;
 }
@@ -140,6 +157,8 @@ export class DialogueRunner {
     this.nodeId = id;
     for (const f of node.set ?? []) this.ctx.setFlag(f, true);
     for (const f of node.clear ?? []) this.ctx.setFlag(f, false);
+    if (node.startQuest) this.ctx.startQuest(node.startQuest);
+    if (node.completeQuest) this.ctx.completeQuest(node.completeQuest);
     const visible = (node.choices ?? []).filter((c) => evalCondition(c.if, this.ctx));
     // A node whose choices are all gated off falls back to its `next` / `end` so the player is never stuck.
     this.offered = visible.length > 0 ? visible : null;

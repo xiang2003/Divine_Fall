@@ -39,7 +39,7 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
     },
   },
 
-  // ---- 獵人 岩牙 ----------------------------------------------------------------------------
+  // ---- 獵人 岩牙（任務 1：初試鋒芒）----------------------------------------------------------
   hunter_intro: {
     id: 'hunter_intro',
     start: 'a',
@@ -49,8 +49,42 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
         { text: '請多指教。', to: 'ok' },
         { text: '林子裡到底怎麼了？', to: 'woods' },
       ] },
-      ok: { text: '少客套。左鍵走路、右鍵揮劍，Q、W、E 是你的招式。記不住就多練。', end: true },
+      ok: { text: '少客套。左鍵走路、右鍵揮劍，Q、W、E 是你的招式。記不住就多練。', next: 'offer' },
       woods: { text: '怎麼了？……沒什麼，只是餓了而已。獸餓了脾氣就差，懂嗎？', next: 'ok' },
+      offer: { text: '光練不夠，得見血。往東出村口就是臍帶林道，去宰五隻野獸回來，讓我看看你的手腳。', choices: [
+        { text: '好，我去。', to: 'accept' },
+        { text: '我還沒準備好。', to: 'later' },
+      ] },
+      accept: { text: '這才像話。路上別逞強，血快見底就退。回來找我。', startQuest: 'q1_first_hunt', end: true },
+      later: { text: '哼，準備好了再來。別讓我等太久。', end: true },
+    },
+  },
+  hunter_offer: {
+    id: 'hunter_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '想通了？林道裡有五隻野獸等著你。', choices: [
+        { text: '我準備好了。', to: 'accept' },
+        { text: '再等等。', to: 'later' },
+      ] },
+      accept: { text: '好。去吧，回來找我。', startQuest: 'q1_first_hunt', end: true },
+      later: { text: '快點，天黑了林子可不好走。', end: true },
+    },
+  },
+  hunter_active: {
+    id: 'hunter_active',
+    start: 'a',
+    nodes: {
+      a: { text: '還沒宰夠五隻？東邊出村口就是林道，別在這兒偷懶。', end: true },
+    },
+  },
+  hunter_turnin: {
+    id: 'hunter_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '五隻？……不賴。比我年輕時差一點，就一點。', next: 'b' },
+      b: { text: '拿著，這是給你的。有它，下次可以走遠一點——但別走太遠，聽見沒？', completeQuest: 'q1_first_hunt', next: 'c' },
+      c: { text: '那些獸的眼神……算了，當我沒說。', end: true },
     },
   },
   hunter_repeat: {

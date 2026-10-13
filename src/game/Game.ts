@@ -21,6 +21,9 @@ import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
 import { getDialogue } from '../data/dialogues';
+import { getNpc } from '../data/npcs';
+import { QUESTS } from '../data/quests';
+import { QuestLog, type QuestEvent, type QuestHappening, type QuestView } from '../systems/quests';
 import { DialogueRunner, pickDialogue, type DialogueContext } from '../systems/dialogue';
 import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
@@ -128,6 +131,9 @@ export interface GameSnapshot {
   /** Black overlay opacity (0-1) while moving between maps. */
   fade: number;
   dialogue: DialogueSnapshot | null;
+  /** Quests that were accepted: ready ones first, then active, then completed. */
+  quests: readonly QuestView[];
+  questLogOpen: boolean;
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -174,6 +180,8 @@ const INITIAL: GameSnapshot = {
   bossDefeated: false,
   fade: 0,
   dialogue: null,
+  quests: [],
+  questLogOpen: false,
 };
 
 /** What survives a map change: the character itself. */
@@ -246,6 +254,8 @@ export class Game {
   private telegraphOwner: Monster | null = null;
   private teleportIndex = 0;
   private inventoryOpen = false;
+  private questLogOpen = false;
+  private readonly quests = new QuestLog(QUESTS);
   /** The conversation in progress (the world keeps running behind it, but the player's input is ignored). */
   private dialogue: { runner: DialogueRunner; npc: Npc } | null = null;
   /** The NPC the player was told to walk to and talk to. */
@@ -300,6 +310,8 @@ export class Game {
       const { player } = this.world;
       this.syncEquipment();
       this.publishSkills();
+      this.questHappened({ type: 'reach', map: map.id });
+      this.refreshQuests();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
       this.publish({ phase: 'ready', mapName: map.name, warnings: [...assets.errors] });
       this.publishVitals();
@@ -365,8 +377,17 @@ export class Game {
 
   setInventoryOpen = (open: boolean): void => {
     this.inventoryOpen = open;
+    if (open && this.questLogOpen) this.setQuestLogOpen(false);
     this.publish({ inventoryOpen: open });
   };
+
+  setQuestLogOpen = (open: boolean): void => {
+    this.questLogOpen = open;
+    if (open && this.inventoryOpen) this.setInventoryOpen(false);
+    this.publish({ questLogOpen: open });
+  };
+
+  toggleQuestLog = (): void => this.setQuestLogOpen(!this.questLogOpen);
 
   toggleInventory = (): void => this.setInventoryOpen(!this.inventoryOpen);
 
@@ -495,6 +516,7 @@ export class Game {
       phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
       monsterKilled: (m: Monster) => {
         this.kills++;
+        this.questHappened({ type: 'kill', monster: m.def.id, map: this.mapId, elite: m.isElite, boss: m.isBoss });
         this.gainXp(m.xpReward);
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
@@ -718,6 +740,65 @@ export class Game {
     return map;
   }
 
+  // --- quests ----------------------------------------------------------------------------------
+
+  /** Feeds a world happening to the quest log and shows what it changed. */
+  private questHappened(happening: QuestHappening): void {
+    this.handleQuestEvents(this.quests.report(happening));
+  }
+
+  private handleQuestEvents(events: readonly QuestEvent[]): void {
+    if (events.length === 0) return;
+    let text: string | null = null;
+    for (const e of events) {
+      const def = QUESTS[e.quest]!;
+      if (e.type === 'progress' && e.target > 1) {
+        text = `${def.title}：${def.objectives[e.objective]!.label}（${e.current}/${e.target}）`;
+      } else if (e.type === 'objectiveDone') {
+        text = `${def.title}：${def.objectives[e.objective]!.label} ✓`;
+      } else if (e.type === 'ready') {
+        text = `任務可交付：${def.title}（回報${getNpc(def.turnIn ?? def.giver).name}）`;
+      }
+    }
+    if (text) this.notify(text);
+    this.refreshQuests();
+  }
+
+  private startQuest(id: string): void {
+    const def = this.quests.start(id);
+    if (!def) return;
+    for (const f of def.startFlags ?? []) this.setFlag(f, true);
+    this.notify(`任務開始：${def.title}`);
+    this.refreshQuests();
+  }
+
+  private completeQuest(id: string): void {
+    const def = this.quests.complete(id);
+    const w = this.world;
+    if (!def || !w) return;
+    for (const f of def.rewards.flags ?? []) this.setFlag(f, true);
+    for (const reward of def.rewards.items) {
+      for (let i = 0; i < reward.count; i++) {
+        const item = generateItem(reward.rarity, defaultRng);
+        // A full backpack must never lose a reward: it drops at the player's feet instead.
+        if (!w.inventory.add(item).ok) w.groundLoot.spawnNear(item, w.player.pos.x, w.player.pos.y);
+      }
+    }
+    this.notify(`任務完成：${def.title}`);
+    if (def.rewards.xp > 0) this.gainXp(def.rewards.xp);
+    this.refreshQuests();
+  }
+
+  /** Publishes the quest list and puts "!" / "?" over the NPCs who have something to offer or take in. */
+  private refreshQuests(): void {
+    this.publish({ quests: this.quests.views() });
+    this.world?.npcs.setMarkers((npcId) => {
+      if (this.quests.readyFor(npcId).length > 0) return '?';
+      if (this.quests.availableFrom(npcId).length > 0) return '!';
+      return null;
+    });
+  }
+
   // --- NPCs and dialogue ---------------------------------------------------------------------
 
   /** A name tag was clicked: walk over and talk. */
@@ -732,17 +813,26 @@ export class Game {
     const w = this.world;
     if (!w || w.player.isDead || this.dialogue) return;
     this.talkTarget = null;
+    this.questHappened({ type: 'talk', npc: npc.def.id });
     const graphId = pickDialogue(npc.def.dialogue, this.currentDialogueContext());
     if (!graphId) return;
     w.player.mover.stop();
     this.setInventoryOpen(false);
+    this.setQuestLogOpen(false);
     this.dialogue = { runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name), npc };
     this.publishDialogue();
   }
 
   /** The dialogue context with the live character level. */
   private currentDialogueContext(): DialogueContext {
-    return { hasFlag: (name) => this.flags.has(name), setFlag: (name, on) => this.setFlag(name, on), level: this.progression.level };
+    return {
+      hasFlag: (name) => this.flags.has(name),
+      setFlag: (name, on) => this.setFlag(name, on),
+      level: this.progression.level,
+      questState: (id) => this.quests.state(id),
+      startQuest: (id) => this.startQuest(id),
+      completeQuest: (id) => this.completeQuest(id),
+    };
   }
 
   advanceDialogue = (): void => {
@@ -859,6 +949,8 @@ export class Game {
     this.publishSkills();
     this.cameraCtl.snapTo(worldToSceneX(world.player.pos.x, world.player.pos.y), worldToSceneY(world.player.pos.x, world.player.pos.y));
     this.publish({ mapName: map.name, debug: world.debug.visible });
+    this.questHappened({ type: 'reach', map: map.id });
+    this.refreshQuests();
     this.publishVitals();
   }
 
@@ -970,8 +1062,10 @@ export class Game {
 
     const talking = this.dialogue !== null;
     if (input.wasPressed('inventory') && !talking) this.toggleInventory();
+    if (input.wasPressed('quests') && !talking) this.toggleQuestLog();
     if (input.wasPressed('pause')) {
       if (talking) this.endDialogue();
+      else if (this.questLogOpen) this.setQuestLogOpen(false);
       else if (this.inventoryOpen) this.setInventoryOpen(false);
     }
 

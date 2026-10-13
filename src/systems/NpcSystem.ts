@@ -28,6 +28,7 @@ export class Npc {
   private readonly animator: SpriteAnimator;
   private readonly shadow: THREE.Mesh;
   private readonly tag: HTMLDivElement;
+  private readonly marker: HTMLSpanElement;
   private readonly screen: Vec2 = { x: 0, y: 0 };
 
   constructor(
@@ -55,7 +56,10 @@ export class Npc {
     const title = document.createElement('div');
     title.className = 'npc-title';
     title.textContent = this.def.title;
-    this.tag.append(name, title);
+    this.marker = document.createElement('span');
+    this.marker.className = 'npc-marker';
+    this.marker.style.display = 'none';
+    this.tag.append(this.marker, name, title);
     this.tag.addEventListener('click', (e) => {
       e.stopPropagation();
       onClick(this);
@@ -64,6 +68,13 @@ export class Npc {
     this.tag.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.tag.addEventListener('contextmenu', (e) => e.preventDefault());
     tagLayer.appendChild(this.tag);
+  }
+
+  /** "!" (a quest to offer), "?" (a quest to turn in) or null. */
+  setMarker(symbol: string | null): void {
+    this.marker.style.display = symbol ? 'block' : 'none';
+    this.marker.textContent = symbol ?? '';
+    this.marker.className = symbol === '?' ? 'npc-marker turnin' : 'npc-marker';
   }
 
   /** Turns to face a point (the player) and keeps the name tag on the sprite. */
@@ -116,6 +127,11 @@ export class NpcSystem {
       }
     }
     return best;
+  }
+
+  /** Puts a quest marker over every NPC according to `markerFor`. */
+  setMarkers(markerFor: (npcId: string) => string | null): void {
+    for (const n of this.all) n.setMarker(markerFor(n.def.id));
   }
 
   update(dt: number, player: Vec2): void {

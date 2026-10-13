@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { DIALOGUES } from '../src/data/dialogues';
 import { MapParseError, parseMap } from '../src/data/mapData';
 import { NPCS } from '../src/data/npcs';
+import { QUESTS } from '../src/data/quests';
+import { QuestLog } from '../src/systems/quests';
 import { WORLD_MAP_FILES } from '../src/data/worldMaps';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
 import {
@@ -17,11 +19,15 @@ import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, npcBounds } from '../src/systems/NpcS
 
 function makeCtx(flags: string[] = [], level = 1): DialogueContext & { flags: Set<string> } {
   const set = new Set(flags);
+  const log = new QuestLog(QUESTS);
   return {
     flags: set,
     level,
     hasFlag: (n) => set.has(n),
-    setFlag: (n, on) => (on ? set.add(n) : set.delete(n)),
+    setFlag: (n, on) => void (on ? set.add(n) : set.delete(n)),
+    questState: (id) => log.state(id),
+    startQuest: (id) => void log.start(id),
+    completeQuest: (id) => void log.complete(id),
   };
 }
 
