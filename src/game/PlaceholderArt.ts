@@ -81,6 +81,63 @@ export function drawFloorTile(variant: number): HTMLCanvasElement {
   return c;
 }
 
+/** 64x32 grass diamond. variant 0/1 are two greens. */
+export function drawGrassTile(variant: number): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(64, 32);
+  const diamond: Pt[] = [
+    [0, 16],
+    [32, 0],
+    [64, 16],
+    [32, 32],
+  ];
+  poly(ctx, diamond, ['#456b3c', '#3f6337'][variant] ?? '#456b3c', '#2c4a28');
+  ctx.save();
+  ctx.beginPath();
+  diamond.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+  ctx.closePath();
+  ctx.clip();
+  const rand = mulberry32(2000 + variant);
+  for (let i = 0; i < 30; i++) {
+    ctx.fillStyle = rand() > 0.5 ? 'rgba(180,230,120,0.22)' : 'rgba(10,40,10,0.28)';
+    ctx.fillRect(Math.floor(rand() * 64), Math.floor(rand() * 32), 1, 2);
+  }
+  // an occasional pale flower
+  if (rand() > 0.55) {
+    ctx.fillStyle = '#e8e2b0';
+    ctx.fillRect(Math.floor(14 + rand() * 36), Math.floor(8 + rand() * 16), 2, 2);
+  }
+  ctx.restore();
+  return c;
+}
+
+/** 64x64 tree: a trunk on the base diamond (bottom 32 rows) with a rounded canopy above. Same footprint as a wall. */
+export function drawTreeBlock(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(64, 64);
+  // shadow on the ground
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(32, 48, 22, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // trunk
+  ctx.fillStyle = '#5a3d27';
+  ctx.fillRect(28, 36, 8, 16);
+  ctx.fillStyle = '#3d2918';
+  ctx.fillRect(33, 36, 3, 16);
+  // canopy: three overlapping blobs, darker underneath
+  const blob = (x: number, y: number, r: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  blob(32, 28, 17, '#244d2a');
+  blob(24, 22, 12, '#2f6a35');
+  blob(40, 22, 12, '#2f6a35');
+  blob(32, 14, 11, '#3b8040');
+  blob(28, 11, 5, '#58a357');
+  return c;
+}
+
 /** 64x64 wall cube. The base diamond occupies the bottom 32 rows (anchor y = 0.25). */
 export function drawWallBlock(): HTMLCanvasElement {
   const [c, ctx] = makeCanvas(64, 64);

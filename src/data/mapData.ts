@@ -4,6 +4,8 @@ import type { Vec2 } from '../game/iso';
 export interface DungeonMapFile {
   id: string;
   name: string;
+  /** Look of the floor: "stone" (default, dungeon) or "grass" (outdoors, where "T" tiles are trees). */
+  theme?: MapTheme;
   /** Human-readable legend; informational only. */
   legend?: Record<string, string>;
   /** One string per row; `layout[y][x]` is tile (x, y). All rows must have equal length. */
@@ -31,10 +33,15 @@ export interface PortalFile {
   blockedText?: string;
 }
 
+export type MapTheme = 'stone' | 'grass';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'grass'];
+
 export const TileType = {
   VOID: 0,
   FLOOR: 1,
   WALL: 2,
+  /** Blocks like a wall but is drawn as a tree ("T" in a layout). */
+  TREE: 3,
 } as const;
 export type TileType = (typeof TileType)[keyof typeof TileType];
 
@@ -85,6 +92,7 @@ export interface MapSpawns {
 export interface MapData {
   id: string;
   name: string;
+  theme: MapTheme;
   width: number;
   height: number;
   /** Row-major, index = y * width + x. */
@@ -146,6 +154,9 @@ export function parseMap(raw: unknown): MapData {
           break;
         case '#':
           tile = TileType.WALL;
+          break;
+        case 'T':
+          tile = TileType.TREE;
           break;
         case '.':
           break;
@@ -243,5 +254,8 @@ export function parseMap(raw: unknown): MapData {
     npcs.push({ id: n.id, pos: { x: n.x + 0.5, y: n.y + 0.5 } });
   }
 
-  return { id: file.id, name: file.name, width, height, tiles, props, spawns, entrances, portals, npcs };
+  const theme = file.theme ?? 'stone';
+  if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
+
+  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs };
 }

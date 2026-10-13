@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { MapParseError, parseMap, type MapData } from '../src/data/mapData';
+import { MapParseError, TileType, parseMap, tileAt, type MapData } from '../src/data/mapData';
 import { START_MAP_ID, WORLD_MAP_FILES, checkWorldLinks } from '../src/data/worldMaps';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../src/systems/portals';
@@ -179,3 +179,42 @@ function reachableTiles(map: MapData): Set<number> {
   }
   return seen;
 }
+
+describe('map themes and tree tiles', () => {
+  it('"T" is a tile that blocks movement and sight like a wall, and themes default to stone', () => {
+    const map = parseMap({ id: 'a', name: 'A', theme: 'grass', layout: ['#####', '#PT.#', '#...#', '#####'] });
+    expect(map.theme).toBe('grass');
+    expect(tileAt(map, 2, 1)).toBe(TileType.TREE);
+    const collision = new CollisionSystem(map);
+    expect(collision.isTileBlocked(2, 1)).toBe(true);
+    expect(collision.hasLineOfSight(1.5, 1.5, 3.5, 1.5)).toBe(false);
+    expect(parseMap({ id: 'a', name: 'A', layout: ['P'] }).theme).toBe('stone');
+  });
+
+  it('rejects an unknown theme', () => {
+    expect(() => parseMap({ id: 'a', name: 'A', theme: 'lava', layout: ['P'] })).toThrow(/theme/);
+  });
+
+  it('the outdoor maps use the grass theme and are sealed by trees or walls (no floor touches void or the map edge)', () => {
+    for (const id of ['pure_village', 'pure_forest'] as const) {
+      const map = parseMap(JSON.parse(readFileSync(new URL(`../public/${WORLD_MAP_FILES[id]}`, import.meta.url), 'utf8')) as unknown);
+      expect(map.theme).toBe('grass');
+      for (let y = 0; y < map.height; y++) {
+        for (let x = 0; x < map.width; x++) {
+          if (tileAt(map, x, y) !== TileType.FLOOR) continue;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+            expect(tileAt(map, x + dx, y + dy), `${id} leaks at ${x},${y}`).not.toBe(TileType.VOID);
+          }
+        }
+      }
+    }
+  });
+
+  it('the forest has enough monsters for the first quest, spread away from the arrival point', () => {
+    const map = parseMap(JSON.parse(readFileSync(new URL(`../public/${WORLD_MAP_FILES.pure_forest}`, import.meta.url), 'utf8')) as unknown);
+    expect(map.spawns.monsters.length).toBeGreaterThanOrEqual(8);
+    for (const m of map.spawns.monsters) {
+      expect(Math.hypot(m.x - map.entrances.from_village!.x, m.y - map.entrances.from_village!.y)).toBeGreaterThan(8);
+    }
+  });
+});

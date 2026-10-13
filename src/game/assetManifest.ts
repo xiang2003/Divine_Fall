@@ -16,7 +16,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { drawCrate, drawFloorTile, drawMoveMarker, drawShadow, drawWallBlock } from './PlaceholderArt';
+import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock } from './PlaceholderArt';
 
 export interface SpriteAssetDef {
   key: string;
@@ -40,6 +40,9 @@ export const SpriteKey = {
   FLOOR_A: 'tile.floor_a',
   FLOOR_B: 'tile.floor_b',
   FLOOR_EXIT: 'tile.floor_exit',
+  GRASS_A: 'tile.grass_a',
+  GRASS_B: 'tile.grass_b',
+  TREE: 'tile.tree',
   WALL: 'tile.wall',
   CRATE: 'prop.crate',
   SHADOW: 'fx.shadow',
@@ -77,6 +80,27 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
     frameHeight: 32,
     anchor: { x: 0.5, y: 0.5 },
     placeholder: () => drawFloorTile(1),
+  },
+  {
+    key: SpriteKey.GRASS_A,
+    frameWidth: 64,
+    frameHeight: 32,
+    anchor: { x: 0.5, y: 0.5 },
+    placeholder: () => drawGrassTile(0),
+  },
+  {
+    key: SpriteKey.GRASS_B,
+    frameWidth: 64,
+    frameHeight: 32,
+    anchor: { x: 0.5, y: 0.5 },
+    placeholder: () => drawGrassTile(1),
+  },
+  {
+    key: SpriteKey.TREE,
+    frameWidth: 64,
+    frameHeight: 64,
+    anchor: { x: 0.5, y: 0.25 },
+    placeholder: drawTreeBlock,
   },
   {
     key: SpriteKey.FLOOR_EXIT,

@@ -23,7 +23,7 @@ export class MapView {
   }
 
   private buildFloor(map: MapData, assets: AssetLoader): void {
-    const variants = [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B];
+    const variants = map.theme === 'grass' ? [SpriteKey.GRASS_A, SpriteKey.GRASS_B] : [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B];
     const tilesPerVariant: { x: number; y: number }[][] = [[], []];
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
@@ -49,10 +49,13 @@ export class MapView {
   private buildWallsAndProps(map: MapData, assets: AssetLoader): void {
     const wallGeo = assets.sharedGeometry(SpriteKey.WALL);
     const wallMat = assets.material(SpriteKey.WALL);
+    const treeGeo = assets.sharedGeometry(SpriteKey.TREE);
+    const treeMat = assets.material(SpriteKey.TREE);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
-        if (tileAt(map, x, y) !== TileType.WALL) continue;
-        const wall = new THREE.Mesh(wallGeo, wallMat);
+        const tile = tileAt(map, x, y);
+        if (tile !== TileType.WALL && tile !== TileType.TREE) continue;
+        const wall = tile === TileType.TREE ? new THREE.Mesh(treeGeo, treeMat) : new THREE.Mesh(wallGeo, wallMat);
         placeAt(wall, Layer.OBJECT, x + 0.5, y + 0.5);
         wall.matrixAutoUpdate = false;
         wall.updateMatrix();
