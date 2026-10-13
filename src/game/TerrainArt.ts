@@ -122,6 +122,75 @@ export function drawWaterTile(kind: 'sea' | 'murk', variant: number): HTMLCanvas
   }, 5000 + variant + (sea ? 0 : 50));
 }
 
+/** A cluster of pale blue crystal shards with a glow: the fragment in the spring cave. 64x64, base diamond in the bottom 32 rows. */
+export function drawShard(): HTMLCanvasElement {
+  const [canvas, ctx] = makeCanvas(64 * S, 64 * S);
+  ctx.scale(S, S);
+  ctx.lineJoin = 'round';
+  const glow = ctx.createRadialGradient(32, 40, 0, 32, 40, 30);
+  glow.addColorStop(0, 'rgba(150,235,255,0.55)');
+  glow.addColorStop(1, 'rgba(150,235,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(32, 50, 16, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const crystal = (x: number, h: number, w: number, tilt: number) => {
+    const pts: Pt[] = [[x - w, 50], [x - w * 0.4 + tilt, 50 - h], [x + w * 0.5 + tilt, 50 - h * 0.85], [x + w, 50]];
+    poly(ctx, pts, '#9fe6f5', '#3b7f93');
+    poly(ctx, [[x - w, 50], [x - w * 0.4 + tilt, 50 - h], [x + tilt * 0.4, 50 - h * 0.6], [x, 50]], '#d8fbff');
+  };
+  crystal(24, 22, 5, -2);
+  crystal(38, 28, 6, 2);
+  crystal(31, 36, 5, 0);
+  return canvas;
+}
+
+/** A round stone seal on a low pedestal, gold lines glowing in it: the first relic. 64x64, base diamond in the bottom 32 rows. */
+export function drawRelic(): HTMLCanvasElement {
+  const [canvas, ctx] = makeCanvas(64 * S, 64 * S);
+  ctx.scale(S, S);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(32, 51, 20, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // pedestal
+  ctx.fillStyle = '#8f8a80';
+  ctx.beginPath();
+  ctx.ellipse(32, 48, 15, 6.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(17, 40, 30, 8);
+  ctx.fillStyle = '#b5afa3';
+  ctx.beginPath();
+  ctx.ellipse(32, 40, 15, 6.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // the seal: an upright disc with a ring and a closed-eye mark
+  const glow = ctx.createRadialGradient(32, 26, 0, 32, 26, 22);
+  glow.addColorStop(0, 'rgba(255,214,120,0.6)');
+  glow.addColorStop(1, 'rgba(255,214,120,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(6, 4, 52, 44);
+  ctx.fillStyle = '#6a655c';
+  ctx.beginPath();
+  ctx.ellipse(32, 26, 13, 15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#f0c75e';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.ellipse(32, 26, 10, 12, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(24, 26);
+  ctx.quadraticCurveTo(32, 20, 40, 26);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(32, 26);
+  ctx.lineTo(32, 33);
+  ctx.stroke();
+  return canvas;
+}
+
 /** A boulder (beach) or a rock pillar (cave) standing on a tile: 64x64, base diamond in the bottom 32 rows. */
 export function drawRock(kind: 'boulder' | 'pillar', variant: number): HTMLCanvasElement {
   const [canvas, ctx] = makeCanvas(64 * S, 64 * S);

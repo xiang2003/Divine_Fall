@@ -22,10 +22,11 @@ import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../s
 import { MonsterAISystem } from '../systems/MonsterAISystem';
 import { getDialogue } from '../data/dialogues';
 import { getNpc } from '../data/npcs';
+import { INTERACT_RANGE, InteractableSystem, type Interactable } from '../systems/InteractableSystem';
 import { QUESTS } from '../data/quests';
 import { QuestLog, type QuestEvent, type QuestHappening, type QuestView } from '../systems/quests';
 import { DialogueRunner, pickDialogue, type DialogueContext } from '../systems/dialogue';
-import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, type Npc } from '../systems/NpcSystem';
+import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, npcPresent, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
@@ -134,6 +135,8 @@ export interface GameSnapshot {
   /** Quests that were accepted: ready ones first, then active, then completed. */
   quests: readonly QuestView[];
   questLogOpen: boolean;
+  /** The chapter-complete screen is showing. */
+  chapterEnd: boolean;
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -182,6 +185,7 @@ const INITIAL: GameSnapshot = {
   dialogue: null,
   quests: [],
   questLogOpen: false,
+  chapterEnd: false,
 };
 
 /** What survives a map change: the character itself. */
@@ -220,6 +224,7 @@ interface World {
   novaFx: SlashEffect;
   nameplateLayer: HTMLDivElement;
   npcs: NpcSystem;
+  interactables: InteractableSystem;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -257,9 +262,11 @@ export class Game {
   private questLogOpen = false;
   private readonly quests = new QuestLog(QUESTS);
   /** The conversation in progress (the world keeps running behind it, but the player's input is ignored). */
-  private dialogue: { runner: DialogueRunner; npc: Npc } | null = null;
+  private dialogue: { runner: DialogueRunner; name: string; pos: Vec2 } | null = null;
   /** The NPC the player was told to walk to and talk to. */
   private talkTarget: Npc | null = null;
+  /** The thing the player was told to walk to and examine. */
+  private interactTarget: Interactable | null = null;
   /** The ground item the player was told to walk to and pick up. */
   private pickupTarget: LootDrop | null = null;
   /** A skill key pressed while busy, cast as soon as the player is free (see SKILL_INPUT_BUFFER). */
@@ -431,6 +438,7 @@ export class Game {
     w.novaFx.dispose();
     w.nameplateLayer.remove();
     w.npcs.dispose();
+    w.interactables.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
     w.effects.dispose();
@@ -438,6 +446,7 @@ export class Game {
       this.scene.scene.remove(
         w.groundLoot.group,
         w.npcs.group,
+        w.interactables.group,
         w.monsters.group,
         w.projectiles.group,
         w.skillBolts.group,
@@ -455,7 +464,8 @@ export class Game {
   }
 
   private buildWorld(map: MapData, assets: AssetLoader, carry: Carry | null): World {
-    const collision = new CollisionSystem(map, map.npcs.map((n) => npcBounds(n.pos)));
+    const presentNpcs = map.npcs.filter((n) => npcPresent(n, (f) => this.flags.has(f)));
+    const collision = new CollisionSystem(map, presentNpcs.map((n) => npcBounds(n.pos)));
     const debug = this.scene.loadMap(map, assets);
     const effects = new EffectAssets();
 
@@ -477,7 +487,15 @@ export class Game {
     const slamFx = new SlashEffect({ color: '#ff7a45', inner: 0 });
     const telegraphFx = new SlashEffect({ color: '#ff3b30', inner: 0 });
     const novaFx = new SlashEffect({ color: '#ffb070', inner: 0 });
-    const npcs = new NpcSystem(map.npcs, assets, this.container, this.cameraCtl, (npc) => this.requestTalk(npc));
+    const npcs = new NpcSystem(presentNpcs, assets, this.container, this.cameraCtl, (npc) => this.requestTalk(npc));
+    const interactables = new InteractableSystem(
+      map.interactables,
+      assets,
+      this.container,
+      this.cameraCtl,
+      (it) => this.requestInteract(it),
+      (f) => this.flags.has(f),
+    );
     const nameplateLayer = document.createElement('div');
     nameplateLayer.className = 'nameplate-layer';
     this.container.appendChild(nameplateLayer);
@@ -516,6 +534,7 @@ export class Game {
       phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
       monsterKilled: (m: Monster) => {
         this.kills++;
+        if (m.isBoss) this.setFlag(`${this.mapId}_boss_defeated`, true);
         this.questHappened({ type: 'kill', monster: m.def.id, map: this.mapId, elite: m.isElite, boss: m.isBoss });
         this.gainXp(m.xpReward);
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
@@ -550,6 +569,7 @@ export class Game {
     this.scene.scene.add(
       groundLoot.group,
       npcs.group,
+      interactables.group,
       monsters.group,
       projectiles.group,
       skillBolts.group,
@@ -580,6 +600,7 @@ export class Game {
       novaFx,
       nameplateLayer,
       npcs,
+      interactables,
       lightning,
       numbers,
       debug,
@@ -820,9 +841,50 @@ export class Game {
     w.player.mover.stop();
     this.setInventoryOpen(false);
     this.setQuestLogOpen(false);
-    this.dialogue = { runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name), npc };
+    this.dialogue = {
+      runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name),
+      name: npc.def.name,
+      pos: npc.pos,
+    };
     this.publishDialogue();
   }
+
+  /** A tag on a thing to examine was clicked: walk over and examine it. */
+  private requestInteract(it: Interactable): void {
+    const w = this.world;
+    if (!w || w.player.isDead || this.dialogue || this.transition) return;
+    this.interactTarget = it;
+    this.talkTarget = null;
+    this.pickupTarget = null;
+  }
+
+  private startInteract(it: Interactable): void {
+    const w = this.world;
+    if (!w || w.player.isDead || this.dialogue || !it.visible) return;
+    this.interactTarget = null;
+    if (it.def.reportOnUse) this.questHappened({ type: 'interact', target: it.def.id });
+    const graphId = pickDialogue(it.def.dialogue, this.currentDialogueContext());
+    if (!graphId) return;
+    w.player.mover.stop();
+    this.setInventoryOpen(false);
+    this.setQuestLogOpen(false);
+    this.dialogue = {
+      runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), it.def.name),
+      name: it.def.name,
+      pos: it.pos,
+    };
+    this.publishDialogue();
+  }
+
+  /** Ends the chapter: the end screen opens (the player can dismiss it and keep exploring). */
+  private endChapter(): void {
+    this.setFlag('chapter1_complete', true);
+    this.publish({ chapterEnd: true });
+  }
+
+  dismissChapterEnd = (): void => {
+    this.publish({ chapterEnd: false });
+  };
 
   /** The dialogue context with the live character level. */
   private currentDialogueContext(): DialogueContext {
@@ -830,9 +892,12 @@ export class Game {
       hasFlag: (name) => this.flags.has(name),
       setFlag: (name, on) => this.setFlag(name, on),
       level: this.progression.level,
+      mapId: this.mapId,
       questState: (id) => this.quests.state(id),
       startQuest: (id) => this.startQuest(id),
       completeQuest: (id) => this.completeQuest(id),
+      reportInteract: (target) => this.questHappened({ type: 'interact', target }),
+      endChapter: () => this.endChapter(),
     };
   }
 
@@ -859,6 +924,7 @@ export class Game {
 
   private endDialogue(): void {
     this.talkTarget = null;
+    this.interactTarget = null;
     if (!this.dialogue) return;
     this.dialogue.runner.close();
     this.dialogue = null;
@@ -872,7 +938,7 @@ export class Game {
       this.publish({ dialogue: null });
       return;
     }
-    this.publish({ dialogue: { npcName: d.npc.def.name, ...view } });
+    this.publish({ dialogue: { npcName: d.name, ...view } });
   }
 
   // --- changing maps ---------------------------------------------------------------------------
@@ -1040,7 +1106,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, npcs, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, interactables, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -1085,6 +1151,7 @@ export class Game {
       const pressedMove = input.wasMousePressed('move');
       const npcAtAim = pressedMove && aim ? npcs.nearest(aim, NPC_CLICK_RADIUS) : null;
       if (attackHeld || input.wasPressed('dodge') || (pressedMove && !npcAtAim)) this.talkTarget = null;
+      if (attackHeld || moveHeld || input.wasPressed('dodge')) this.interactTarget = null;
       if (npcAtAim) {
         this.talkTarget = npcAtAim;
         this.pickupTarget = null;
@@ -1095,14 +1162,27 @@ export class Game {
       // Right button: swing toward the cursor (hold to keep swinging). It stops the player in place
       // and takes priority over walking, so holding both never drags the player mid-swing.
       if (attackHeld && aim) player.startAttack(aim.x, aim.y);
-      else if (moveHeld && aim && !this.talkTarget) player.moveTo(aim.x, aim.y);
+      else if (moveHeld && aim && !this.talkTarget && !this.interactTarget) player.moveTo(aim.x, aim.y);
 
       // F: pick up the nearest item within reach, otherwise talk to the nearest NPC.
       if (input.wasPressed('pickup')) {
         const near = groundLoot.nearest(player.pos, LOOT_CONFIG.keyPickupRange);
         const npcNear = npcs.nearest(player.pos, NPC_TALK_RANGE);
+        const thingNear = interactables.nearest(player.pos, INTERACT_RANGE);
         if (near) this.tryPickup(near);
         else if (npcNear) this.startTalk(npcNear);
+        else if (thingNear) this.startInteract(thingNear);
+      }
+
+      // Walking toward a clicked thing to examine.
+      const interactTarget = this.interactTarget;
+      if (interactTarget) {
+        if (!interactTarget.visible) this.interactTarget = null;
+        else if (Math.hypot(interactTarget.pos.x - player.pos.x, interactTarget.pos.y - player.pos.y) <= INTERACT_RANGE) {
+          this.startInteract(interactTarget);
+        } else if (!player.isSwinging && !player.mover.hasTarget) {
+          player.moveTo(interactTarget.pos.x, interactTarget.pos.y);
+        }
       }
 
       // Walking toward a clicked NPC.
@@ -1147,13 +1227,16 @@ export class Game {
     } else {
       this.pickupTarget = null;
       this.pendingSkill = null;
-      if (player.isDead) this.talkTarget = null;
+      if (player.isDead) {
+        this.talkTarget = null;
+        this.interactTarget = null;
+      }
     }
     if (talking) {
       // A conversation ends if the player dies or somehow ends up far from the speaker.
       const d = this.dialogue;
       if (player.isDead) this.endDialogue();
-      else if (d && Math.hypot(d.npc.pos.x - player.pos.x, d.npc.pos.y - player.pos.y) > NPC_TALK_RANGE + 1.5) this.endDialogue();
+      else if (d && Math.hypot(d.pos.x - player.pos.x, d.pos.y - player.pos.y) > NPC_TALK_RANGE + 1.5) this.endDialogue();
     }
 
     player.update(dt);
@@ -1162,6 +1245,7 @@ export class Game {
     combat.update(dt);
     monsters.syncViews(dt);
     npcs.update(dt, player.pos);
+    interactables.update(dt, (f) => this.flags.has(f));
     slash.update(dt);
     spinFx.update(dt);
     slamFx.update(dt);

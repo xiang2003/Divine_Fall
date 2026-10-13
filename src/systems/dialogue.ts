@@ -13,6 +13,8 @@ export type Condition =
   | { flag: string }
   | { notFlag: string }
   | { minLevel: number }
+  /** The player is on this map. */
+  | { map: string }
   /** A quest is in one of these states. */
   | { quest: string; state: QuestState | readonly QuestState[] }
   | { all: readonly Condition[] };
@@ -35,8 +37,12 @@ export interface DialogueNode {
   clear?: readonly string[];
   /** Accepts this quest when the node is shown (only if it is available). */
   startQuest?: string;
+  /** Tells the quest log the player examined / did this (an "interact" target), before `completeQuest` is applied. */
+  interact?: string;
   /** Turns this quest in when the node is shown (only if it is ready); rewards are paid by the game. */
   completeQuest?: string;
+  /** Ends the chapter: the game shows the chapter-complete screen. */
+  endChapter?: boolean;
   choices?: readonly DialogueChoice[];
   next?: string;
   end?: boolean;
@@ -59,18 +65,23 @@ export interface DialogueContext {
   hasFlag(name: string): boolean;
   setFlag(name: string, on: boolean): void;
   readonly level: number;
+  /** Id of the map the conversation is happening on. */
+  readonly mapId: string;
   questState(id: string): QuestState;
   startQuest(id: string): void;
   completeQuest(id: string): void;
+  reportInteract(target: string): void;
+  endChapter(): void;
 }
 
-type ConditionContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState'>;
+type ConditionContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'>;
 
 export function evalCondition(cond: Condition | undefined, ctx: ConditionContext): boolean {
   if (!cond) return true;
   if ('flag' in cond) return ctx.hasFlag(cond.flag);
   if ('notFlag' in cond) return !ctx.hasFlag(cond.notFlag);
   if ('minLevel' in cond) return ctx.level >= cond.minLevel;
+  if ('map' in cond) return ctx.mapId === cond.map;
   if ('quest' in cond) {
     const states: readonly QuestState[] = Array.isArray(cond.state) ? cond.state : [cond.state as QuestState];
     return states.includes(ctx.questState(cond.quest));
@@ -158,7 +169,9 @@ export class DialogueRunner {
     for (const f of node.set ?? []) this.ctx.setFlag(f, true);
     for (const f of node.clear ?? []) this.ctx.setFlag(f, false);
     if (node.startQuest) this.ctx.startQuest(node.startQuest);
+    if (node.interact) this.ctx.reportInteract(node.interact);
     if (node.completeQuest) this.ctx.completeQuest(node.completeQuest);
+    if (node.endChapter) this.ctx.endChapter();
     const visible = (node.choices ?? []).filter((c) => evalCondition(c.if, this.ctx));
     // A node whose choices are all gated off falls back to its `next` / `end` so the player is never stuck.
     this.offered = visible.length > 0 ? visible : null;

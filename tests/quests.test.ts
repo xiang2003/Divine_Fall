@@ -267,11 +267,14 @@ describe('authored chapter 1 quests', () => {
     const flags = new Set<string>();
     const ctx: DialogueContext = {
       level: 1,
+      mapId: 'pure_village',
       hasFlag: (n) => flags.has(n),
       setFlag: (n, on) => void (on ? flags.add(n) : flags.delete(n)),
       questState: (id) => log.state(id),
       startQuest: (id) => void log.start(id),
       completeQuest: (id) => void log.complete(id),
+      reportInteract: () => undefined,
+      endChapter: () => undefined,
     };
     const talk = () => {
       log.report({ type: 'talk', npc: 'hunter_yanya' });
@@ -307,11 +310,14 @@ describe('authored chapter 1 quests', () => {
     const flags = new Set<string>();
     const ctx: DialogueContext = {
       level: 1,
+      mapId: 'pure_village',
       hasFlag: (n) => flags.has(n),
       setFlag: (n, on) => void (on ? flags.add(n) : flags.delete(n)),
       questState: (id) => log.state(id),
       startQuest: (id) => void log.start(id),
       completeQuest: (id) => void log.complete(id),
+      reportInteract: () => undefined,
+      endChapter: () => undefined,
     };
     const r = new DialogueRunner(DIALOGUES.hunter_intro!, ctx, '岩牙');
     r.advance(); // a -> b

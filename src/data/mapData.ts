@@ -18,8 +18,10 @@ export interface DungeonMapFile {
   population?: { monsters?: string[]; elites?: string[]; boss?: string };
   /** Buildings drawn over a rectangle of solid ("#") tiles. `style` and size must be one of BUILDING_VARIANTS. */
   buildings?: { style: string; x: number; y: number; w: number; h: number }[];
-  /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). */
-  npcs?: { id: string; x: number; y: number }[];
+  /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). A character can be on two maps if one placement is hidden by the flag that shows the other. */
+  npcs?: { id: string; x: number; y: number; requiresFlag?: string; hiddenByFlag?: string }[];
+  /** Things to examine (tile coordinates; the definition lives in data/interactables.ts). */
+  interactables?: { id: string; x: number; y: number }[];
 }
 
 /** On-disk portal: a tile rectangle that moves the player to `to.entrance` of map `to.map`. */
@@ -100,6 +102,15 @@ export interface NpcPlacement {
   id: string;
   /** Centre of its tile, in world units. */
   pos: Vec2;
+  /** Present only while this flag is set / only while it is not set (checked when the map is entered). */
+  requiresFlag?: string;
+  hiddenByFlag?: string;
+}
+
+/** A thing to examine standing somewhere on a map. */
+export interface InteractablePlacement {
+  id: string;
+  pos: Vec2;
 }
 
 /** The entrance every map has: where a new game (or a restart) puts the player. */
@@ -130,6 +141,7 @@ export interface MapData {
   buildings: Building[];
   /** Null means the default monster mix. */
   population: Population | null;
+  interactables: InteractablePlacement[];
 }
 
 const CRATE_HALF = 0.36;
@@ -281,7 +293,19 @@ export function parseMap(raw: unknown): MapData {
     if (props.some((p) => p.tileX === n.x && p.tileY === n.y)) {
       throw new MapParseError(`NPC "${n.id}" at (${n.x}, ${n.y}) stands on a crate`);
     }
-    npcs.push({ id: n.id, pos: { x: n.x + 0.5, y: n.y + 0.5 } });
+    npcs.push({ id: n.id, pos: { x: n.x + 0.5, y: n.y + 0.5 }, requiresFlag: n.requiresFlag, hiddenByFlag: n.hiddenByFlag });
+  }
+
+  const interactables: InteractablePlacement[] = [];
+  for (const it of file.interactables ?? []) {
+    if (typeof it?.id !== 'string' || !Number.isInteger(it.x) || !Number.isInteger(it.y)) {
+      throw new MapParseError('Every interactable needs a string "id" and integer tile x / y');
+    }
+    if (interactables.some((o) => o.id === it.id)) throw new MapParseError(`Interactable "${it.id}" is placed twice`);
+    if (tileAtRaw(tiles, width, height, it.x, it.y) !== TileType.FLOOR) {
+      throw new MapParseError(`Interactable "${it.id}" at (${it.x}, ${it.y}) is not on a floor tile`);
+    }
+    interactables.push({ id: it.id, pos: { x: it.x + 0.5, y: it.y + 0.5 } });
   }
 
   const buildings: Building[] = [];
@@ -319,5 +343,5 @@ export function parseMap(raw: unknown): MapData {
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings, population };
+  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings, population, interactables };
 }

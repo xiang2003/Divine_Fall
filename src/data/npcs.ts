@@ -20,7 +20,16 @@ export const NPCS: Record<string, NpcDef> = {
     title: '村長',
     spriteKey: SpriteKey.NPC_ELDER,
     scale: 0.95,
-    dialogue: [{ if: { flag: 'met_elder' }, graph: 'elder_repeat' }, { graph: 'elder_intro' }],
+    dialogue: [
+      { if: { quest: 'q3_resonance', state: 'ready' }, graph: 'elder_q3_turnin' },
+      { if: { quest: 'q4_stranded_boat', state: 'active' }, graph: 'elder_q4_active' },
+      { if: { quest: 'q4_stranded_boat', state: 'available' }, graph: 'elder_q4_offer' },
+      { if: { quest: 'q4_stranded_boat', state: 'completed' }, graph: 'elder_after' },
+      { if: { quest: 'q3_resonance', state: 'active' }, graph: 'elder_q3_active' },
+      { if: { all: [{ flag: 'has_shard' }, { quest: 'q3_resonance', state: 'available' }] }, graph: 'elder_q3_offer' },
+      { if: { flag: 'met_elder' }, graph: 'elder_repeat' },
+      { graph: 'elder_intro' },
+    ],
   },
   hunter_yanya: {
     id: 'hunter_yanya',
@@ -42,7 +51,14 @@ export const NPCS: Record<string, NpcDef> = {
     title: '汲水人',
     spriteKey: SpriteKey.NPC_WATERER,
     scale: 0.8,
-    dialogue: [{ if: { flag: 'met_xi' }, graph: 'waterer_repeat' }, { graph: 'waterer_intro' }],
+    dialogue: [
+      { if: { quest: 'q2_muddy_water', state: 'ready' }, graph: 'xi_q2_turnin' },
+      { if: { quest: 'q2_muddy_water', state: 'active' }, graph: 'xi_q2_active' },
+      { if: { all: [{ flag: 'met_xi' }, { quest: 'q2_muddy_water', state: 'available' }] }, graph: 'xi_q2_offer' },
+      { if: { quest: 'q2_muddy_water', state: 'completed' }, graph: 'xi_after' },
+      { if: { flag: 'met_xi' }, graph: 'waterer_repeat' },
+      { graph: 'waterer_intro' },
+    ],
   },
   boatwright_laodu: {
     id: 'boatwright_laodu',
@@ -50,7 +66,12 @@ export const NPCS: Record<string, NpcDef> = {
     title: '船匠',
     spriteKey: SpriteKey.NPC_BOATWRIGHT,
     scale: 0.78,
-    dialogue: [{ if: { flag: 'met_laodu' }, graph: 'boatwright_repeat' }, { graph: 'boatwright_intro' }],
+    dialogue: [
+      { if: { all: [{ map: 'pure_coast' }, { quest: 'q4_stranded_boat', state: 'active' }, { notFlag: 'laodu_ferry_checked' }] }, graph: 'laodu_coast_q4' },
+      { if: { all: [{ map: 'pure_coast' }, { flag: 'laodu_ferry_checked' }] }, graph: 'laodu_coast_after' },
+      { if: { flag: 'met_laodu' }, graph: 'boatwright_repeat' },
+      { graph: 'boatwright_intro' },
+    ],
   },
 };
 

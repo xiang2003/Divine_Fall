@@ -74,5 +74,12 @@
    "echo_guard"
   ],
   "boss": "ruins_guardian"
- }
+ },
+ "interactables": [
+  {
+   "id": "ruins_relic",
+   "x": 36,
+   "y": 29
+  }
+ ]
 }

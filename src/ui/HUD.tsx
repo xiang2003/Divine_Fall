@@ -53,12 +53,14 @@ export function HUD({
   inventoryActions,
   dialogueActions,
   onCloseQuestLog,
+  onDismissChapterEnd,
 }: {
   snapshot: GameSnapshot;
   onRestart: () => void;
   inventoryActions: InventoryActions;
   dialogueActions: DialogueActions;
   onCloseQuestLog: () => void;
+  onDismissChapterEnd: () => void;
 }) {
   if (snapshot.phase === 'loading') {
     return (
@@ -87,7 +89,7 @@ export function HUD({
         <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
       </div>
       <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · F 拾取 / 交談 · Q W E 技能 · F3 除錯
+        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · F 拾取 / 交談 / 調查 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
@@ -136,6 +138,17 @@ export function HUD({
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       <QuestTracker quests={snapshot.quests} npcName={npcName} />
       {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
+      {snapshot.chapterEnd && (
+        <div className="chapter-end" onContextMenu={(e) => e.preventDefault()}>
+          <h2>第一章　純源島</h2>
+          <p className="chapter-end-line">渡船載著你離開了島。</p>
+          <p className="muted">初胎之印在你的掌心微微發亮。海的另一邊，有一片你從未見過的陸地。</p>
+          <p className="muted">（第一章完。後面的故事還沒有寫。）</p>
+          <button type="button" onClick={onDismissChapterEnd}>
+            回到島上繼續探索
+          </button>
+        </div>
+      )}
       {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} {...dialogueActions} />}
       <Toast notice={snapshot.notice} />
       {snapshot.playerDead && (

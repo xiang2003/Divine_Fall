@@ -17,6 +17,13 @@ export const NPC_TALK_RANGE = 1.9;
 /** Height of the name tag above the feet, in art pixels. */
 const NAME_HEIGHT = 62;
 
+/** Is this placement present given the world flags (checked when a map is entered)? */
+export function npcPresent(p: Pick<NpcPlacement, 'requiresFlag' | 'hiddenByFlag'>, hasFlag: (name: string) => boolean): boolean {
+  if (p.requiresFlag && !hasFlag(p.requiresFlag)) return false;
+  if (p.hiddenByFlag && hasFlag(p.hiddenByFlag)) return false;
+  return true;
+}
+
 /** The solid square an NPC occupies, for CollisionSystem. */
 export function npcBounds(pos: Vec2): Rect {
   return { minX: pos.x - NPC_HALF, minY: pos.y - NPC_HALF, maxX: pos.x + NPC_HALF, maxY: pos.y + NPC_HALF };

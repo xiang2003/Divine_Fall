@@ -269,7 +269,7 @@ function matches(o: ObjectiveDef, h: QuestHappening): number {
 /** Structural problems in the quest data (an empty list means it is sound). References are checked against the given id sets. */
 export function validateQuests(
   defs: Readonly<Record<string, QuestDef>>,
-  known: { npcs: ReadonlySet<string>; maps: ReadonlySet<string>; monsters: ReadonlySet<string> },
+  known: { npcs: ReadonlySet<string>; maps: ReadonlySet<string>; monsters: ReadonlySet<string>; interactables?: ReadonlySet<string> },
 ): string[] {
   const problems: string[] = [];
   for (const [key, q] of Object.entries(defs)) {
@@ -290,6 +290,9 @@ export function validateQuests(
         if (!(o.count >= 1)) problems.push(`${where}: kill objective needs count >= 1`);
         if (o.map && !known.maps.has(o.map)) problems.push(`${where}: kill objective names unknown map "${o.map}"`);
         if (o.monster && !known.monsters.has(o.monster)) problems.push(`${where}: kill objective names unknown monster "${o.monster}"`);
+      }
+      if (o.type === 'interact' && known.interactables && !known.interactables.has(o.target)) {
+        problems.push(`${where}: interact objective names unknown target "${o.target}"`);
       }
       if (o.type === 'collect' && !(o.count >= 1)) problems.push(`${where}: collect objective needs count >= 1`);
     }

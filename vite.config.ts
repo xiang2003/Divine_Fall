@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // `base: './'` makes every built URL relative, so the same build works at the
@@ -9,9 +9,5 @@ export default defineConfig({
   plugins: [react()],
   build: {
     chunkSizeWarningLimit: 900,
-  },
-  test: {
-    include: ['tests/**/*.test.ts'],
-    environment: 'node',
   },
 });

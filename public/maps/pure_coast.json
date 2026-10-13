@@ -68,5 +68,20 @@
    "w": 5,
    "h": 3
   }
+ ],
+ "interactables": [
+  {
+   "id": "ferry_board",
+   "x": 27,
+   "y": 16
+  }
+ ],
+ "npcs": [
+  {
+   "id": "boatwright_laodu",
+   "x": 31,
+   "y": 14,
+   "requiresFlag": "coast_open"
+  }
  ]
 }

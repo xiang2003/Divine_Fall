@@ -135,7 +135,8 @@
   {
    "id": "boatwright_laodu",
    "x": 35,
-   "y": 24
+   "y": 24,
+   "hiddenByFlag": "coast_open"
   }
  ]
 }

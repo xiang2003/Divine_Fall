@@ -156,6 +156,181 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
       bye: { text: '滾吧滾吧，別擋著我的光。', end: true },
     },
   },
+
+  // ==== 任務 2：渾濁的水源（汐）============================================================================
+  xi_q2_offer: {
+    id: 'xi_q2_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '水……又變了。今天，連井底都有那股味道。', next: 'b' },
+      b: { text: '源泉洞在林道北邊的林間空地。我、我不敢一個人進去。你……願意幫我看看嗎？', choices: [
+        { text: '好，我去看看。', to: 'accept' },
+        { text: '讓我準備一下。', to: 'later' },
+      ] },
+      accept: { text: '謝謝……！洞裡的東西，不太對勁。請小心。', startQuest: 'q2_muddy_water', end: true },
+      later: { text: '嗯……我等你。', end: true },
+    },
+  },
+  xi_q2_active: {
+    id: 'xi_q2_active',
+    start: 'a',
+    nodes: {
+      a: { text: '洞口在林道北邊的林間空地，往北走就看得見。那裡的鳥……全都不叫了。', end: true },
+    },
+  },
+  xi_q2_turnin: {
+    id: 'xi_q2_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '你回來了……！（她盯著你胸前透出的微光）那、那是什麼？', next: 'b' },
+      b: { text: '洞裡的水……是不是活的？我一直覺得，它在看著我們。', next: 'c' },
+      c: { text: '那天你把碎片握在手裡的時候，你的手指，也亮了一下。你……沒發現嗎？', completeQuest: 'q2_muddy_water', next: 'd' },
+      d: { text: '把它給村長看吧。村長……一定知道些什麼。', end: true },
+    },
+  },
+  xi_after: {
+    id: 'xi_after',
+    start: 'a',
+    nodes: {
+      a: { text: '水還是濁的，但我覺得……它在等什麼。', choices: [
+        { text: '妳的眼睛真的很敏銳。', to: 'thanks' },
+        { text: '我會查清楚的。', to: 'bye' },
+      ] },
+      thanks: { text: '我、我只是……看得比較久而已。', next: 'bye' },
+      bye: { text: '嗯。路上小心。', end: true },
+    },
+  },
+
+  // ==== 任務 3：共鳴（祈漪）===============================================================================
+  elder_q3_offer: {
+    id: 'elder_q3_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '汐跟我說了。你在洞底……撿到了東西？拿來，讓我看看。', next: 'b' },
+      b: { text: '（祈漪接過碎片，指尖微微發抖。碎片在祈漪手裡暗了下去，回到你手上時，又亮了。）', next: 'c' },
+      c: { text: '它該去的地方是遺跡。入口的封石只對某種血有反應……我本來希望，這一天能晚一點來。', choices: [
+        { text: '「某種血」是什麼意思？', to: 'blood' },
+        { text: '我去。', to: 'accept' },
+      ] },
+      blood: { text: '我現在不能說。等你帶著答案回來，我再把剩下的話說完。', next: 'accept' },
+      accept: { text: '封石會認得你。去吧——裡面的東西，會模仿你以為熟悉的樣子。別被騙了。', startQuest: 'q3_resonance', end: true },
+    },
+  },
+  elder_q3_active: {
+    id: 'elder_q3_active',
+    start: 'a',
+    nodes: {
+      a: { text: '封石已經鬆開了。遺跡在林道最東邊。', end: true },
+    },
+  },
+  elder_q3_turnin: {
+    id: 'elder_q3_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '（你手心的印記，與祈漪頸間的貝殼同時發出了很輕的聲響。祈漪久久沒有說話。）', next: 'b' },
+      b: { text: '我曾經希望你一輩子都不需要走進那裡。', completeQuest: 'q3_resonance', next: 'c' },
+      c: { text: '既然它醒了，我不該再替你藏下去了……但今天還不行。', next: 'd' },
+      d: { text: '去海岸看看吧。有些事，要先讓你自己看見。', end: true },
+    },
+  },
+  elder_q4_offer: {
+    id: 'elder_q4_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '昨夜，海岸擱淺了一艘船。不是我們島上的船。', next: 'b' },
+      b: { text: '老舵說，它是遺跡醒來的那一夜靠岸的。你帶著初胎之印……去看看吧。', choices: [
+        { text: '我去海岸。', to: 'accept' },
+        { text: '讓我再想一想。', to: 'later' },
+      ] },
+      accept: { text: '去吧。南邊的路，我讓人替你讓開了。', startQuest: 'q4_stranded_boat', end: true },
+      later: { text: '船不會自己走……至少，我希望它不會。', end: true },
+    },
+  },
+  elder_q4_active: {
+    id: 'elder_q4_active',
+    start: 'a',
+    nodes: {
+      a: { text: '海岸在村子南邊，老舵已經過去了。', end: true },
+    },
+  },
+  elder_after: {
+    id: 'elder_after',
+    start: 'a',
+    nodes: {
+      a: { text: '你長大了。比我預想的，快得多。', end: true },
+    },
+  },
+
+  // ==== 任務 4：擱淺的渡船（老舵、渡船）================================================================
+  laodu_coast_q4: {
+    id: 'laodu_coast_q4',
+    start: 'a',
+    nodes: {
+      a: { text: '站住！……是你啊。別碰那船的板子，我還沒檢查完！', next: 'b' },
+      b: { text: '這船不是我們造的。金屬跟骨頭是長在一起的——這接縫，比我做過的任何東西都漂亮。我、不、服。', next: 'c' },
+      c: { text: '它是昨晚遺跡醒來的時候靠岸的。船頭那盞燈，只在你靠近的時候才亮。', choices: [
+        { text: '它在等我？', to: 'wait' },
+        { text: '你覺得它安全嗎？', to: 'safe' },
+      ] },
+      wait: { text: '別問我，木頭腦袋。我只是個修船的。', next: 'd' },
+      safe: { text: '安全？我連它是什麼木頭——是不是木頭——都不知道。', next: 'd' },
+      d: { text: '想上去就上去，不想就滾。……不過，別讓人家把我修的船板給整壞了。', set: ['laodu_ferry_checked'], end: true },
+    },
+  },
+  laodu_coast_after: {
+    id: 'laodu_coast_after',
+    start: 'a',
+    nodes: {
+      a: { text: '船在那兒。想好了就上去，別在我面前磨蹭。', end: true },
+    },
+  },
+  ferry_look: {
+    id: 'ferry_look',
+    start: 'a',
+    nodes: {
+      a: { text: '一艘擱淺的船。金屬板與蒼白的骨肋拼成船身，接縫找不到一絲痕跡。船頭的燈是暗的。', end: true },
+    },
+  },
+  ferry_need_laodu: {
+    id: 'ferry_need_laodu',
+    start: 'a',
+    nodes: {
+      a: { text: '船身冰涼。不遠處，老舵正瞪著你。——先去問問老舵怎麼看吧。', end: true },
+    },
+  },
+  ferry_board: {
+    id: 'ferry_board',
+    start: 'a',
+    nodes: {
+      a: { text: '船身冰涼，金屬與骨肋的接縫漂亮得不像人手做的。你靠近的時候，船頭那盞冷藍色的燈亮了。', choices: [
+        { text: '登上渡船。', to: 'go' },
+        { text: '再等一下。', to: 'wait' },
+      ] },
+      go: { text: '你踏上甲板。船沒有帆，也沒有槳，卻開始緩緩滑向海面。岸上，有人在喊你的名字。', interact: 'ferry_board', completeQuest: 'q4_stranded_boat', next: 'end' },
+      end: { text: '——海的另一邊，有一片你從未見過的陸地。', endChapter: true, end: true },
+      wait: { text: '你退後一步。燈，暗了下去。', end: true },
+    },
+  },
+
+  // ==== 互動物件 ===========================================================================================
+  shard_find: {
+    id: 'shard_find',
+    start: 'a',
+    nodes: {
+      a: { text: '水池南岸的碎石間，嵌著一塊會發光的碎片，像一顆還沒睡著的心。', next: 'b' },
+      b: { text: '你伸手去碰——手上的血管像被點亮似的，一條金色的細線順著手臂亮了起來。', set: ['has_shard'], next: 'c' },
+      c: { text: '碎片溫熱，不燙。你把它收進懷裡。洞裡的水，安靜了一瞬。', end: true },
+    },
+  },
+  relic_take: {
+    id: 'relic_take',
+    start: 'a',
+    nodes: {
+      a: { text: '石像崩解之後，基座上浮著一枚圓印——像一塊胎盤，又像一隻閉著的眼睛。', next: 'b' },
+      b: { text: '你懷裡的碎片同時發亮。兩道光合在一起，沉進了你的掌心。', set: ['has_relic'], next: 'c' },
+      c: { text: '牆上的壁畫在微光裡浮現：四片大陸的輪廓，環繞著中央的裂口。——卻沒有畫出這座島。', end: true },
+    },
+  },
 };
 
 export function getDialogue(id: string): DialogueGraph {

@@ -21,7 +21,7 @@ import {
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
 import { BUILDING_VARIANTS, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
-import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawRock, drawSandTile, drawWaterTile } from './TerrainArt';
+import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
 import type { MapTheme } from '../data/mapData';
 import { drawCrate, drawFloorTile, drawGrassTile, drawMoveMarker, drawShadow, drawTreeBlock, drawWallBlock, makeCanvas } from './PlaceholderArt';
 
@@ -72,6 +72,8 @@ export const SpriteKey = {
   WATER_SHADE: 'monster.water_shade',
   ECHO: 'monster.echo',
   BOSS: 'monster.boss',
+  SHARD: 'object.shard',
+  RELIC: 'object.relic',
   NPC_ELDER: 'npc.elder',
   NPC_HUNTER: 'npc.hunter',
   NPC_WATERER: 'npc.waterer',
@@ -177,6 +179,8 @@ function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: n
 }
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
+  terrainSprite(SpriteKey.SHARD, 64, 64, 0.25, drawShard),
+  terrainSprite(SpriteKey.RELIC, 64, 64, 0.25, drawRelic),
   ...SAND_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawSandTile(i))),
   ...CAVE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i))),
   ...SEA_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('sea', i))),
