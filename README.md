@@ -132,6 +132,8 @@ npm run preview    # 預覽 production build
 ## 專案結構
 
 ```
+docs/lore/world-bible.md       世界觀設定（最高優先級的設定來源）
+docs/design/                 設計文件（chapter1-pure-source-island.md：第一章地圖、劇情、NPC、任務的提案，尚未實作）
 public/maps/dungeon.json     固定地城（ASCII 版面，格式說明見檔內 legend）
 public/assets/*              素材目錄（目前皆為空，使用內建佔位圖）
 src/config/                  標題 / Logo（branding.ts）、鍵位與各項數值（gameConfig.ts）
