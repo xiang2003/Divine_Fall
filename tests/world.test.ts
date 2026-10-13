@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { MONSTERS } from '../src/data/monsters';
+import { planSpawns } from '../src/systems/spawnPlan';
+import { mulberry32 } from '../src/systems/rng';
 import { MapParseError, TileType, parseMap, tileAt, type MapData } from '../src/data/mapData';
 import { START_MAP_ID, WORLD_MAP_FILES, checkWorldLinks } from '../src/data/worldMaps';
 import { BUILDING_VARIANTS, buildingCanvasSize, isBuildingVariant } from '../src/game/BuildingArt';
@@ -319,5 +322,46 @@ describe('beach and cave maps', () => {
     expect(village.portals.find((p) => p.to.map === 'pure_coast')?.requiresFlag).toBe('coast_open');
     const forest = load('pure_forest');
     expect(forest.portals.find((p) => p.to.map === 'pure_spring_cave')?.requiresFlag).toBeUndefined();
+  });
+});
+
+describe('map populations', () => {
+  it('parses a population and rejects malformed ones', () => {
+    const layout = ['####', '#Pm#', '####'];
+    const map = parseMap({ id: 'a', name: 'A', layout, population: { monsters: ['warped'], elites: ['echo_guard'], boss: 'ruins_guardian' } });
+    expect(map.population).toEqual({ monsters: ['warped'], elites: ['echo_guard'], boss: 'ruins_guardian' });
+    expect(parseMap({ id: 'a', name: 'A', layout }).population).toBeNull();
+    expect(() => parseMap({ id: 'a', name: 'A', layout, population: { monsters: 'warped' } })).toThrow(/list of monster ids/);
+    expect(() => parseMap({ id: 'a', name: 'A', layout, population: { boss: 5 } })).toThrow(/monster id/);
+  });
+
+  it('every monster a real map names exists, and the chapter maps use the island monsters', () => {
+    const used = new Map<string, Set<string>>();
+    for (const [id, file] of Object.entries(WORLD_MAP_FILES)) {
+      const map = parseMap(JSON.parse(readFileSync(new URL(`../public/${file}`, import.meta.url), 'utf8')) as unknown);
+      const ids = [...(map.population?.monsters ?? []), ...(map.population?.elites ?? []), ...(map.population?.boss ? [map.population.boss] : [])];
+      for (const m of ids) expect(Object.keys(MONSTERS), `${id}: ${m}`).toContain(m);
+      used.set(id, new Set(ids));
+    }
+    expect(used.get('pure_forest')).toContain('forest_fang');
+    expect(used.get('pure_spring_cave')).toContain('water_shade');
+    expect(used.get('pure_ruins')).toContain('ruins_guardian');
+  });
+
+  it('planSpawns follows the population in order, falls back to the default mix, and rejects unknown ids', () => {
+    const spawns = { player: { x: 1, y: 1 }, monsters: [{ x: 2, y: 2 }, { x: 3, y: 3 }, { x: 4, y: 4 }], elites: [{ x: 5, y: 5 }], boss: { x: 6, y: 6 }, exit: null };
+    const plan = planSpawns(spawns, mulberry32(1), { monsters: ['forest_fang', 'warped'], elites: ['echo_guard'], boss: 'ruins_guardian' });
+    expect(plan.map((p) => p.def.id)).toEqual(['forest_fang', 'warped', 'forest_fang', 'echo_guard', 'ruins_guardian']);
+    expect(plan[3]!.affixes.length).toBeGreaterThan(0);
+    expect(planSpawns(spawns, mulberry32(1)).map((p) => p.def.id)).toEqual(['ghoul', 'shade', 'hound', 'ghoul', 'archon']);
+    expect(() => planSpawns(spawns, mulberry32(1), { monsters: ['nope'], elites: [], boss: null })).toThrow(/Unknown monster/);
+  });
+
+  it('the island monsters are weaker than the boss and fit their roles', () => {
+    expect(MONSTERS.forest_fang.maxHp).toBeLessThan(MONSTERS.warped.maxHp);
+    expect(MONSTERS.warped.maxHp).toBeLessThan(MONSTERS.echo_guard.maxHp);
+    expect(MONSTERS.water_shade.behavior).toBe('ranged');
+    expect(MONSTERS.ruins_guardian.isBoss).toBe(true);
+    expect(MONSTERS.ruins_guardian.bossAttacks?.length).toBeGreaterThan(0);
   });
 });

@@ -335,7 +335,7 @@ export class Game {
     const w = this.world;
     if (!w) return;
     w.player.respawn(w.map.spawns.player);
-    w.monsters.spawnAll(w.map.spawns, defaultRng);
+    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population);
     w.telegraphFx.hide();
     w.novaFx.hide();
     this.telegraphOwner = null;
@@ -532,7 +532,7 @@ export class Game {
       playerDied: () => this.publishVitals(),
     });
     monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
-    monsters.spawnAll(map.spawns, defaultRng);
+    monsters.spawnAll(map.spawns, defaultRng, map.population);
 
     player.hooks = {
       swingStarted: (dx, dy, duration) =>
@@ -685,7 +685,7 @@ export class Game {
     const w = this.world;
     if (!w || w.player.isDead) return;
     w.player.hp = w.player.stats.maxHp;
-    w.monsters.spawnAll(w.map.spawns, defaultRng);
+    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population);
     w.projectiles.clear();
     w.telegraphFx.hide();
     this.telegraphOwner = null;

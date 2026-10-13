@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { MapSpawns } from '../data/mapData';
+import type { MapSpawns, Population } from '../data/mapData';
 import { Monster, type MonsterHooks, type MonsterTarget } from '../entities/Monster';
 import { MonsterView } from '../entities/MonsterView';
 import type { AssetLoader } from '../game/AssetLoader';
@@ -45,9 +45,9 @@ export class MonsterAISystem {
    * Removes everything and spawns the whole map population: normal monsters, elites (with freshly rolled
    * affixes) and the boss. `rng` drives affix rolls and boss attack choices.
    */
-  spawnAll(spawns: MapSpawns, rng: Rng): void {
+  spawnAll(spawns: MapSpawns, rng: Rng, population: Population | null = null): void {
     this.clear();
-    const plan = planSpawns(spawns, rng);
+    const plan = planSpawns(spawns, rng, population);
     for (const entry of plan) this.spawn(new Monster(entry.def, entry.pos, { affixes: entry.affixes, rng }));
     this.spawnedTotal = plan.length;
   }

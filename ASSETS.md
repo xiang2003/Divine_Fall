@@ -29,6 +29,7 @@
 | terrain.sand / cave / sea / murk | 沙灘、洞窟地面，海水與混濁泉水（2 倍解析度繪製） | 專案內建佔位圖（[TerrainArt.ts](src/game/TerrainArt.ts)） | 專案自有 |
 | terrain.boulder / pillar | 沙灘的大石頭、洞窟的石筍 | 專案內建佔位圖（同上） | 專案自有 |
 | building.ferry | 擱淺的渡船 | 專案內建佔位圖（[BuildingArt.ts](src/game/BuildingArt.ts)） | 專案自有 |
+| monster.fang / warped / water_shade / echo | 林牙獸、畸變體、水影、仿神守衛（原有人形與獸形佔位圖的新配色） | 專案內建佔位圖（[CharacterArt.ts](src/game/CharacterArt.ts)） | 專案自有 |
 | fx.loot_ring | 地面掉落物的品質光圈（執行時依品質染色） | 專案內建佔位圖 | 專案自有 |
 
 ## 目前使用中的第三方素材（2026-10-13 加入）

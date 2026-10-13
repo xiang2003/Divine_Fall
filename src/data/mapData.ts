@@ -14,6 +14,8 @@ export interface DungeonMapFile {
   entrances?: Record<string, { x: number; y: number }>;
   /** Walk-in doors to other maps. */
   portals?: PortalFile[];
+  /** Which monsters stand on this map's spawn points (ids from data/monsters.ts). Omitted: the default mix. */
+  population?: { monsters?: string[]; elites?: string[]; boss?: string };
   /** Buildings drawn over a rectangle of solid ("#") tiles. `style` and size must be one of BUILDING_VARIANTS. */
   buildings?: { style: string; x: number; y: number; w: number; h: number }[];
   /** Characters standing on the map (tile coordinates; the definition lives in data/npcs.ts). */
@@ -76,6 +78,13 @@ export interface Portal {
   blockedText?: string;
 }
 
+/** Which monsters a map uses; spawn points take them in order, cycling. */
+export interface Population {
+  monsters: string[];
+  elites: string[];
+  boss: string | null;
+}
+
 /** A building: a sprite drawn over a rectangle of solid tiles (the tiles do the blocking). */
 export interface Building {
   style: string;
@@ -119,6 +128,8 @@ export interface MapData {
   portals: Portal[];
   npcs: NpcPlacement[];
   buildings: Building[];
+  /** Null means the default monster mix. */
+  population: Population | null;
 }
 
 const CRATE_HALF = 0.36;
@@ -293,8 +304,20 @@ export function parseMap(raw: unknown): MapData {
     buildings.push({ style: b.style, x: b.x, y: b.y, w: b.w, h: b.h });
   }
 
+  let population: Population | null = null;
+  if (file.population) {
+    const list = (v: unknown, what: string): string[] => {
+      if (v === undefined) return [];
+      if (!Array.isArray(v) || !v.every((x) => typeof x === 'string')) throw new MapParseError(`Population "${what}" must be a list of monster ids`);
+      return v as string[];
+    };
+    const boss = file.population.boss;
+    if (boss !== undefined && typeof boss !== 'string') throw new MapParseError('Population "boss" must be a monster id');
+    population = { monsters: list(file.population.monsters, 'monsters'), elites: list(file.population.elites, 'elites'), boss: boss ?? null };
+  }
+
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings };
+  return { id: file.id, name: file.name, theme, width, height, tiles, props, spawns, entrances, portals, npcs, buildings, population };
 }

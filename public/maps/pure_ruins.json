@@ -64,5 +64,15 @@
     "entrance": "from_ruins"
    }
   }
- ]
+ ],
+ "population": {
+  "monsters": [
+   "warped",
+   "echo_guard"
+  ],
+  "elites": [
+   "echo_guard"
+  ],
+  "boss": "ruins_guardian"
+ }
 }

@@ -300,6 +300,48 @@ const SHADE_STYLE: HumanoidStyle = {
   hood: true,
 };
 
+/** The warped: island creatures with limbs that do not belong to them. Pale grey-green, hunched, violet eyes. */
+const WARPED_STYLE: HumanoidStyle = {
+  cloak: '#6f8077',
+  cloakDark: '#26302b',
+  skin: '#aeb8a4',
+  eye: '#c47bff',
+  accent: '#4a3d58',
+  scale: 1.05,
+  hunch: 5,
+  floating: false,
+  weapon: 'claw',
+  hood: false,
+};
+
+/** A water shade: a drifting shape of the fouled spring, teal with cold eyes. */
+const WATER_SHADE_STYLE: HumanoidStyle = {
+  cloak: '#2f6a70',
+  cloakDark: '#0f2a2e',
+  skin: '#8fb6b2',
+  eye: '#b6fff0',
+  accent: '#58c2b4',
+  scale: 1,
+  hunch: 0,
+  floating: true,
+  weapon: 'orb',
+  hood: true,
+};
+
+/** A stone guardian's echo: sandstone body, the posture of an ancient warden, cyan eyes. */
+const ECHO_STYLE: HumanoidStyle = {
+  cloak: '#8c8576',
+  cloakDark: '#3d3a33',
+  skin: '#b3ab98',
+  eye: '#7be0ff',
+  accent: '#c9a85a',
+  scale: 1.18,
+  hunch: 0,
+  floating: false,
+  weapon: 'sword',
+  hood: false,
+};
+
 const ARCHON_STYLE: HumanoidStyle = {
   cloak: '#5a1d2e',
   cloakDark: '#1b070d',
@@ -403,15 +445,32 @@ export function drawGhoulSheet(): HTMLCanvasElement {
   return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, GHOUL_STYLE));
 }
 
+export function drawWarpedSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, WARPED_STYLE));
+}
+
+export function drawWaterShadeSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, WATER_SHADE_STYLE));
+}
+
+export function drawEchoSheet(): HTMLCanvasElement {
+  return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, ECHO_STYLE));
+}
+
+export function drawFangSheet(): HTMLCanvasElement {
+  return drawHoundSheet(true);
+}
+
 export function drawShadeSheet(): HTMLCanvasElement {
   return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, SHADE_STYLE));
 }
 
 /** Four-legged beast: low body, head forward, lunges on the attack frames. */
-export function drawHoundSheet(): HTMLCanvasElement {
+/** `wild` is the island's fang beast: sandy brown, wolf-like, with amber eyes. The default is the red hound of the ruins. */
+export function drawHoundSheet(wild = false): HTMLCanvasElement {
   return buildSheet((ctx, pose) => {
-    const body = pose.hurt ? '#c0453a' : '#7a3b3b';
-    const dark = '#2a1212';
+    const body = pose.hurt ? '#c0453a' : wild ? '#8b6b43' : '#7a3b3b';
+    const dark = wild ? '#2b2014' : '#2a1212';
     const lunge = pose.attack >= 0 ? [-3, -6, 8, 3][pose.attack]! : 0;
     ctx.translate(lunge, 0);
     const bob = pose.bob;
@@ -420,7 +479,7 @@ export function drawHoundSheet(): HTMLCanvasElement {
     ctx.fillStyle = dark;
     ctx.fillRect(-12 + stride, -10, 4, 10);
     ctx.fillRect(6 - stride, -10, 4, 10);
-    ctx.fillStyle = '#5c2a2a';
+    ctx.fillStyle = wild ? '#6a5133' : '#5c2a2a';
     ctx.fillRect(-7 - stride, -10, 4, 10);
     ctx.fillRect(11 + stride, -10, 4, 10);
     // body

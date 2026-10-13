@@ -101,5 +101,14 @@
    "requiresFlag": "ruins_open",
    "blockedText": "封石紋絲不動。"
   }
- ]
+ ],
+ "population": {
+  "monsters": [
+   "forest_fang",
+   "forest_fang",
+   "forest_fang",
+   "forest_fang",
+   "warped"
+  ]
+ }
 }
