@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { parseMap } from '../src/data/mapData';
 import { CABIN_SPRITES } from '../src/game/BuildingArt';
 import { ASSET_MANIFEST, DECOR_KINDS, PROP_KEYS, THEME_SCATTER } from '../src/game/assetManifest';
-import { DIRECTION_COUNT, directionIndex } from '../src/game/directions';
+import { POSE_FRAMES } from '../src/game/DirectionalAnimator';
+import { DIRECTION_COUNT, Facing, directionIndex } from '../src/game/directions';
 
 const PUBLIC = join(__dirname, '..', 'public');
 
@@ -85,26 +86,39 @@ describe('map ground and decor', () => {
 });
 
 describe('directionIndex', () => {
-  it('maps the four world axes to the diagonal screen directions', () => {
-    // +x runs to the lower right of the screen (front-right), +y to the lower left (front-left)
-    expect(directionIndex(1, 0)).toBe(2);
-    expect(directionIndex(0, 1)).toBe(4);
-    expect(directionIndex(-1, 0)).toBe(6);
-    expect(directionIndex(0, -1)).toBe(0);
+  it('faces sideways when walking along a world axis (screen diagonals)', () => {
+    expect(directionIndex(1, 0)).toBe(Facing.RIGHT); // +x runs toward the lower right of the screen
+    expect(directionIndex(0, -1)).toBe(Facing.RIGHT);
+    expect(directionIndex(0, 1)).toBe(Facing.LEFT); // +y runs toward the lower left
+    expect(directionIndex(-1, 0)).toBe(Facing.LEFT);
   });
 
-  it('maps straight down / up / left / right on screen', () => {
-    expect(directionIndex(1, 1)).toBe(3); // toward the camera
-    expect(directionIndex(-1, -1)).toBe(7); // away from it
-    expect(directionIndex(1, -1)).toBe(1);
-    expect(directionIndex(-1, 1)).toBe(5);
+  it('faces front or back when walking straight down / up the screen', () => {
+    expect(directionIndex(1, 1)).toBe(Facing.FRONT); // toward the camera
+    expect(directionIndex(-1, -1)).toBe(Facing.BACK); // away from it
   });
 
-  it('always lands in range', () => {
+  it('always lands in range and uses every facing', () => {
+    const seen = new Set<number>();
     for (let a = 0; a < 360; a += 7) {
       const i = directionIndex(Math.cos((a * Math.PI) / 180), Math.sin((a * Math.PI) / 180));
       expect(i).toBeGreaterThanOrEqual(0);
       expect(i).toBeLessThan(DIRECTION_COUNT);
+      seen.add(i);
+    }
+    expect(seen.size).toBe(DIRECTION_COUNT);
+  });
+});
+
+describe('character sheets', () => {
+  it('have a row per facing and every pose column inside the sheet', () => {
+    for (const key of ['char.hero', 'npc.elder', 'npc.hunter', 'npc.waterer', 'npc.boatwright']) {
+      const def = ASSET_MANIFEST.find((d) => d.key === key)!;
+      const { width, height } = pngSize(join(PUBLIC, def.url!));
+      expect(height / def.frameHeight, key).toBe(DIRECTION_COUNT);
+      for (const { frames } of Object.values(POSE_FRAMES)) {
+        for (const col of frames) expect(col, key).toBeLessThan(width / def.frameWidth);
+      }
     }
   });
 });

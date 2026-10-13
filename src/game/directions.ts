@@ -1,16 +1,17 @@
 /** Number of facing directions in the character sheets (tools/prepare_characters.py). */
-export const DIRECTION_COUNT = 8;
+export const DIRECTION_COUNT = 4;
+
+/** Sheet rows, in order: the figure seen from the front (toward the camera), facing right, from behind, facing left. */
+export const Facing = { FRONT: 0, RIGHT: 1, BACK: 2, LEFT: 3 } as const;
 
 /**
- * Which of the 8 directions of a character sheet looks along a world-space vector.
- * Sheet order, seen from the isometric camera: 0 back-right, 1 right, 2 front-right, 3 front (toward the camera),
- * 4 front-left, 5 left, 6 back-left, 7 back (away from the camera).
- * World +x runs toward the lower right of the screen and +y toward the lower left.
+ * Which of the 4 facings looks along a world-space vector. World +x runs toward the lower right of the screen and +y toward the
+ * lower left, so the screen vector is (dx - dy, (dx + dy) / 2). Walking along a world axis is the common case and lands exactly
+ * between two facings, so sideways wins ties: +x and -y face right, +y and -x face left; pure screen up / down give back / front.
  */
 export function directionIndex(dx: number, dy: number): number {
-  const screenX = dx - dy;
-  const screenY = (dx + dy) / 2; // down is positive
-  const degrees = (Math.atan2(screenY, screenX) * 180) / Math.PI;
-  const step = Math.round(degrees / 45); // -4 .. 4, 0 = screen right, 2 = screen down
-  return (((step + 1) % DIRECTION_COUNT) + DIRECTION_COUNT) % DIRECTION_COUNT;
+  const sx = dx - dy;
+  const sy = dx + dy; // twice the screen y; down is positive
+  if (Math.abs(sx) >= Math.abs(sy) * 0.9) return sx >= 0 ? Facing.RIGHT : Facing.LEFT;
+  return sy > 0 ? Facing.FRONT : Facing.BACK;
 }

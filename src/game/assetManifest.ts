@@ -66,8 +66,7 @@ export const SpriteKey = {
   ICON_BOOTS: 'item.boots',
   ICON_RING: 'item.ring',
   PLAYER: 'char.player',
-  HERO_IDLE: 'char.hero_idle',
-  HERO_RUN: 'char.hero_run',
+  HERO: 'char.hero',
   GHOUL: 'monster.ghoul',
   SHADE: 'monster.shade',
   HOUND: 'monster.hound',
@@ -241,8 +240,8 @@ function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: n
   };
 }
 
-/** Frame size of the 8-direction character sheets and how much they are shrunk (see directionalCharacters below). */
-const CHARACTER_FRAME = { width: 132, height: 164, scale: 0.33 };
+/** Frame size of the 4-facing pixel-art character sheets and how much they are enlarged (see directionalCharacters below). */
+const CHARACTER_FRAME = { width: 32, height: 32, scale: 2.5 };
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
   terrainSprite(SpriteKey.SHARD, 64, 64, 0.25, drawShard),
@@ -376,46 +375,48 @@ function characterSprite(
 }
 
 /**
- * Characters with 8 facing directions (Kenney's isometric figure, re-coloured; see ASSETS.md and tools/prepare_characters.py).
- * Idle sheets are 8 frames in a row (one per direction); the hero also has a run sheet of 8 rows x 10 frames.
- * Frames are 132 x 164 px, shown at a third of that size. If an image fails to load, the old procedural figure stands in.
+ * Characters with 4 facings (front, right, back, left): Shade's pixel-art "Puny Characters" (see ASSETS.md and
+ * tools/prepare_characters.py). Each sheet is 24 columns x 4 rows (one row per facing) of 32 px frames holding every pose
+ * (columns per pose: DirectionalAnimator.POSE_FRAMES), drawn without smoothing at 2.5x. If an image fails to load, the old
+ * procedural figure stands in (one frame repeated).
  */
 
-function directionalPlaceholder(base: () => HTMLCanvasElement, columns: number, rows: number): () => HTMLCanvasElement {
+export const CHARACTER_SHEET = { columns: 24, rows: 4 };
+
+function directionalPlaceholder(base: () => HTMLCanvasElement): () => HTMLCanvasElement {
   return () => {
     const frame = base(); // the procedural sheets start with a 64 x 64 idle frame
-    const [canvas, ctx] = makeCanvas(CHARACTER_FRAME.width * columns, CHARACTER_FRAME.height * rows);
-    ctx.imageSmoothingEnabled = false;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < columns; c++) {
-        ctx.drawImage(frame, 0, 0, 64, 64, c * CHARACTER_FRAME.width + 2, (r + 1) * CHARACTER_FRAME.height - 128 - 2, 128, 128);
+    const { width, height } = CHARACTER_FRAME;
+    const [canvas, ctx] = makeCanvas(width * CHARACTER_SHEET.columns, height * CHARACTER_SHEET.rows);
+    for (let r = 0; r < CHARACTER_SHEET.rows; r++) {
+      for (let c = 0; c < CHARACTER_SHEET.columns; c++) {
+        ctx.drawImage(frame, 0, 0, 64, 64, c * width, r * height, width, height);
       }
     }
     return canvas;
   };
 }
 
-function directionalSheet(key: string, url: string, columns: number, rows: number, base: () => HTMLCanvasElement): SpriteAssetDef {
+function directionalSheet(key: string, name: string, base: () => HTMLCanvasElement): SpriteAssetDef {
   return {
     key,
-    url,
+    url: `assets/characters/${name}.png`,
     frameWidth: CHARACTER_FRAME.width,
     frameHeight: CHARACTER_FRAME.height,
     displayScale: CHARACTER_FRAME.scale,
-    smooth: true,
-    anchor: { x: 0.5, y: 4 / CHARACTER_FRAME.height },
-    placeholder: directionalPlaceholder(base, columns, rows),
+    // the figure's feet are at row 24 of the 32 px frame
+    anchor: { x: 0.5, y: 8 / CHARACTER_FRAME.height },
+    placeholder: directionalPlaceholder(base),
   };
 }
 
 function directionalCharacters(): SpriteAssetDef[] {
   return [
-    directionalSheet(SpriteKey.HERO_IDLE, 'assets/characters/hero_idle.png', 8, 1, drawPlayerSheet),
-    directionalSheet(SpriteKey.HERO_RUN, 'assets/characters/hero_run.png', 10, 8, drawPlayerSheet),
-    directionalSheet(SpriteKey.NPC_ELDER, 'assets/characters/elder_idle.png', 8, 1, drawElderSheet),
-    directionalSheet(SpriteKey.NPC_HUNTER, 'assets/characters/hunter_idle.png', 8, 1, drawHunterSheet),
-    directionalSheet(SpriteKey.NPC_WATERER, 'assets/characters/waterer_idle.png', 8, 1, drawWatererSheet),
-    directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'assets/characters/boatwright_idle.png', 8, 1, drawBoatwrightSheet),
+    directionalSheet(SpriteKey.HERO, 'hero', drawPlayerSheet),
+    directionalSheet(SpriteKey.NPC_ELDER, 'elder', drawElderSheet),
+    directionalSheet(SpriteKey.NPC_HUNTER, 'hunter', drawHunterSheet),
+    directionalSheet(SpriteKey.NPC_WATERER, 'waterer', drawWatererSheet),
+    directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'boatwright', drawBoatwrightSheet),
   ];
 }
 

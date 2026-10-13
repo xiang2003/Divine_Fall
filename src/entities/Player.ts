@@ -68,7 +68,7 @@ export class Player {
   ) {
     this.pos = { x: spawn.x, y: spawn.y };
     this.hp = stats.maxHp;
-    this.animator = new DirectionalAnimator(assets, SpriteKey.HERO_IDLE, SpriteKey.HERO_RUN);
+    this.animator = new DirectionalAnimator(assets, SpriteKey.HERO);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
     this.group.add(this.shadow, this.animator.mesh);
     this.syncVisuals();

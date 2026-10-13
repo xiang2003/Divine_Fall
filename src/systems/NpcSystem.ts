@@ -14,8 +14,8 @@ export const NPC_HALF = 0.3;
 export const NPC_CLICK_RADIUS = 0.7;
 /** The player can start a conversation from this far (centre to centre, world units). */
 export const NPC_TALK_RANGE = 1.9;
-/** Height of the name tag above the feet, in art pixels. */
-const NAME_HEIGHT = 62;
+/** Height of the name tag above the feet, in scene pixels (at scale 1). */
+const NAME_HEIGHT = 46;
 
 /** Is this placement present given the world flags (checked when a map is entered)? */
 export function npcPresent(p: Pick<NpcPlacement, 'requiresFlag' | 'hiddenByFlag'>, hasFlag: (name: string) => boolean): boolean {

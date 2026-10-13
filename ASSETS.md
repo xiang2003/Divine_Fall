@@ -49,7 +49,7 @@
 **上面「目前使用中（Phase 1）」表格裡的玩家、NPC、房屋、道具、沙灘／洞窟／海水地面現在都改用下列圖片；
 原本的程式繪製佔位圖留作「圖片載入失敗時的備援」。** 怪物、遺跡的牆、洞窟的石筍與大石頭、水井、渡船仍是佔位圖。
 
-四個作品都是 OpenGameArt 上標示 **CC0 1.0** 的素材（我讀作品頁面確認標示，下載的壓縮檔沒有附授權文字檔，沒有法律意見）。
+五個作品都是 OpenGameArt 上標示 **CC0 1.0** 的素材（我讀作品頁面確認標示，下載的壓縮檔沒有附授權文字檔，沒有法律意見）。
 處理腳本：[tools/prepare_assets.py](tools/prepare_assets.py)（地面、道具、房屋、植物）與
 [tools/prepare_characters.py](tools/prepare_characters.py)（角色）。原始下載不放進專案。
 
@@ -64,10 +64,13 @@
 | public/assets/tiles/sand_*.png、sea_*.png | 沙灘地面、海水（128×64，顯示為 64×32） | 同上（`sand_tiles.png`、`water_v01.png`） | rubberduck | CC0 | 裁切、調亮 |
 | public/assets/tiles/cave_*.png | 洞窟地面 | 同上（`dirt_tiles.png` 的石板色調，重新上色成藍灰） | rubberduck | CC0 | 裁切、改色 |
 | public/assets/props/plant_*.png | 灌木、矮樹叢、草叢、雜草、棕櫚、熱帶植物（草地與沙灘的散布裝飾） | [Free isometric plants-pack](https://opengameart.org/content/free-isometric-plants-pack) | rubberduck（打包），模型與貼圖 yughues | CC0 | 調亮 |
-| public/assets/characters/hero_idle.png、hero_run.png、elder_idle.png、hunter_idle.png、waterer_idle.png、boatwright_idle.png | 主角與四位 NPC（8 個方向；主角另有 10 格跑步動作） | [Isometric Miniature Dungeon](https://opengameart.org/content/isometric-miniature-dungeon)（`Characters/Male`） | Kenney（kenney.nl） | CC0（頁面請求署名但註明非強制；這裡仍然署名） | 同一個男性人形，各角色只重新上色衣服與頭髮 |
+| public/assets/characters/hero.png、elder.png、hunter.png、waterer.png、boatwright.png | 主角與四位 NPC：2D 像素小人，正面／右／背面／左四個朝向，每個朝向有待機、行走、揮劍、受傷、死亡的畫格（768×128，32×32 一格） | [Puny Characters](https://opengameart.org/content/puny-characters)（`Warrior-Blue`＝主角、`Mage-Cyan`＝祈漪、`Archer-Green`＝岩牙、`Archer-Purple`＝汐、`Warrior-Red`＝老舵） | Shade | CC0（頁面標示） | 原圖 8 個朝向只留前、右、後、左四列，沒有改色（[tools/prepare_characters.py](tools/prepare_characters.py)） |
 
-**角色的限制**：五個人共用同一個身體，只有衣服與髮色不同（所以汐的「女性、矮小」外觀做不到）；素材沒有攻擊、受傷、死亡的畫格，
-這三個動作由程式演出（攻擊＝跑步姿勢加往前衝、受傷＝變紅、死亡＝倒下淡出）；主角沒有武器圖。
+**角色的限制**：這包是 Q 版（約 16×16 的小人，頭身比大），五個人是現成的職業造型，不是依角色設定畫的：主角是戴角盔的戰士
+（不是黑髮的流浪者）、祈漪與汐不是老人／女性的樣子。素材的行走只有 2 格步伐，揮劍 4 格；沒有為每個角色做武器圖。
+**先前用過的 Kenney 3D 渲染人形（Isometric Miniature Dungeon）已經移除**，因為你要的是 2D 風格。
+
+**已知的風格落差**：房屋、樹、道具、植物仍是第三方的 3D 渲染圖，與 2D 像素小人並排會有風格差異。
 
 ## 本機 AI 生成的角色圖（2026-10-13）
 
@@ -86,7 +89,7 @@
 - 全身圖：*Full-body character concept art of a young wanderer from a remote primordial island, androgynous, short messy dark hair, calm determined eyes, wearing a layered teal and cream linen tunic with brown leather straps and wrapped forearms, faint glowing golden veins along both forearms (ancient divine blood), a rusty iron short sword at the hip, simple leather sandals, standing pose, three-quarter view, entire body from head to toe visible, dark fantasy, highly detailed painterly illustration, soft rim light, plain flat light gray studio background, no text, no watermark*
 - 像素小人：*Pixel art game sprite of a chibi young adventurer, short messy dark hair, teal and cream tunic with brown leather straps, golden glowing lines on forearms, small rusty short sword at the hip, big head small body, full body, standing, front three-quarter view, crisp 1-pixel dark outline, flat shading, limited color palette, 16-bit RPG style, centered, solid flat pure magenta background*
 
-**使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。遊戲內的主角佔位圖已改成相同的配色（青綠上衣、黑髮）。
+**使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。這兩張與遊戲內的主角（Puny Characters 的戰士）長得不一樣。
 像素小人**只是一張靜態圖**，沒有行走或攻擊動畫，所以不能直接取代遊戲內角色的動畫表。
 
 **下載過、評估後沒有採用的**（沒有放進專案）：

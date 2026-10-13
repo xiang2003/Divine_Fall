@@ -7,7 +7,7 @@ export interface NpcDef {
   /** Short role shown under the name. */
   title: string;
   spriteKey: string;
-  /** Visual scale (the dwarf and the small waterer are shorter than the player). */
+  /** Visual scale of the sprite (keep it 1: pixel art does not survive fractional scaling). */
   scale: number;
   /** Conversations in priority order: the first rule whose condition holds is used. Always end with an unconditional one. */
   dialogue: readonly DialogueRule[];
@@ -19,7 +19,7 @@ export const NPCS: Record<string, NpcDef> = {
     name: '祈漪',
     title: '村長',
     spriteKey: SpriteKey.NPC_ELDER,
-    scale: 0.95,
+    scale: 1,
     dialogue: [
       { if: { quest: 'q3_resonance', state: 'ready' }, graph: 'elder_q3_turnin' },
       { if: { quest: 'q4_stranded_boat', state: 'active' }, graph: 'elder_q4_active' },
@@ -36,7 +36,7 @@ export const NPCS: Record<string, NpcDef> = {
     name: '岩牙',
     title: '獵人',
     spriteKey: SpriteKey.NPC_HUNTER,
-    scale: 1.1,
+    scale: 1,
     dialogue: [
       { if: { quest: 'q1_first_hunt', state: 'ready' }, graph: 'hunter_turnin' },
       { if: { quest: 'q1_first_hunt', state: 'active' }, graph: 'hunter_active' },
@@ -50,7 +50,7 @@ export const NPCS: Record<string, NpcDef> = {
     name: '汐',
     title: '汲水人',
     spriteKey: SpriteKey.NPC_WATERER,
-    scale: 0.8,
+    scale: 1,
     dialogue: [
       { if: { quest: 'q2_muddy_water', state: 'ready' }, graph: 'xi_q2_turnin' },
       { if: { quest: 'q2_muddy_water', state: 'active' }, graph: 'xi_q2_active' },
@@ -65,7 +65,7 @@ export const NPCS: Record<string, NpcDef> = {
     name: '老舵',
     title: '船匠',
     spriteKey: SpriteKey.NPC_BOATWRIGHT,
-    scale: 0.78,
+    scale: 1,
     dialogue: [
       { if: { all: [{ map: 'pure_coast' }, { quest: 'q4_stranded_boat', state: 'active' }, { notFlag: 'laodu_ferry_checked' }] }, graph: 'laodu_coast_q4' },
       { if: { all: [{ map: 'pure_coast' }, { flag: 'laodu_ferry_checked' }] }, graph: 'laodu_coast_after' },
