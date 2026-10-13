@@ -10,6 +10,7 @@ import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance
 import { LOOT_TABLES } from '../data/lootTables';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
+import { START_MAP_ID, WORLD_MAP_FILES, isWorldMapId } from '../data/worldMaps';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
@@ -19,6 +20,7 @@ import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
 import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
+import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
@@ -34,7 +36,10 @@ import { Input } from './Input';
 import { Layer, placeAt, worldToSceneX, worldToSceneY, type Vec2 } from './iso';
 import { SceneManager } from './SceneManager';
 
-const MAP_URL = 'maps/dungeon.json';
+/** Seconds for each half of the black fade when changing maps. */
+const FADE_SECONDS = 0.25;
+/** A closed portal repeats its message at most this often (seconds). */
+const PORTAL_NOTICE_INTERVAL = 2;
 const STATS_INTERVAL = 0.25;
 const STARTER_WEAPON = 'sword_rusty';
 
@@ -106,6 +111,8 @@ export interface GameSnapshot {
   boss: BossView | null;
   /** True from the moment the boss dies until the next restart. */
   bossDefeated: boolean;
+  /** Black overlay opacity (0-1) while moving between maps. */
+  fade: number;
 }
 
 const EMPTY_INVENTORY: InventoryView = {
@@ -150,7 +157,24 @@ const INITIAL: GameSnapshot = {
   skills: [],
   boss: null,
   bossDefeated: false,
+  fade: 0,
 };
+
+/** What survives a map change: the character itself. */
+interface Carry {
+  player: Player;
+  inventory: Inventory;
+}
+
+/** A map change in progress: fade to black, swap the world once the next map is loaded, fade back in. */
+interface Transition {
+  phase: 'out' | 'in';
+  t: number;
+  mapId: string;
+  entrance: string;
+  map: MapData | null;
+  failed: boolean;
+}
 
 /** Everything that exists once a map has loaded. */
 interface World {
@@ -192,6 +216,12 @@ export class Game {
   private noticeSeq = 0;
   private hitSeq = 0;
   private kills = 0;
+  private mapId: string = START_MAP_ID;
+  private readonly mapCache = new Map<string, MapData>();
+  /** World progress switches (e.g. "ruins_open"); portals can require one. Quests will own these later. */
+  private readonly flags = new Set<string>();
+  private transition: Transition | null = null;
+  private portalNoticeTimer = 0;
   /** Level and experience; kept across restarts like the inventory. */
   private readonly progression = new Progression();
   private bossDefeated = false;
@@ -241,10 +271,11 @@ export class Game {
     try {
       const assets = new AssetLoader(ASSET_MANIFEST);
       this.assets = assets;
-      const [, map] = await Promise.all([assets.loadAll(), this.fetchMap()]);
+      const [, map] = await Promise.all([assets.loadAll(), this.loadMapData(START_MAP_ID)]);
       if (this.disposed) return;
 
-      this.world = this.buildWorld(map, assets);
+      this.mapId = map.id;
+      this.world = this.buildWorld(map, assets, null);
       const { player } = this.world;
       this.syncEquipment();
       this.publishSkills();
@@ -298,23 +329,7 @@ export class Game {
     cancelAnimationFrame(this.rafId);
     this.resizeObserver.disconnect();
     this.input.dispose();
-    const w = this.world;
-    if (w) {
-      w.monsters.dispose();
-      w.projectiles.dispose();
-      w.skillBolts.dispose();
-      w.groundLoot.dispose();
-      w.player.dispose();
-      w.slash.dispose();
-      w.spinFx.dispose();
-      w.slamFx.dispose();
-      w.telegraphFx.dispose();
-      w.novaFx.dispose();
-      w.nameplateLayer.remove();
-      w.lightning.dispose();
-      w.numbers.dispose();
-      w.effects.dispose();
-    }
+    if (this.world) this.releaseWorld(this.world, false);
     this.scene.dispose();
     this.assets?.dispose();
     this.listeners.clear();
@@ -360,16 +375,56 @@ export class Game {
 
   // --- setup -------------------------------------------------------------------------------
 
-  private buildWorld(map: MapData, assets: AssetLoader): World {
+  /** Disposes everything that belongs to one map. The player survives a map change (keepPlayer). */
+  private releaseWorld(w: World, keepPlayer: boolean): void {
+    w.monsters.dispose();
+    w.projectiles.dispose();
+    w.skillBolts.dispose();
+    w.groundLoot.dispose();
+    w.slash.dispose();
+    w.spinFx.dispose();
+    w.slamFx.dispose();
+    w.telegraphFx.dispose();
+    w.novaFx.dispose();
+    w.nameplateLayer.remove();
+    w.lightning.dispose();
+    w.numbers.dispose();
+    w.effects.dispose();
+    if (keepPlayer) {
+      this.scene.scene.remove(
+        w.groundLoot.group,
+        w.monsters.group,
+        w.projectiles.group,
+        w.skillBolts.group,
+        w.slash.mesh,
+        w.spinFx.mesh,
+        w.slamFx.mesh,
+        w.telegraphFx.mesh,
+        w.novaFx.mesh,
+        w.lightning.group,
+        w.moveMarker,
+      );
+    } else {
+      w.player.dispose();
+    }
+  }
+
+  private buildWorld(map: MapData, assets: AssetLoader, carry: Carry | null): World {
     const collision = new CollisionSystem(map);
     const debug = this.scene.loadMap(map, assets);
     const effects = new EffectAssets();
 
-    const inventory = new Inventory(() => this.syncEquipment());
-    inventory.add(createPlainItem(STARTER_WEAPON, defaultRng));
-    inventory.equip(0);
-
-    const player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment, this.progression.level));
+    let inventory: Inventory;
+    let player: Player;
+    if (carry) {
+      inventory = carry.inventory;
+      player = carry.player;
+    } else {
+      inventory = new Inventory(() => this.syncEquipment());
+      inventory.add(createPlainItem(STARTER_WEAPON, defaultRng));
+      inventory.equip(0);
+      player = new Player(assets, collision, map.spawns.player, computeStats(inventory.equipment, this.progression.level));
+    }
     const projectiles = new ProjectileSystem(assets);
     const skillBolts = new SkillProjectileSystem(assets);
     const slash = new SlashEffect();
@@ -515,6 +570,13 @@ export class Game {
     this.publishVitals();
   }
 
+  /** Debug (F3 mode + F10): opens / closes the sealed stone between the forest and the ruins. */
+  private debugToggleRuinsFlag(): void {
+    const open = !this.hasFlag('ruins_open');
+    this.setFlag('ruins_open', open);
+    this.notify(open ? '除錯：封石已開啟' : '除錯：封石已封閉');
+  }
+
   /** Debug (F3 mode + F9): grants exactly the experience needed for the next level. */
   private debugLevelUp(): void {
     const w = this.world;
@@ -605,8 +667,11 @@ export class Game {
 
   // --- internals -------------------------------------------------------------------------
 
-  private async fetchMap(): Promise<MapData> {
-    const url = assetUrl(MAP_URL);
+  private async loadMapData(id: string): Promise<MapData> {
+    const cached = this.mapCache.get(id);
+    if (cached) return cached;
+    if (!isWorldMapId(id)) throw new Error(`未知的地圖：${id}`);
+    const url = assetUrl(WORLD_MAP_FILES[id]);
     let res: Response;
     try {
       res = await fetch(url);
@@ -620,7 +685,103 @@ export class Game {
     } catch {
       throw new Error(`地圖檔不是有效的 JSON：${url}`);
     }
-    return parseMap(json);
+    const map = parseMap(json);
+    if (map.id !== id) throw new Error(`地圖檔 ${url} 的 id 是 "${map.id}"，應為 "${id}"`);
+    this.mapCache.set(id, map);
+    return map;
+  }
+
+  // --- changing maps ---------------------------------------------------------------------------
+
+  /** Flags are plain on/off switches for world progress. */
+  hasFlag(name: string): boolean {
+    return this.flags.has(name);
+  }
+  setFlag(name: string, on = true): void {
+    if (on) this.flags.add(name);
+    else this.flags.delete(name);
+  }
+
+  /** Starts moving the player to an entrance of another map (fade out, swap, fade in). Returns false if it cannot start. */
+  travelTo = (mapId: string, entrance: string): boolean => {
+    if (this.transition || !this.world || this.world.player.isDead) return false;
+    const tr: Transition = { phase: 'out', t: 0, mapId, entrance, map: null, failed: false };
+    this.transition = tr;
+    this.loadMapData(mapId).then(
+      (map) => {
+        tr.map = map;
+      },
+      (err) => {
+        console.error(err);
+        tr.failed = true;
+      },
+    );
+    return true;
+  };
+
+  private tickTransition(dt: number): void {
+    const tr = this.transition;
+    if (!tr) return;
+    tr.t += dt;
+    if (tr.phase === 'out') {
+      this.publish({ fade: Math.min(1, tr.t / FADE_SECONDS) });
+      if (tr.t < FADE_SECONDS) return;
+      if (tr.failed) {
+        this.notify('無法載入地圖。');
+      } else if (tr.map) {
+        this.swapMap(tr.map, tr.entrance);
+      } else {
+        return; // still loading: stay black
+      }
+      tr.phase = 'in';
+      tr.t = 0;
+    } else {
+      this.publish({ fade: Math.max(0, 1 - tr.t / FADE_SECONDS) });
+      if (tr.t >= FADE_SECONDS) this.transition = null;
+    }
+  }
+
+  /** Replaces the current world with the one for map, carrying the character (inventory, health, level) over. */
+  private swapMap(map: MapData, entrance: string): void {
+    const old = this.world;
+    const assets = this.assets;
+    if (!old || !assets) return;
+    const debugWasOn = old.debug.visible;
+    const at = resolveEntrance(map, entrance);
+    if (!at) console.warn(`Map "${map.id}" has no entrance "${entrance}"; using its start.`);
+
+    this.releaseWorld(old, true);
+    const world = this.buildWorld(map, assets, { player: old.player, inventory: old.inventory });
+    this.world = world;
+    this.mapId = map.id;
+    world.player.enterMap(world.collision, at ?? map.spawns.player);
+    if (debugWasOn) world.debug.toggle();
+
+    this.pickupTarget = null;
+    this.pendingSkill = null;
+    this.telegraphOwner = null;
+    this.bossDefeated = false;
+    this.syncEquipment();
+    this.publishSkills();
+    this.cameraCtl.snapTo(worldToSceneX(world.player.pos.x, world.player.pos.y), worldToSceneY(world.player.pos.x, world.player.pos.y));
+    this.publish({ mapName: map.name, debug: world.debug.visible });
+    this.publishVitals();
+  }
+
+  /** Walking into a portal rectangle changes map, unless a world flag it needs is missing. */
+  private checkPortals(w: World, dt: number): void {
+    this.portalNoticeTimer = Math.max(0, this.portalNoticeTimer - dt);
+    const portal = findPortalAt(w.map, w.player.pos.x, w.player.pos.y);
+    if (!portal) return;
+    const reason = portalBlockedReason(portal, this.flags);
+    if (reason) {
+      if (this.portalNoticeTimer === 0) {
+        this.notify(reason);
+        this.portalNoticeTimer = PORTAL_NOTICE_INTERVAL;
+      }
+      return;
+    }
+    this.travelTo(portal.to.map, portal.to.entrance);
   }
 
   private publishSkills(): void {
@@ -695,6 +856,13 @@ export class Game {
     const { player, debug, monsters, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
+    if (this.transition) {
+      // The world stands still behind the black fade.
+      this.tickTransition(dt);
+      this.cameraCtl.follow(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y), dt);
+      return;
+    }
+
     if (input.wasPressed('debug')) {
       debug.toggle();
       this.publish({ debug: debug.visible });
@@ -704,6 +872,7 @@ export class Game {
     if (debug.visible && input.wasPressed('debugReset')) this.debugResetBattlefield();
     if (debug.visible && input.wasPressed('debugTeleport')) this.debugTeleport();
     if (debug.visible && input.wasPressed('debugLevel')) this.debugLevelUp();
+    if (debug.visible && input.wasPressed('debugFlag')) this.debugToggleRuinsFlag();
 
     if (input.wasPressed('inventory')) this.toggleInventory();
     if (input.wasPressed('pause') && this.inventoryOpen) this.setInventoryOpen(false);
@@ -767,6 +936,7 @@ export class Game {
     }
 
     player.update(dt);
+    if (!player.isDead) this.checkPortals(w, dt);
     monsters.update(dt, player);
     combat.update(dt);
     monsters.syncViews(dt);
@@ -825,6 +995,9 @@ export class Game {
   /** Read-only views for tests and debugging. */
   get monsterList(): readonly Monster[] {
     return this.world?.monsters.all ?? [];
+  }
+  get currentMapId(): string {
+    return this.mapId;
   }
   get playerEntity(): Player | null {
     return this.world?.player ?? null;

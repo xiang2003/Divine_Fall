@@ -112,6 +112,7 @@ body,
 .hud-top-right {
   top: 12px;
   right: 12px;
+  max-width: 330px;
 }
 
 .hud-warning {
@@ -180,6 +181,14 @@ body,
   height: 100%;
   background: linear-gradient(#e7c35a, #a8832a);
   transition: width 0.15s linear;
+}
+
+.fade-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 50;
 }
 
 .hud-kills {

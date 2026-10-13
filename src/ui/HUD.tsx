@@ -73,6 +73,7 @@ export function HUD({
         左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · F 拾取 · Q W E 技能 · F3 除錯
       </div>
       <HitFlash hitSeq={snapshot.hitSeq} />
+      {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
       <div className="panel hud-hp">
         <div className="hp-track">
           <div
@@ -136,7 +137,7 @@ export function HUD({
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
           <br />
-          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級 · F10 開關封石
         </div>
       )}
     </div>

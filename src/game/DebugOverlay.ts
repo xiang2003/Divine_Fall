@@ -7,6 +7,7 @@ const COLOR_PROP = new THREE.Color('#ffb347');
 const COLOR_SPAWN = new THREE.Color('#5ad1ff');
 const COLOR_ELITE = new THREE.Color('#d98cff');
 const COLOR_BOSS = new THREE.Color('#ffffff');
+const COLOR_PORTAL = new THREE.Color('#66ffcc');
 const CIRCLE_SEGMENTS = 24;
 
 /** Toggleable (F3) outlines of collision shapes and spawn points, plus the player's collision circle. */
@@ -44,6 +45,8 @@ export class DebugOverlay {
     for (const e of map.spawns.elites) cross(e, COLOR_ELITE);
     if (map.spawns.boss) cross(map.spawns.boss, COLOR_BOSS);
     if (map.spawns.exit) cross(map.spawns.exit, COLOR_BOSS);
+    for (const e of Object.values(map.entrances)) cross(e, COLOR_PORTAL);
+    for (const p of map.portals) box(p.rect.minX, p.rect.minY, p.rect.maxX, p.rect.maxY, COLOR_PORTAL);
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));

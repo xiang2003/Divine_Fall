@@ -40,15 +40,15 @@ describe('parseMap', () => {
   });
 });
 
-describe('public/maps/dungeon.json', () => {
-  const raw = JSON.parse(readFileSync(new URL('../public/maps/dungeon.json', import.meta.url), 'utf8')) as unknown;
+describe('public/maps/pure_ruins.json', () => {
+  const raw = JSON.parse(readFileSync(new URL('../public/maps/pure_ruins.json', import.meta.url), 'utf8')) as unknown;
   const map = parseMap(raw);
 
   it('has every required spawn kind', () => {
     expect(map.spawns.monsters.length).toBeGreaterThanOrEqual(6);
     expect(map.spawns.elites.length).toBeGreaterThanOrEqual(1);
     expect(map.spawns.boss).not.toBeNull();
-    expect(map.spawns.exit).not.toBeNull();
+    expect(map.portals.length).toBeGreaterThanOrEqual(1);
   });
 
   it('is sealed: no floor tile touches the map edge or void', () => {
@@ -71,13 +71,13 @@ describe('public/maps/dungeon.json', () => {
     expect(pos.y).toBeCloseTo(5 + PLAYER_CONFIG.radius, 5);
   });
 
-  it('lets the player body physically walk from the start to every spawn and the exit', () => {
+  it('lets the player body physically walk from the start to every spawn and portal', () => {
     const collision = new CollisionSystem(map);
     const targets = [
       ...map.spawns.monsters,
       ...map.spawns.elites,
       map.spawns.boss!,
-      map.spawns.exit!,
+      ...map.portals.map((p) => ({ x: (p.rect.minX + p.rect.maxX) / 2, y: (p.rect.minY + p.rect.maxY) / 2 })),
     ];
     for (const target of targets) {
       const path = findTilePath(map, collision, map.spawns.player, target);

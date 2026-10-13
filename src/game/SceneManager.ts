@@ -28,7 +28,18 @@ export class SceneManager {
     return this.renderer.domElement;
   }
 
+  /** Removes the current map's visuals (the next `loadMap` replaces them). */
+  unloadMap(): void {
+    if (this.mapView) this.scene.remove(this.mapView.root);
+    if (this.debug) this.scene.remove(this.debug.root);
+    this.mapView?.dispose();
+    this.debug?.dispose();
+    this.mapView = null;
+    this.debug = null;
+  }
+
   loadMap(map: MapData, assets: AssetLoader): DebugOverlay {
+    this.unloadMap();
     this.mapView = new MapView(map, assets);
     this.debug = new DebugOverlay(map);
     this.scene.add(this.mapView.root, this.debug.root);

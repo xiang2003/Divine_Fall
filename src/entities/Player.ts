@@ -61,7 +61,7 @@ export class Player {
 
   constructor(
     assets: AssetLoader,
-    private readonly collision: CollisionSystem,
+    private collision: CollisionSystem,
     spawn: Vec2,
     /** Live stats object; replace its fields (not the reference) when equipment changes. */
     readonly stats: PlayerStats,
@@ -176,6 +176,23 @@ export class Player {
     this.animator.setSpeed(1);
     this.animator.play('die', true);
     return { amount, died: true };
+  }
+
+  /**
+   * Moves the player into another map: new collision, new position, any swing / skill / dash / walk cancelled.
+   * Health, cooldowns and buffs carry over.
+   */
+  enterMap(collision: CollisionSystem, at: Vec2): void {
+    this.collision = collision;
+    this.pos.x = at.x;
+    this.pos.y = at.y;
+    this.attack.reset();
+    this.activeSkill = null;
+    this.dodge.reset();
+    this.mover.stop();
+    this.animator.setSpeed(1);
+    this.animator.play(this.isDead ? 'die' : 'idle', true);
+    this.syncVisuals();
   }
 
   /** Brings the player back at `spawn` with full health. */

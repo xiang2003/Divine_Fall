@@ -8,6 +8,25 @@ export interface DungeonMapFile {
   legend?: Record<string, string>;
   /** One string per row; `layout[y][x]` is tile (x, y). All rows must have equal length. */
   layout: string[];
+  /** Named arrival points as tile coordinates, e.g. `{ "from_forest": { "x": 3, "y": 5 } }`. "start" is always the "P" tile. */
+  entrances?: Record<string, { x: number; y: number }>;
+  /** Walk-in doors to other maps. */
+  portals?: PortalFile[];
+}
+
+/** On-disk portal: a tile rectangle that moves the player to `to.entrance` of map `to.map`. */
+export interface PortalFile {
+  id: string;
+  x: number;
+  y: number;
+  /** Size in tiles (default 1). */
+  w?: number;
+  h?: number;
+  to: { map: string; entrance: string };
+  /** The portal only works while this world flag is set. */
+  requiresFlag?: string;
+  /** Shown when the player walks in while `requiresFlag` is not set. */
+  blockedText?: string;
 }
 
 export const TileType = {
@@ -34,6 +53,18 @@ export interface Prop {
   bounds: Rect;
 }
 
+/** A door to another map (rectangle in world units). */
+export interface Portal {
+  id: string;
+  rect: Rect;
+  to: { map: string; entrance: string };
+  requiresFlag?: string;
+  blockedText?: string;
+}
+
+/** The entrance every map has: where a new game (or a restart) puts the player. */
+export const DEFAULT_ENTRANCE = 'start';
+
 export interface MapSpawns {
   player: Vec2;
   monsters: Vec2[];
@@ -51,6 +82,9 @@ export interface MapData {
   tiles: Uint8Array;
   props: Prop[];
   spawns: MapSpawns;
+  /** Named arrival points in world units (centre of the tile). Does not include the implicit "start". */
+  entrances: Record<string, Vec2>;
+  portals: Portal[];
 }
 
 const CRATE_HALF = 0.36;
@@ -58,6 +92,11 @@ const CRATE_HALF = 0.36;
 export function tileAt(map: MapData, x: number, y: number): TileType {
   if (x < 0 || y < 0 || x >= map.width || y >= map.height) return TileType.VOID;
   return (map.tiles[y * map.width + x] ?? TileType.VOID) as TileType;
+}
+
+function tileAtRaw(tiles: Uint8Array, width: number, height: number, x: number, y: number): TileType {
+  if (x < 0 || y < 0 || x >= width || y >= height) return TileType.VOID;
+  return (tiles[y * width + x] ?? TileType.VOID) as TileType;
 }
 
 export class MapParseError extends Error {}
@@ -140,5 +179,44 @@ export function parseMap(raw: unknown): MapData {
   }
   if (!playerSet) throw new MapParseError('Map has no player spawn "P"');
 
-  return { id: file.id, name: file.name, width, height, tiles, props, spawns };
+
+  const entrances: Record<string, Vec2> = {};
+  for (const [name, at] of Object.entries(file.entrances ?? {})) {
+    if (name === DEFAULT_ENTRANCE) throw new MapParseError(`Entrance name "${DEFAULT_ENTRANCE}" is reserved for the "P" tile`);
+    const { x, y } = at as { x: number; y: number };
+    if (!Number.isInteger(x) || !Number.isInteger(y)) throw new MapParseError(`Entrance "${name}" needs integer tile x / y`);
+    if (tileAtRaw(tiles, width, height, x, y) !== TileType.FLOOR) {
+      throw new MapParseError(`Entrance "${name}" at (${x}, ${y}) is not on a floor tile`);
+    }
+    entrances[name] = { x: x + 0.5, y: y + 0.5 };
+  }
+
+  const portals: Portal[] = [];
+  for (const p of file.portals ?? []) {
+    if (typeof p?.id !== 'string' || typeof p.to?.map !== 'string' || typeof p.to?.entrance !== 'string') {
+      throw new MapParseError('Every portal needs a string "id" and "to": { "map", "entrance" }');
+    }
+    if (portals.some((o) => o.id === p.id)) throw new MapParseError(`Duplicate portal id "${p.id}"`);
+    const w = p.w ?? 1;
+    const h = p.h ?? 1;
+    if (![p.x, p.y, w, h].every(Number.isInteger) || w < 1 || h < 1) {
+      throw new MapParseError(`Portal "${p.id}" needs integer x / y and a size of at least 1`);
+    }
+    for (let ty = p.y; ty < p.y + h; ty++) {
+      for (let tx = p.x; tx < p.x + w; tx++) {
+        if (tileAtRaw(tiles, width, height, tx, ty) !== TileType.FLOOR) {
+          throw new MapParseError(`Portal "${p.id}" covers (${tx}, ${ty}), which is not a floor tile`);
+        }
+      }
+    }
+    portals.push({
+      id: p.id,
+      rect: { minX: p.x, minY: p.y, maxX: p.x + w, maxY: p.y + h },
+      to: { map: p.to.map, entrance: p.to.entrance },
+      requiresFlag: p.requiresFlag,
+      blockedText: p.blockedText,
+    });
+  }
+
+  return { id: file.id, name: file.name, width, height, tiles, props, spawns, entrances, portals };
 }

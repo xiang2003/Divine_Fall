@@ -15,7 +15,8 @@ export type InputAction =
   | 'debugEquip'
   | 'debugReset'
   | 'debugTeleport'
-  | 'debugLevel';
+  | 'debugLevel'
+  | 'debugFlag';
 
 /** Skill actions in hotbar order. */
 export const SKILL_ACTIONS = ['skillQ', 'skillW', 'skillE', 'skillR', 'skillT'] as const satisfies readonly InputAction[];
@@ -47,6 +48,7 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   debugReset: ['F7'],
   debugTeleport: ['F8'],
   debugLevel: ['F9'],
+  debugFlag: ['F10'],
 };
 
 export type MouseAction = 'move' | 'attack';

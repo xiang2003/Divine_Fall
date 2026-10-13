@@ -15,6 +15,11 @@ export class MapView {
     this.buildFloor(map, assets);
     this.buildWallsAndProps(map, assets);
     if (map.spawns.exit) this.buildExit(map.spawns.exit, assets);
+    for (const portal of map.portals) {
+      for (let y = portal.rect.minY; y < portal.rect.maxY; y++) {
+        for (let x = portal.rect.minX; x < portal.rect.maxX; x++) this.buildExit({ x: x + 0.5, y: y + 0.5 }, assets);
+      }
+    }
   }
 
   private buildFloor(map: MapData, assets: AssetLoader): void {
