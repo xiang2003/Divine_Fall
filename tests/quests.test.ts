@@ -4,7 +4,8 @@ import { MONSTERS } from '../src/data/monsters';
 import { NPCS } from '../src/data/npcs';
 import { QUESTS } from '../src/data/quests';
 import { WORLD_MAP_FILES } from '../src/data/worldMaps';
-import { DialogueRunner, pickDialogue, type DialogueContext } from '../src/systems/dialogue';
+import { DialogueRunner, type DialogueContext } from '../src/systems/dialogue';
+import { firstGraph } from './npcHelpers';
 import { QuestLog, describeRewards, validateQuests, type QuestDef } from '../src/systems/quests';
 
 const rewards = { xp: 10, items: [] };
@@ -278,7 +279,7 @@ describe('authored chapter 1 quests', () => {
     };
     const talk = () => {
       log.report({ type: 'talk', npc: 'hunter_yanya' });
-      const id = pickDialogue(NPCS.hunter_yanya!.dialogue, ctx)!;
+      const id = firstGraph(NPCS.hunter_yanya!.conversation, ctx)!;
       const r = new DialogueRunner(DIALOGUES[id]!, ctx, '岩牙');
       const seen: string[] = [id];
       for (let i = 0; i < 30 && !r.finished; i++) {
@@ -325,6 +326,6 @@ describe('authored chapter 1 quests', () => {
     r.advance(); // ok -> offer
     r.choose(1); // "not ready"
     expect(log.state('q1_first_hunt')).toBe('available');
-    expect(pickDialogue(NPCS.hunter_yanya!.dialogue, ctx)).toBe('hunter_offer');
+    expect(firstGraph(NPCS.hunter_yanya!.conversation, ctx)).toBe('hunter_offer');
   });
 });

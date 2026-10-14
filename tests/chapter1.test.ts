@@ -8,7 +8,8 @@ import { QUESTS } from '../src/data/quests';
 import { WORLD_MAP_FILES } from '../src/data/worldMaps';
 import { parseMap, type MapData } from '../src/data/mapData';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
-import { DialogueRunner, pickDialogue, validateDialogue, type DialogueContext, type DialogueRule } from '../src/systems/dialogue';
+import { DialogueRunner, pickDialogue, validateDialogue, type Condition, type DialogueContext } from '../src/systems/dialogue';
+import { firstGraph } from './npcHelpers';
 import { interactableVisible } from '../src/systems/InteractableSystem';
 import { npcPresent } from '../src/systems/NpcSystem';
 import { QuestLog, validateQuests } from '../src/systems/quests';
@@ -59,9 +60,9 @@ class World {
   }
 
   /** Runs a conversation to its end, taking `choices[i]` at the i-th choice (default: the first). Returns the graph id used. */
-  talk(rules: readonly DialogueRule[], name: string, choices: number[] = []): string {
+  talk(pick: (ctx: DialogueContext) => string | null, name: string, choices: number[] = []): string {
     const ctx = this.ctx();
-    const id = pickDialogue(rules, ctx);
+    const id = pick(ctx);
     if (!id) throw new Error('no dialogue');
     const runner = new DialogueRunner(DIALOGUES[id]!, ctx, name);
     let picked = 0;
@@ -75,7 +76,7 @@ class World {
 
   npc(id: string, choices: number[] = []): string {
     this.log.report({ type: 'talk', npc: id });
-    return this.talk(NPCS[id]!.dialogue, NPCS[id]!.name, choices);
+    return this.talk((ctx) => firstGraph(NPCS[id]!.conversation, ctx), NPCS[id]!.name, choices);
   }
 
   /** Examines a thing. Returns the graph id, or null if it is not there. */
@@ -83,7 +84,7 @@ class World {
     const def = INTERACTABLES[id]!;
     if (!interactableVisible(def, (f) => this.flags.has(f))) return null;
     if (def.reportOnUse) this.log.report({ type: 'interact', target: def.id });
-    return this.talk(def.dialogue, def.name, choices);
+    return this.talk((ctx) => pickDialogue(def.dialogue, ctx), def.name, choices);
   }
 }
 
@@ -107,13 +108,13 @@ describe('chapter 1 data', () => {
 
   it('every dialogue graph is sound and every dialogue / interactable rule points at a real graph', () => {
     for (const g of Object.values(DIALOGUES)) expect(validateDialogue(g), g.id).toEqual([]);
-    for (const npc of Object.values(NPCS)) for (const r of npc.dialogue) expect(DIALOGUES[r.graph], `${npc.id}->${r.graph}`).toBeDefined();
+    for (const npc of Object.values(NPCS)) for (const t of npc.conversation.topics) expect(DIALOGUES[t.graph], `${npc.id}->${t.graph}`).toBeDefined();
     for (const it of Object.values(INTERACTABLES)) for (const r of it.dialogue) expect(DIALOGUES[r.graph], `${it.id}->${r.graph}`).toBeDefined();
   });
 
   it('every dialogue conditional names real quests, and every quest the dialogue starts or completes exists', () => {
     const questIds = new Set(Object.keys(QUESTS));
-    const check = (rules: readonly DialogueRule[], where: string) => {
+    const check = (rules: readonly { if?: Condition }[], where: string) => {
       const walk = (c: unknown): void => {
         if (!c || typeof c !== 'object') return;
         const o = c as Record<string, unknown>;
@@ -122,7 +123,7 @@ describe('chapter 1 data', () => {
       };
       for (const r of rules) walk(r.if);
     };
-    for (const npc of Object.values(NPCS)) check(npc.dialogue, npc.id);
+    for (const npc of Object.values(NPCS)) check(npc.conversation.topics, npc.id);
     for (const it of Object.values(INTERACTABLES)) check(it.dialogue, it.id);
   });
 
@@ -210,6 +211,7 @@ describe('playing chapter 1 from the first word to the ferry', () => {
     // -- quest 3: the elder, the ruins, the seal
     expect(w.log.state('q3_resonance')).toBe('available');
     expect(w.flags.has('ruins_open')).toBe(false);
+    expect(w.npc('elder_qiyi')).toBe('elder_intro'); // the first meeting plays by itself
     expect(w.npc('elder_qiyi')).toBe('elder_q3_offer');
     expect(w.log.state('q3_resonance')).toBe('active');
     expect(w.flags.has('ruins_open')).toBe(true);
@@ -255,9 +257,11 @@ describe('playing chapter 1 from the first word to the ferry', () => {
       }
       expect(w.log.complete(id)).not.toBeNull();
     }
+    w.npc('elder_qiyi'); // first meeting: the intro
     w.npc('elder_qiyi'); // offer q4, accept
     w.goTo('pure_coast');
-    w.npc('boatwright_laodu');
+    w.npc('boatwright_laodu'); // first meeting: the intro
+    w.npc('boatwright_laodu'); // the ferry question
     expect(w.use('ferry_board', [1])).toBe('ferry_board'); // second choice: wait
     expect(w.log.state('q4_stranded_boat')).toBe('active');
     expect(w.chapterEnded).toBe(false);

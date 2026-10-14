@@ -16,6 +16,7 @@ import {
   type DialogueGraph,
 } from '../src/systems/dialogue';
 import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, npcBounds } from '../src/systems/NpcSystem';
+import { firstGraph } from './npcHelpers';
 
 function makeCtx(flags: string[] = [], level = 1): DialogueContext & { flags: Set<string> } {
   const set = new Set(flags);
@@ -189,17 +190,20 @@ describe('authored chapter 1 content', () => {
     for (const [key, g] of Object.entries(DIALOGUES)) expect(g.id).toBe(key);
   });
 
-  it('every NPC rule points at a real graph and the last rule is unconditional', () => {
+  it('every NPC intro and topic points at a real graph, and the last topic is always on offer', () => {
     for (const npc of Object.values(NPCS)) {
-      for (const rule of npc.dialogue) expect(DIALOGUES[rule.graph], `${npc.id} -> ${rule.graph}`).toBeDefined();
-      expect(npc.dialogue.at(-1)?.if, `${npc.id} needs a fallback rule`).toBeUndefined();
+      const { intro, topics, greetings } = npc.conversation;
+      expect(DIALOGUES[intro.graph], `${npc.id} intro`).toBeDefined();
+      for (const t of topics) expect(DIALOGUES[t.graph], `${npc.id} -> ${t.graph}`).toBeDefined();
+      expect(topics.at(-1)?.if, `${npc.id} needs a topic that is always there`).toBeUndefined();
+      expect(greetings.length, `${npc.id} needs greetings`).toBeGreaterThan(0);
     }
   });
 
   it('a first conversation switches the NPC to its repeat conversation', () => {
     for (const npc of Object.values(NPCS)) {
       const ctx = makeCtx();
-      const first = pickDialogue(npc.dialogue, ctx)!;
+      const first = firstGraph(npc.conversation, ctx)!;
       let r = new DialogueRunner(DIALOGUES[first]!, ctx, npc.name);
       // Walk through every line, always taking the first choice.
       for (let i = 0; i < 50 && !r.finished; i++) {
@@ -207,7 +211,7 @@ describe('authored chapter 1 content', () => {
         else r.advance();
       }
       expect(r.finished, `${npc.id} first conversation never ends`).toBe(true);
-      const second = pickDialogue(npc.dialogue, ctx)!;
+      const second = firstGraph(npc.conversation, ctx)!;
       expect(second, `${npc.id} should have a different conversation afterwards`).not.toBe(first);
       r = new DialogueRunner(DIALOGUES[second]!, ctx, npc.name);
       expect(r.finished).toBe(false);

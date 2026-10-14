@@ -27,6 +27,8 @@ import { INTERACT_RANGE, InteractableSystem, type Interactable } from '../system
 import { QUESTS } from '../data/quests';
 import { QuestLog, type QuestEvent, type QuestHappening, type QuestView } from '../systems/quests';
 import { DialogueRunner, pickDialogue, type DialogueContext } from '../systems/dialogue';
+import { TOPIC_MARK, greetingFor, needsIntro, visibleTopics, type NpcTopic, type TopicKind } from '../systems/npcTopics';
+import type { NpcDef } from '../data/npcs';
 import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, npcPresent, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
@@ -85,15 +87,29 @@ export interface BossView {
   phaseCount: number;
 }
 
+/** One entry of an NPC's topic menu. */
+export interface TopicView {
+  label: string;
+  kind: TopicKind;
+  /** "！" / "？" / "…" in front of quest entries, empty otherwise. */
+  mark: string;
+}
+
 /** The conversation on screen. */
 export interface DialogueSnapshot {
   npcName: string;
+  /** The NPC's role (shown under the name), or null for a thing being examined. */
+  title: string | null;
+  /** Upper-body picture of the NPC, or null when there is none (a thing being examined). */
+  portrait: string | null;
   speaker: string;
   text: string;
   /** Choices on offer, or null when the line simply continues. */
   choices: readonly string[] | null;
   /** True when continuing closes the conversation. */
   last: boolean;
+  /** The NPC's topic menu while it is showing (then `text` is the greeting and there are no choices), otherwise null. */
+  topics: readonly TopicView[] | null;
 }
 
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
@@ -271,7 +287,16 @@ export class Game {
   private readonly visitedMaps = new Set<string>([START_MAP_ID]);
   private readonly quests = new QuestLog(QUESTS);
   /** The conversation in progress (the world keeps running behind it, but the player's input is ignored). */
-  private dialogue: { runner: DialogueRunner; name: string; pos: Vec2 } | null = null;
+  private dialogue: {
+    /** The conversation being played; null while an NPC's topic menu is showing. */
+    runner: DialogueRunner | null;
+    /** The NPC being talked to (null for a thing being examined, which has no menu). */
+    npc: NpcDef | null;
+    name: string;
+    pos: Vec2;
+  } | null = null;
+  /** How many times the player has talked to each NPC this session (picks the greeting line). */
+  private readonly talkVisits = new Map<string, number>();
   /** The NPC the player was told to walk to and talk to. */
   private talkTarget: Npc | null = null;
   /** The thing the player was told to walk to and examine. */
@@ -875,17 +900,15 @@ export class Game {
     if (!w || w.player.isDead || this.dialogue) return;
     this.talkTarget = null;
     this.questHappened({ type: 'talk', npc: npc.def.id });
-    const graphId = pickDialogue(npc.def.dialogue, this.currentDialogueContext());
-    if (!graphId) return;
     w.player.mover.stop();
     this.setInventoryOpen(false);
     this.setQuestLogOpen(false);
     this.setWorldMapOpen(false);
-    this.dialogue = {
-      runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), npc.def.name),
-      name: npc.def.name,
-      pos: npc.pos,
-    };
+    const ctx = this.currentDialogueContext();
+    const conversation = npc.def.conversation;
+    // The first meeting plays the intro by itself; after that the topic menu opens.
+    const intro = needsIntro(conversation, ctx) ? new DialogueRunner(getDialogue(conversation.intro.graph), ctx, npc.def.name) : null;
+    this.dialogue = { runner: intro, npc: npc.def, name: npc.def.name, pos: npc.pos };
     this.publishDialogue();
   }
 
@@ -911,6 +934,7 @@ export class Game {
     this.setWorldMapOpen(false);
     this.dialogue = {
       runner: new DialogueRunner(getDialogue(graphId), this.currentDialogueContext(), it.def.name),
+      npc: null,
       name: it.def.name,
       pos: it.pos,
     };
@@ -944,42 +968,88 @@ export class Game {
 
   advanceDialogue = (): void => {
     const d = this.dialogue;
-    if (!d) return;
+    if (!d?.runner) return;
     d.runner.advance();
     this.afterDialogueStep();
   };
 
   chooseDialogueOption = (index: number): void => {
     const d = this.dialogue;
-    if (!d) return;
+    if (!d?.runner) return;
     d.runner.choose(index);
+    this.afterDialogueStep();
+  };
+
+  /** Picks an entry of the NPC's topic menu (by its index in the snapshot's `topics`). */
+  chooseDialogueTopic = (index: number): void => {
+    const d = this.dialogue;
+    if (!d || d.runner || !d.npc) return;
+    const ctx = this.currentDialogueContext();
+    const topic = visibleTopics(d.npc.conversation, ctx)[index];
+    if (!topic) return;
+    d.runner = new DialogueRunner(getDialogue(topic.graph), ctx, d.npc.name);
     this.afterDialogueStep();
   };
 
   closeDialogue = (): void => this.endDialogue();
 
   private afterDialogueStep(): void {
-    if (this.dialogue?.runner.finished) this.endDialogue();
-    else this.publishDialogue();
+    const d = this.dialogue;
+    if (!d) return;
+    if (d.runner?.finished) {
+      // an NPC goes back to its menu (it now reflects whatever the conversation changed); anything else just ends
+      if (!d.npc) {
+        this.endDialogue();
+        return;
+      }
+      d.runner = null;
+    }
+    this.publishDialogue();
   }
 
   private endDialogue(): void {
     this.talkTarget = null;
     this.interactTarget = null;
     if (!this.dialogue) return;
-    this.dialogue.runner.close();
+    this.dialogue.runner?.close();
+    if (this.dialogue.npc) this.talkVisits.set(this.dialogue.npc.id, (this.talkVisits.get(this.dialogue.npc.id) ?? 0) + 1);
     this.dialogue = null;
     this.publish({ dialogue: null });
   }
 
   private publishDialogue(): void {
     const d = this.dialogue;
-    const view = d?.runner.view;
-    if (!d || !view) {
+    if (!d) {
       this.publish({ dialogue: null });
       return;
     }
-    this.publish({ dialogue: { npcName: d.name, ...view } });
+    const npc = d.npc;
+    const base = { npcName: d.name, title: npc?.title ?? null, portrait: npc?.portrait ?? null };
+    if (!d.runner) {
+      // the topic menu
+      if (!npc) {
+        this.publish({ dialogue: null });
+        return;
+      }
+      const topics = visibleTopics(npc.conversation, this.currentDialogueContext());
+      this.publish({
+        dialogue: {
+          ...base,
+          speaker: npc.name,
+          text: greetingFor(npc.conversation, this.talkVisits.get(npc.id) ?? 0),
+          choices: null,
+          last: false,
+          topics: topics.map((t: NpcTopic) => ({ label: t.label, kind: t.kind, mark: TOPIC_MARK[t.kind] })),
+        },
+      });
+      return;
+    }
+    const view = d.runner.view;
+    if (!view) {
+      this.afterDialogueStep();
+      return;
+    }
+    this.publish({ dialogue: { ...base, ...view, topics: null } });
   }
 
   // --- changing maps ---------------------------------------------------------------------------

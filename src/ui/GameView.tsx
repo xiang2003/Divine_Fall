@@ -45,6 +45,7 @@ function HudBridge({ game }: { game: Game }) {
       dialogueActions={{
         onAdvance: game.advanceDialogue,
         onChoose: game.chooseDialogueOption,
+        onTopic: game.chooseDialogueTopic,
         onClose: game.closeDialogue,
       }}
     />
