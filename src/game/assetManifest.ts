@@ -159,7 +159,7 @@ function terrainSprite(key: string, width: number, height: number, anchorY: numb
  * A third-party prop image (barrel, stump, bush...) standing on the ground, drawn at `scale` of its pixel size.
  * The frame size is not known here, so it is read from the image itself when it loads (see AssetLoader, \`measure\`).
  */
-function propSprite(key: string, url: string, scale: number, anchorY: number): SpriteAssetDef {
+function propSprite(key: string, url: string, scale: number, anchorY: number, placeholder: () => HTMLCanvasElement = () => drawCrate()): SpriteAssetDef {
   return {
     key,
     url,
@@ -169,7 +169,7 @@ function propSprite(key: string, url: string, scale: number, anchorY: number): S
     displayScale: scale,
     smooth: true,
     anchor: { x: 0.5, y: anchorY },
-    placeholder: () => drawCrate(),
+    placeholder,
   };
 }
 
@@ -255,7 +255,8 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...PROP_NAMES.map((name) => propSprite(`prop.${name}`, `assets/props/prop_${name}.png`, 1, 0.22)),
   ...Object.values(DECOR_KINDS).flatMap((k) => k.keys.map((key) => propSprite(key, `assets/props/${key.replace('.', '_')}.png`, k.scale, 0.2))),
   ...MURK_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('murk', i))),
-  ...BOULDER_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('boulder', i))),
+  // beach boulders: generated pictures (docs/art/props), shown at 0.45x; the drawn rock is the fallback
+  ...BOULDER_KEYS.map((key, i) => propSprite(key, `assets/props/boulder_${i}.png`, 0.45, 0.27, enlarged(() => drawRock('boulder', i), 64, 64))),
   ...PILLAR_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('pillar', i))),
   ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),

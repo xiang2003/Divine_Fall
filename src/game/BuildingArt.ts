@@ -29,7 +29,8 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
 ];
 
 /**
- * Buildings that use third-party art (log cabins by rubberduck, CC0; see ASSETS.md) instead of the procedural drawing.
+ * Buildings that use picture files (log cabins by rubberduck, CC0; the well and the ferry generated locally; see ASSETS.md) instead of
+ * the procedural drawing, which stays as the fallback if a file is missing.
  * `anchorY` is measured from the bottom of the image up to the middle of the footprint on the ground; the images are
  * 128x64-tile renders shown at half size. These numbers come from tools/prepare_assets.py (a test checks them against the files).
  */
@@ -41,6 +42,9 @@ export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: 
   shed: { url: 'assets/buildings/cabin_shed.png', width: 288, height: 235, anchorY: 0.3319 },
   tent: { url: 'assets/buildings/prop_tent.png', width: 240, height: 229, anchorY: 0.332 },
   campfire: { url: 'assets/buildings/prop_campfire.png', width: 147, height: 90, anchorY: 0.5 },
+  // generated with Z-Image-Turbo in the same look as the cabins (tools/prepare_props.py, docs/art/prop-prompts.json)
+  well: { url: 'assets/buildings/well.png', width: 200, height: 272, anchorY: 0.2 },
+  ferry: { url: 'assets/buildings/ferry.png', width: 520, height: 481, anchorY: 0.3 },
 };
 
 export function buildingKey(style: string, w: number, h: number): string {

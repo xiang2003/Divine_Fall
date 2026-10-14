@@ -1,0 +1,37 @@
+{
+  "well": {
+    "seed": 8113,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A rustic round village water well built of mossy grey fieldstone, a small wooden gabled roof on two timber posts, a rope and a wooden bucket, worn and weathered, the whole well fully visible."
+  },
+  "ferry": {
+    "seed": 8312,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A strange foreign ferry boat stranded on a beach, the long hull made of dark grey riveted metal plates over pale curved bone ribs, a bare mast, a cold blue glowing lantern at the prow, tilted a little in the sand, weathered and salt-stained, the whole boat fully visible."
+  },
+  "boulder_0": {
+    "seed": 8212,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A cluster of large weathered beige-grey granite boulders half buried in pale beach sand, with a few small stones around them, rough and natural, the whole cluster fully visible."
+  },
+  "boulder_1": {
+    "seed": 8214,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A cluster of large weathered beige-grey granite boulders half buried in pale beach sand, with a few small stones around them, rough and natural, the whole cluster fully visible."
+  },
+  "boulder_2": {
+    "seed": 8216,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A cluster of large weathered beige-grey granite boulders half buried in pale beach sand, with a few small stones around them, rough and natural, the whole cluster fully visible."
+  }
+}
