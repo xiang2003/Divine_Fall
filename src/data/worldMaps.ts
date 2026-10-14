@@ -24,6 +24,11 @@ export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: 
   pure_coast: { x: 20, y: 84, kind: '海岸' },
 };
 
+/** Coming back to a town refills the potions. */
+export function isTown(mapId: string): boolean {
+  return isWorldMapId(mapId) && WORLD_MAP_LAYOUT[mapId].kind === '村落';
+}
+
 export function isWorldMapId(id: string): id is WorldMapId {
   return Object.prototype.hasOwnProperty.call(WORLD_MAP_FILES, id);
 }

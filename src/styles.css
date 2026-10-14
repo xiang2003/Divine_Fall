@@ -1246,6 +1246,21 @@ button:hover {
   transform: translate(-50%, -46%);
 }
 
+.skill-slot.potion-slot.drained .potion-bottle {
+  opacity: 0.3;
+  filter: grayscale(0.8);
+}
+
+/* progress toward the next charge, rising from the bottom of the slot */
+.potion-charge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(224, 184, 74, 0.28);
+  border-top: 1px solid rgba(224, 184, 74, 0.7);
+}
+
 .potion-count {
   position: absolute;
   right: 4px;

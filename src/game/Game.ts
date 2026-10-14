@@ -9,10 +9,10 @@ import {
 } from '../config/gameConfig';
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { LOOT_TABLES } from '../data/lootTables';
-import type { PotionId } from '../data/potions';
+import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
-import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isWorldMapId } from '../data/worldMaps';
+import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId } from '../data/worldMaps';
 import { buildWorldGraph, type WorldGraphView } from '../systems/worldGraph';
 import { MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
@@ -84,7 +84,16 @@ export interface SkillView {
 export interface PotionSlotView {
   keyLabel: string;
   /** The potion held, or null for an empty slot. */
-  potion: { id: PotionId; name: string; description: string; count: number } | null;
+  potion: {
+    id: PotionId;
+    name: string;
+    description: string;
+    /** Whole charges ready to use, and the most the potion holds. */
+    charges: number;
+    maxCharges: number;
+    /** Progress toward the next charge (0 to 1). */
+    fraction: number;
+  } | null;
 }
 
 /** The boss health bar, shown once the boss has noticed the player. */
@@ -635,6 +644,7 @@ export class Game {
         if (m.isBoss) this.setFlag(`${this.mapId}_boss_defeated`, true);
         this.questHappened({ type: 'kill', monster: m.def.id, map: this.mapId, elite: m.isElite, boss: m.isBoss });
         this.gainXp(m.xpReward);
+        player.potions.recharge(RECHARGE_PER_KILL * (m.isBoss ? RECHARGE_BOSS_MULT : m.isElite ? RECHARGE_ELITE_MULT : 1));
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
@@ -1152,6 +1162,10 @@ export class Game {
     this.visitedMaps.add(map.id);
     if (this.worldMapOpen) void this.refreshWorldMap();
     world.player.enterMap(world.collision, at ?? map.spawns.player);
+    if (isTown(map.id) && !world.player.potions.isFull) {
+      world.player.potions.refill();
+      this.notify('回到村子：藥水充能全滿');
+    }
     if (debugWasOn) world.debug.toggle();
 
     this.pickupTarget = null;
@@ -1205,6 +1219,7 @@ export class Game {
     const { result, def, restored } = w.player.usePotion(index);
     if (result === 'used' && def) this.notify(`${def.name}：恢復 ${Math.round(restored)} 點${def.restores === 'hp' ? '生命' : '魔力'}`);
     else if (result === 'full' && def) this.notify(def.restores === 'hp' ? '生命已滿' : '魔力已滿');
+    else if (result === 'drained' && def) this.notify(`${def.name}沒有充能了（擊殺怪物或回村恢復）`);
     else if (result === 'empty') this.notify('這一格沒有藥水');
     this.publishVitals();
   }
@@ -1225,7 +1240,16 @@ export class Game {
         const held = w.player.potions.peek(i);
         return {
           keyLabel: action.slice(6),
-          potion: held ? { id: held.def.id, name: held.def.name, description: held.def.description, count: held.count } : null,
+          potion: held
+            ? {
+                id: held.def.id,
+                name: held.def.name,
+                description: held.def.description,
+                charges: held.charges,
+                maxCharges: held.def.maxCharges,
+                fraction: held.fraction,
+              }
+            : null,
         };
       }),
       playerDead: w.player.isDead,

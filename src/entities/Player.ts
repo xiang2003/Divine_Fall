@@ -113,15 +113,16 @@ export class Player {
   }
 
   /**
-   * Drinks the potion in a belt slot. A potion is only used up when it does something: drinking a health potion at full
-   * health (or a mana potion at full mana) leaves it in the slot and reports "full".
+   * Drinks the potion in a belt slot, spending one charge. A charge is only spent when the potion does something:
+   * drinking a health potion at full health (or a mana potion at full mana) reports "full" and keeps the charge.
    */
-  usePotion(index: number): { result: 'used' | 'empty' | 'full' | 'dead'; def: PotionDef | null; restored: number } {
+  usePotion(index: number): { result: 'used' | 'empty' | 'drained' | 'full' | 'dead'; def: PotionDef | null; restored: number } {
     if (this.isDead) return { result: 'dead', def: null, restored: 0 };
     const held = this.potions.peek(index);
     if (!held) return { result: 'empty', def: null, restored: 0 };
     const full = held.def.restores === 'hp' ? this.hp >= this.stats.maxHp : this.mana >= this.maxMana;
     if (full) return { result: 'full', def: held.def, restored: 0 };
+    if (held.charges < 1) return { result: 'drained', def: held.def, restored: 0 };
     this.potions.take(index);
     const restored = held.def.restores === 'hp' ? this.heal(held.def.amount) : this.restoreMana(held.def.amount);
     return { result: 'used', def: held.def, restored };
@@ -265,7 +266,7 @@ export class Player {
     this.pos.y = spawn.y;
     this.hp = this.stats.maxHp;
     this.mana = this.maxMana;
-    this.potions.restock();
+    this.potions.refill();
     this.isDead = false;
     this.hurtTimer = 0;
     this.poison.clear();

@@ -46,21 +46,32 @@ export function SkillBar({ skills, potions }: { skills: readonly SkillView[]; po
         </div>
       ))}
       <div className="skill-divider" />
-      {potions.map((slot) => (
-        <div
-          key={slot.keyLabel}
-          className={`skill-slot potion-slot ${slot.potion ? 'ready' : 'empty'}`}
-          title={slot.potion ? `${slot.potion.name}（${slot.keyLabel}）\n${slot.potion.description}` : `藥水欄（${slot.keyLabel}）：空`}
-        >
-          <span className="skill-key">{slot.keyLabel}</span>
-          {slot.potion && (
-            <>
-              <Bottle kind={slot.potion.id} />
-              <span className="potion-count">{slot.potion.count}</span>
-            </>
-          )}
-        </div>
-      ))}
+      {potions.map((slot) => {
+        const p = slot.potion;
+        return (
+          <div
+            key={slot.keyLabel}
+            className={`skill-slot potion-slot ${!p ? 'empty' : p.charges > 0 ? 'ready' : 'drained'}`}
+            title={
+              p
+                ? `${p.name}（${slot.keyLabel}）　充能 ${p.charges} / ${p.maxCharges}\n${p.description}\n每次使用消耗 1 充能；擊殺怪物回復部分，回村全滿。`
+                : `藥水欄（${slot.keyLabel}）：空`
+            }
+          >
+            <span className="skill-key">{slot.keyLabel}</span>
+            {p && (
+              <>
+                <Bottle kind={p.id} />
+                {/* the sweep climbs as kills charge the next use */}
+                {p.fraction > 0 && <div className="potion-charge" style={{ height: `${p.fraction * 100}%` }} />}
+                <span className="potion-count">
+                  {p.charges}/{p.maxCharges}
+                </span>
+              </>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
