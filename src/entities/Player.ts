@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DODGE_CONFIG, PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS, type LegendaryEffectId } from '../data/legendaryEffects';
+import type { PotionDef } from '../data/potions';
 import { NO_UPGRADE, type SkillDef, type SkillUpgrade } from '../data/skills';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
@@ -11,6 +12,7 @@ import { Buffs, DodgeController, PoisonEffect } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
+import { PotionBelt } from '../systems/potions';
 import { getSkillStats, SkillCooldowns, type SkillStats } from '../systems/skills';
 import type { PlayerStats } from '../systems/stats';
 
@@ -47,6 +49,9 @@ export class Player {
   hooks: PlayerHooks = {};
 
   hp: number;
+  readonly maxMana = PLAYER_CONFIG.baseMana;
+  mana: number = PLAYER_CONFIG.baseMana;
+  readonly potions = new PotionBelt();
   isDead = false;
 
   private readonly animator: DirectionalAnimator;
@@ -97,6 +102,29 @@ export class Player {
     const before = this.hp;
     this.hp = Math.min(this.stats.maxHp, this.hp + amount);
     return this.hp - before;
+  }
+
+  /** Restores mana (capped at max). Returns the amount actually restored. */
+  restoreMana(amount: number): number {
+    if (this.isDead) return 0;
+    const before = this.mana;
+    this.mana = Math.min(this.maxMana, this.mana + amount);
+    return this.mana - before;
+  }
+
+  /**
+   * Drinks the potion in a belt slot. A potion is only used up when it does something: drinking a health potion at full
+   * health (or a mana potion at full mana) leaves it in the slot and reports "full".
+   */
+  usePotion(index: number): { result: 'used' | 'empty' | 'full' | 'dead'; def: PotionDef | null; restored: number } {
+    if (this.isDead) return { result: 'dead', def: null, restored: 0 };
+    const held = this.potions.peek(index);
+    if (!held) return { result: 'empty', def: null, restored: 0 };
+    const full = held.def.restores === 'hp' ? this.hp >= this.stats.maxHp : this.mana >= this.maxMana;
+    if (full) return { result: 'full', def: held.def, restored: 0 };
+    this.potions.take(index);
+    const restored = held.def.restores === 'hp' ? this.heal(held.def.amount) : this.restoreMana(held.def.amount);
+    return { result: 'used', def: held.def, restored };
   }
 
   /** Walk toward a world position (click-to-move). Ignored while dead, mid-swing or dodging. */
@@ -236,6 +264,8 @@ export class Player {
     this.pos.x = spawn.x;
     this.pos.y = spawn.y;
     this.hp = this.stats.maxHp;
+    this.mana = this.maxMana;
+    this.potions.restock();
     this.isDead = false;
     this.hurtTimer = 0;
     this.poison.clear();

@@ -6,6 +6,9 @@ export type InputAction =
   | 'skillE'
   | 'skillR'
   | 'skillT'
+  | 'potion1'
+  | 'potion2'
+  | 'potion3'
   | 'dodge'
   | 'inventory'
   | 'quests'
@@ -22,6 +25,9 @@ export type InputAction =
 
 /** Skill actions in hotbar order. */
 export const SKILL_ACTIONS = ['skillQ', 'skillW', 'skillE', 'skillR', 'skillT'] as const satisfies readonly InputAction[];
+
+/** Potion slot actions in belt order. */
+export const POTION_ACTIONS = ['potion1', 'potion2', 'potion3'] as const satisfies readonly InputAction[];
 
 /** Bound but not yet unlocked skill slots (their skills arrive with progression in Phase 5). */
 export const LOCKED_SKILL_ACTIONS = ['skillR', 'skillT'] as const satisfies readonly InputAction[];
@@ -40,6 +46,9 @@ export const KEYBINDINGS: Record<InputAction, readonly string[]> = {
   skillE: ['KeyE'],
   skillR: ['KeyR'],
   skillT: ['KeyT'],
+  potion1: ['Digit1'],
+  potion2: ['Digit2'],
+  potion3: ['Digit3'],
   dodge: ['Space'],
   inventory: ['KeyI', 'KeyB'],
   quests: ['KeyJ'],
@@ -87,6 +96,8 @@ export const PLAYER_CONFIG = {
   regenDelay: 5,
   /** Out-of-combat HP regenerated per second (placeholder until potions / life-leech exist). */
   regenPerSecond: 3,
+  /** Mana pool. Nothing spends mana yet; the gauge and the mana potion exist so skills can cost it later. */
+  baseMana: 60,
   /** Level-1 stats before equipment and progression modifiers (see systems/stats.ts). */
   baseStats: {
     maxHp: 100,

@@ -100,7 +100,7 @@ body,
 }
 
 .hud-toast {
-  bottom: 136px;
+  bottom: 156px;
   left: 50%;
   transform: translateX(-50%);
   color: var(--gold);
@@ -483,7 +483,7 @@ body,
 
 .hud-buffs {
   position: absolute;
-  bottom: 118px;
+  bottom: 138px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -514,10 +514,7 @@ body,
 /* --- skill bar ------------------------------------------------------------------------- */
 
 .hud-skills {
-  position: absolute;
-  bottom: 26px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   gap: 6px;
   padding: 8px 10px;
@@ -736,7 +733,7 @@ body,
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 150px;
+  padding-bottom: max(210px, 32vh); /* raised toward the middle of the screen */
   pointer-events: none;
   z-index: 20;
 }
@@ -1152,7 +1149,7 @@ body,
   text-align: center;
 }
 
-/* --- the main HUD (see the reference screenshot: orbs at the bottom corners, skill bar in the middle, round minimap top right) ---- */
+/* --- the main HUD (see the reference screenshot: health and mana orbs either side of the skill bar, round minimap top right) ---- */
 
 button {
   font-family: inherit;
@@ -1198,20 +1195,101 @@ button:hover {
   color: var(--muted);
 }
 
-/* controls reminder under the skill bar */
-.hud-hint {
+/* bottom centre: health orb | skills, potions, experience, controls | mana orb */
+.hud-bottom {
   position: absolute;
-  bottom: 5px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: calc(100% - 300px);
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+}
+
+/* controls reminder under the experience bar; it wraps inside the width the skill bar sets */
+.hud-hint {
+  width: 0;
+  min-width: 100%;
   font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
   color: rgba(230, 224, 212, 0.55);
   text-shadow: 0 1px 2px #000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   pointer-events: none;
+}
+
+.skill-divider {
+  width: 2px;
+  margin: 2px 4px;
+  background: linear-gradient(transparent, var(--frame-bronze), transparent);
+}
+
+.skill-slot.potion-slot.empty {
+  opacity: 0.5;
+  border-color: #3b3346;
+}
+
+.potion-bottle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 42px;
+  transform: translate(-50%, -46%);
+}
+
+.potion-count {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px #000;
+}
+
+/* experience: a thin bar under the skill bar */
+.xp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.xp-level {
+  min-width: 34px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.xp-track {
+  flex: 1;
+  height: 8px;
+  background: #07060b;
+  border: 1px solid var(--frame-bronze);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--frame-dark), inset 0 0 4px rgba(0, 0, 0, 0.9);
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(#e9cf7d, #c19a3c 55%, #7d5c1e);
+  transition: width 0.2s linear;
+}
+
+.xp-numbers {
+  min-width: 70px;
+  text-align: right;
+  color: var(--muted);
 }
 
 /* the hero's medallion, top left */
@@ -1267,22 +1345,14 @@ button:hover {
 
 /* orbs: a glass ball in a bronze and gold ring, filled to the level of the value */
 .orb {
-  position: absolute;
-  bottom: 12px;
+  position: relative;
+  flex: none;
   width: 120px;
   height: 120px;
   border-radius: 50%;
   background: conic-gradient(from 200deg, #4f3717, #d9b25a, #6a4a22, #f0d27e, #4f3717);
   box-shadow: 0 0 0 2px var(--frame-dark), 0 6px 16px rgba(0, 0, 0, 0.75);
   pointer-events: none;
-}
-
-.orb-hp {
-  left: 14px;
-}
-
-.orb-xp {
-  right: 14px;
 }
 
 .orb-glass {
@@ -1319,7 +1389,7 @@ button:hover {
   background: linear-gradient(#f0604f, #c32d22 45%, #6d1511);
 }
 
-.orb-xp .orb-liquid {
+.orb-mp .orb-liquid {
   background: linear-gradient(#7d9bff, #4256c8 45%, #1f2a7a);
 }
 

@@ -10,7 +10,7 @@ import { WorldMapPanel } from './WorldMapPanel';
 import { getNpc } from '../data/npcs';
 import { assetUrl } from '../game/AssetLoader';
 import { Minimap } from './Minimap';
-import { Orb } from './Orb';
+import { Orb, XpBar } from './Orb';
 import type { MinimapView } from './minimapDraw';
 import { SkillBar } from './SkillBar';
 
@@ -99,7 +99,6 @@ export function HUD({
           擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
         </div>
       </div>
-      <div className="hud-hint">左鍵 移動 · 右鍵 攻擊 · Space 閃避 · Q W E 技能 · I 背包 · J 任務 · M 地圖 · F 互動 · F3 除錯</div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
       <div className="hud-hero">
@@ -108,14 +107,21 @@ export function HUD({
         </div>
         <span className="hud-hero-level">{snapshot.level}</span>
       </div>
-      <Orb kind="hp" fraction={snapshot.playerHp / Math.max(1, snapshot.playerMaxHp)} main={`${snapshot.playerHp}`} sub={`/ ${snapshot.playerMaxHp}`} title="生命" />
-      <Orb
-        kind="xp"
-        fraction={snapshot.xpToNext > 0 ? snapshot.xp / snapshot.xpToNext : 1}
-        main={`Lv ${snapshot.level}`}
-        sub={snapshot.xpToNext > 0 ? `${snapshot.xp} / ${snapshot.xpToNext}` : 'MAX'}
-        title="經驗"
-      />
+      <div className="hud-bottom">
+        <Orb kind="hp" fraction={snapshot.playerHp / Math.max(1, snapshot.playerMaxHp)} main={`${snapshot.playerHp}`} sub={`/ ${snapshot.playerMaxHp}`} title="生命" />
+        <div className="hud-center">
+          <SkillBar skills={snapshot.skills} potions={snapshot.potions} />
+          <XpBar level={snapshot.level} xp={snapshot.xp} xpToNext={snapshot.xpToNext} />
+          <div className="hud-hint">左鍵 移動 · 右鍵 攻擊 · Space 閃避 · Q W E 技能 · 1 2 3 藥水 · I 背包 · J 任務 · M 地圖 · F 互動 · F3 除錯</div>
+        </div>
+        <Orb
+          kind="mp"
+          fraction={snapshot.playerMana / Math.max(1, snapshot.playerMaxMana)}
+          main={`${snapshot.playerMana}`}
+          sub={`/ ${snapshot.playerMaxMana}`}
+          title="魔力"
+        />
+      </div>
       <div className="hud-minimap-slot">
         <Minimap getView={getMinimapView} title="小地圖（M：世界地圖）" />
       </div>
@@ -133,7 +139,6 @@ export function HUD({
           <span>拾取戰利品（點擊名稱或按 F）</span>
         </div>
       )}
-      <SkillBar skills={snapshot.skills} />
       {!snapshot.inventoryOpen && <EquipmentSummary equipment={snapshot.inventory.equipment} />}
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
       {!snapshot.inventoryOpen && <QuestTracker quests={snapshot.quests} npcName={npcName} />}

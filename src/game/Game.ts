@@ -4,10 +4,12 @@ import {
   LOOT_CONFIG,
   MAX_FRAME_DT,
   PLAYER_CONFIG,
+  POTION_ACTIONS,
   SKILL_INPUT_BUFFER,
 } from '../config/gameConfig';
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { LOOT_TABLES } from '../data/lootTables';
+import type { PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
 import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isWorldMapId } from '../data/worldMaps';
@@ -78,6 +80,13 @@ export interface SkillView {
   ready: boolean;
 }
 
+/** One slot of the potion belt as the HUD draws it. */
+export interface PotionSlotView {
+  keyLabel: string;
+  /** The potion held, or null for an empty slot. */
+  potion: { id: PotionId; name: string; description: string; count: number } | null;
+}
+
 /** The boss health bar, shown once the boss has noticed the player. */
 export interface BossView {
   name: string;
@@ -129,6 +138,9 @@ export interface GameSnapshot {
   notice: { seq: number; text: string } | null;
   playerHp: number;
   playerMaxHp: number;
+  playerMana: number;
+  playerMaxMana: number;
+  potions: readonly PotionSlotView[];
   playerDead: boolean;
   /** Increments every time the player takes damage (restarts the screen flash). */
   hitSeq: number;
@@ -188,6 +200,9 @@ const INITIAL: GameSnapshot = {
   notice: null,
   playerHp: 0,
   playerMaxHp: 0,
+  playerMana: 0,
+  playerMaxMana: 0,
+  potions: [],
   playerDead: false,
   hitSeq: 0,
   monstersAlive: 0,
@@ -1184,6 +1199,16 @@ export class Game {
     this.publish({ skills: views });
   }
 
+  private drinkPotion(index: number): void {
+    const w = this.world;
+    if (!w) return;
+    const { result, def, restored } = w.player.usePotion(index);
+    if (result === 'used' && def) this.notify(`${def.name}：恢復 ${Math.round(restored)} 點${def.restores === 'hp' ? '生命' : '魔力'}`);
+    else if (result === 'full' && def) this.notify(def.restores === 'hp' ? '生命已滿' : '魔力已滿');
+    else if (result === 'empty') this.notify('這一格沒有藥水');
+    this.publishVitals();
+  }
+
   private notify(text: string): void {
     this.publish({ notice: { seq: ++this.noticeSeq, text } });
   }
@@ -1194,6 +1219,15 @@ export class Game {
     this.publish({
       playerHp: Math.ceil(w.player.hp),
       playerMaxHp: w.player.stats.maxHp,
+      playerMana: Math.ceil(w.player.mana),
+      playerMaxMana: w.player.maxMana,
+      potions: POTION_ACTIONS.map((action, i) => {
+        const held = w.player.potions.peek(i);
+        return {
+          keyLabel: action.slice(6),
+          potion: held ? { id: held.def.id, name: held.def.name, description: held.def.description, count: held.count } : null,
+        };
+      }),
       playerDead: w.player.isDead,
       hitSeq: this.hitSeq,
       monstersAlive: w.monsters.aliveCount,
@@ -1358,6 +1392,9 @@ export class Game {
       for (const action of LOCKED_SKILL_ACTIONS) {
         if (input.wasPressed(action)) this.notify(`${action.slice(5)}：技能尚未解鎖`);
       }
+      POTION_ACTIONS.forEach((action, i) => {
+        if (input.wasPressed(action)) this.drinkPotion(i);
+      });
     } else {
       this.pickupTarget = null;
       this.pendingSkill = null;
