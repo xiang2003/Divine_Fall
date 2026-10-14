@@ -12,9 +12,13 @@ left one mirrored. For each character:
   3. colours are boosted a little and reduced to one small palette shared by the three views (no dithering), edges are made hard
      (no half-transparent pixels) and a dark one-pixel outline is drawn around the figure, so it stays readable on grass;
   4. the figure is stood on the baseline of a 64 x 64 frame. The idle animation is the classic breathing bob: the upper body
-     sinks one pixel for two of the four frames while the legs stay put.
+     sinks one pixel for two of the four frames while the legs stay put;
+  5. the dodge roll is baked too: the figure is tucked into a ball (squashed, a little wider) and turned by 45 degrees per frame
+     with nearest-neighbour sampling, so every frame stays on the pixel grid. Right and front facings roll clockwise, left and back
+     counter-clockwise.
 
-Sheet layout: 4 rows (front, right, back, left) x IDLE_FRAMES columns of 64 x 64 px frames. The game draws it without smoothing.
+Sheet layout: 4 rows (front, right, back, left) x (IDLE_FRAMES + ROLL_FRAMES) columns of 64 x 64 px frames: the idle frames first,
+then the roll frames. The game draws it without smoothing.
 """
 import importlib.util
 import sys
@@ -29,6 +33,13 @@ OUT = ROOT / 'public' / 'assets' / 'characters'
 FRAME = 64
 BASELINE = 62  # row of the soles inside the frame (the outline takes the row below)
 IDLE_FRAMES = 4
+ROLL_FRAMES = 8
+# the first roll frame is the crouch before the tumble; later frames are the tucked ball (height as a fraction of the standing figure)
+ROLL_CROUCH = 0.82
+ROLL_BALL_HEIGHT = 0.55
+ROLL_BALL_WIDTH = 1.25
+# the turning ball is lowered this many pixels into the ground line so it looks like it rolls on it
+ROLL_SINK = 3
 # idle: how many pixels the upper body sinks in each frame, and where "upper body" ends (fraction of the figure's height from the top)
 BOB = [0, 0, 1, 1]
 BOB_SPLIT = 0.52
@@ -155,6 +166,32 @@ def bob(figure: Image.Image, dy: int) -> Image.Image:
     return out
 
 
+def roll_frame(figure: Image.Image, step: int, clockwise: bool) -> Image.Image:
+    """One frame of the dodge roll as a FRAME x FRAME picture: step 0 is the crouch, the others are the tucked figure turned 45 degrees more each."""
+    height = ROLL_CROUCH if step == 0 else ROLL_BALL_HEIGHT
+    width = 1.0 if step == 0 else ROLL_BALL_WIDTH
+    w = max(1, round(figure.width * width))
+    h = max(1, round(figure.height * height))
+    ball = figure.resize((w, h), Image.NEAREST)
+    # the ball turns about its own middle, inside a square big enough for any angle
+    side = int((w * w + h * h) ** 0.5) + 2
+    square = Image.new('RGBA', (side, side))
+    square.alpha_composite(ball, ((side - w) // 2, (side - h) // 2))
+    angle = step * (360 / ROLL_FRAMES) * (-1 if clockwise else 1)  # PIL turns counter-clockwise for positive angles
+    if step:
+        square = square.rotate(angle, resample=Image.NEAREST)
+    frame = Image.new('RGBA', (FRAME, FRAME))
+    if step == 0:
+        # crouch: feet on the baseline like the standing figure
+        frame.alpha_composite(square, ((FRAME - side) // 2, BASELINE + 1 - (side + h) // 2))
+    else:
+        # the ball rests on the ground line: its lowest point is the radius below its middle
+        radius = side / 2
+        centre_y = BASELINE + 1 + ROLL_SINK - radius
+        frame.alpha_composite(square, (round((FRAME - side) / 2), round(centre_y - radius)))
+    return frame
+
+
 def place(figure: Image.Image, sheet: Image.Image, col: int, row: int) -> None:
     x = col * FRAME + (FRAME - figure.width) // 2
     y = row * FRAME + BASELINE - figure.height + 1
@@ -168,10 +205,13 @@ def build(name: str, preview: Path | None) -> None:
     done = {v: outline(apply_palette(img, palette)) for v, img in views.items()}
     left = done['left']
     rows = [done['front'], left.transpose(Image.FLIP_LEFT_RIGHT), done['back'], left]  # front, right, back, left
-    sheet = Image.new('RGBA', (FRAME * IDLE_FRAMES, FRAME * len(rows)))
+    sheet = Image.new('RGBA', (FRAME * (IDLE_FRAMES + ROLL_FRAMES), FRAME * len(rows)))
+    clockwise = [True, True, False, False]  # front, right, back, left
     for row, figure in enumerate(rows):
         for col in range(IDLE_FRAMES):
             place(bob(figure, BOB[col]), sheet, col, row)
+        for step in range(ROLL_FRAMES):
+            sheet.alpha_composite(roll_frame(figure, step, clockwise[row]), ((IDLE_FRAMES + step) * FRAME, row * FRAME))
     OUT.mkdir(parents=True, exist_ok=True)
     sheet.save(OUT / f'{name}.png', optimize=True)
     print(name, sheet.size, {v: img.size for v, img in done.items()})

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parseMap } from '../src/data/mapData';
 import { CABIN_SPRITES } from '../src/game/BuildingArt';
 import { ASSET_MANIFEST, DECOR_KINDS, PROP_KEYS, THEME_SCATTER } from '../src/game/assetManifest';
-import { IDLE_FRAMES } from '../src/game/DirectionalAnimator';
+import { IDLE_FRAMES, ROLL_FRAMES } from '../src/game/DirectionalAnimator';
 import { DIRECTION_COUNT, Facing, directionIndex } from '../src/game/directions';
 
 const PUBLIC = join(__dirname, '..', 'public');
@@ -111,12 +111,12 @@ describe('directionIndex', () => {
 });
 
 describe('character sheets', () => {
-  it('have a row per facing and a column per idle frame', () => {
+  it('have a row per facing, with the idle frames first and then the roll frames', () => {
     for (const key of ['char.hero', 'npc.elder', 'npc.hunter', 'npc.waterer', 'npc.boatwright']) {
       const def = ASSET_MANIFEST.find((d) => d.key === key)!;
       const { width, height } = pngSize(join(PUBLIC, def.url!));
       expect(height / def.frameHeight, key).toBe(DIRECTION_COUNT);
-      expect(width / def.frameWidth, key).toBe(IDLE_FRAMES);
+      expect(width / def.frameWidth, key).toBe(IDLE_FRAMES + ROLL_FRAMES);
     }
   });
 

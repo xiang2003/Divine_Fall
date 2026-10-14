@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLAYER_CONFIG } from '../config/gameConfig';
+import { DODGE_CONFIG, PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS, type LegendaryEffectId } from '../data/legendaryEffects';
 import { NO_UPGRADE, type SkillDef, type SkillUpgrade } from '../data/skills';
 import { SpriteKey } from '../game/assetManifest';
@@ -54,6 +54,8 @@ export class Player {
   private readonly attack = new AttackTimer();
   private readonly swingDir: Vec2 = { x: 1, y: 1 };
   private readonly dodgeDir: Vec2 = { x: 1, y: 1 };
+  /** True from the start of a dodge until the first tick after its dash (the animator runs at roll speed meanwhile). */
+  private rolling = false;
   private effects: ReadonlySet<LegendaryEffectId> = new Set();
   private activeSkill: ActiveSkill | null = null;
   private hurtTimer = 0;
@@ -149,12 +151,15 @@ export class Player {
   startDodge(aimX: number, aimY: number): boolean {
     if (this.isDead || !this.dodge.ready) return false;
     this.dodge.start();
+    this.rolling = true;
     this.activeSkill = null;
     normalizeInto(aimX - this.pos.x, aimY - this.pos.y, this.dodgeDir, this.swingDir.x, this.swingDir.y);
     this.attack.cancel();
-    this.animator.setSpeed(1);
     this.mover.stop();
     this.faceWorld(this.dodgeDir.x, this.dodgeDir.y);
+    // one full tumble in exactly the time the dash lasts
+    this.animator.setSpeed(this.animator.durationOf('roll') / DODGE_CONFIG.duration);
+    this.animator.play('roll', true);
     if (this.effects.has('dodgeHaste')) {
       this.buffs.hasteMove(LEGENDARY_EFFECTS.dodgeHaste.duration, LEGENDARY_EFFECTS.dodgeHaste.speedBonus);
     }
@@ -235,10 +240,14 @@ export class Player {
     if (dash > 0) {
       const step = this.dodge.speed * dash;
       this.collision.moveCircle(this.pos, this.radius, this.dodgeDir.x * step, this.dodgeDir.y * step);
-      this.animator.play('walk');
+      this.animator.play('roll');
       this.animator.update(dt);
       this.syncVisuals();
       return;
+    }
+    if (this.rolling) {
+      this.rolling = false;
+      this.animator.setSpeed(1);
     }
 
     this.cooldowns.update(dt);

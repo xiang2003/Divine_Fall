@@ -2,18 +2,25 @@ import * as THREE from 'three';
 import type { AssetLoader } from './AssetLoader';
 import { DIRECTION_COUNT, Facing, directionIndex } from './directions';
 
-export type DirectionalPose = 'idle' | 'walk' | 'attack' | 'hurt' | 'die';
+export type DirectionalPose = 'idle' | 'walk' | 'attack' | 'hurt' | 'die' | 'roll';
 
-/** Frames in a character sheet's idle (breathing) cycle; each facing is one row of this many columns. */
+/**
+ * A character sheet has one row per facing: first the idle (breathing) frames, then the frames of the dodge roll
+ * (tools/prepare_sprites.py draws both).
+ */
 export const IDLE_FRAMES = 4;
+export const ROLL_FRAMES = 8;
 const IDLE_FPS = 3;
 
 /** Natural length of the one-shot poses in "animation seconds"; the player scales it with setSpeed like any animator. */
 const ATTACK_LENGTH = 1;
+const ROLL_LENGTH = 1;
 const HURT_LENGTH = 0.3;
 const DIE_LENGTH = 0.8;
 
 /** The attack steps forward this far (scene pixels) at its peak, and leans this far (radians). */
+/** The roll hops up this far (scene pixels) in the middle of the tumble. */
+const ROLL_HOP = 4;
 const LUNGE_PIXELS = 6;
 const ATTACK_LEAN = 0.16;
 /** Walking: steps per second, how high the body hops (scene pixels) and how far it sways (radians). */
@@ -68,7 +75,7 @@ export class DirectionalAnimator {
 
   play(name: string, restart = false): void {
     const pose = name as DirectionalPose;
-    if (!['idle', 'walk', 'attack', 'hurt', 'die'].includes(pose)) return;
+    if (!['idle', 'walk', 'attack', 'hurt', 'die', 'roll'].includes(pose)) return;
     if (pose === this.pose && !restart) return;
     this.pose = pose;
     this.time = 0;
@@ -77,6 +84,7 @@ export class DirectionalAnimator {
   /** Natural length of a pose in animation seconds (walk and idle loop, so they have no end). */
   durationOf(name: string): number {
     if (name === 'attack') return ATTACK_LENGTH;
+    if (name === 'roll') return ROLL_LENGTH;
     if (name === 'hurt') return HURT_LENGTH;
     if (name === 'die') return DIE_LENGTH;
     return 1;
@@ -124,6 +132,13 @@ export class DirectionalAnimator {
         const phase = this.time * WALK_HZ * Math.PI * 2;
         this.offsetY = Math.abs(Math.sin(phase)) * WALK_HOP;
         rotation = Math.sin(phase) * WALK_SWAY;
+        break;
+      }
+      case 'roll': {
+        // the tumble: one baked frame per step, with a small hop through the middle of it
+        const p = this.progress(ROLL_LENGTH);
+        col = IDLE_FRAMES + Math.min(ROLL_FRAMES - 1, Math.floor(p * ROLL_FRAMES));
+        this.offsetY = Math.sin(p * Math.PI) * ROLL_HOP;
         break;
       }
       case 'attack': {

@@ -376,12 +376,13 @@ function characterSprite(
 
 /**
  * Characters with 4 facings (front, right, back, left): pixel art made from the characters' turnaround drawings (see ASSETS.md and
- * tools/prepare_sprites.py). Each sheet is 4 columns (the idle cycle) x 4 rows (one per facing) of 64 px frames, drawn without
- * smoothing. The walk, attack, hurt and death poses are acted out by DirectionalAnimator. If an image fails to load, the old
+ * tools/prepare_sprites.py). Each sheet is 12 columns (4 idle frames, 8 roll frames) x 4 rows (one per facing) of 64 px frames, drawn without
+ * smoothing. The walk, attack, hurt and death poses are acted out by DirectionalAnimator; the dodge roll has its own frames. If an image fails to load, the old
  * procedural figure stands in (one frame repeated).
  */
 
-export const CHARACTER_SHEET = { columns: 4, rows: 4 };
+/** 4 idle frames + 8 roll frames per facing (see DirectionalAnimator IDLE_FRAMES / ROLL_FRAMES). */
+export const CHARACTER_SHEET = { columns: 12, rows: 4 };
 
 function directionalPlaceholder(base: () => HTMLCanvasElement): () => HTMLCanvasElement {
   return () => {
