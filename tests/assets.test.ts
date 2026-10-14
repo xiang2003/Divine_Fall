@@ -121,10 +121,10 @@ describe('character sheets', () => {
   });
 
   it('have art in every frame of every facing', () => {
-    // a cheap check on the PNG: a mostly empty file is a few hundred bytes, a sheet with five figures drawn is tens of KB
+    // a cheap check on the PNG: an empty sheet compresses to a few hundred bytes, sixteen drawn figures take several KB
     for (const key of ['char.hero', 'npc.elder', 'npc.hunter', 'npc.waterer', 'npc.boatwright']) {
       const def = ASSET_MANIFEST.find((d) => d.key === key)!;
-      expect(readFileSync(join(PUBLIC, def.url!)).length, key).toBeGreaterThan(20000);
+      expect(readFileSync(join(PUBLIC, def.url!)).length, key).toBeGreaterThan(2500);
     }
   });
 });

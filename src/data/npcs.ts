@@ -23,7 +23,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '村長',
     spriteKey: SpriteKey.NPC_ELDER,
     scale: 1,
-    tagHeight: 68,
+    tagHeight: 53,
     portrait: 'assets/art/portraits/elder_qiyi.webp',
     conversation: {
       intro: { graph: 'elder_intro', metFlag: 'met_elder' },
@@ -49,7 +49,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '獵人',
     spriteKey: SpriteKey.NPC_HUNTER,
     scale: 1,
-    tagHeight: 75,
+    tagHeight: 61,
     portrait: 'assets/art/portraits/hunter_yanya.webp',
     conversation: {
       intro: { graph: 'hunter_intro', metFlag: 'met_yanya' },
@@ -72,7 +72,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '汲水人',
     spriteKey: SpriteKey.NPC_WATERER,
     scale: 1,
-    tagHeight: 63,
+    tagHeight: 48,
     portrait: 'assets/art/portraits/waterer_xi.webp',
     conversation: {
       intro: { graph: 'waterer_intro', metFlag: 'met_xi' },
@@ -96,7 +96,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '船匠',
     spriteKey: SpriteKey.NPC_BOATWRIGHT,
     scale: 1,
-    tagHeight: 59,
+    tagHeight: 45,
     portrait: 'assets/art/portraits/boatwright_laodu.webp',
     conversation: {
       intro: { graph: 'boatwright_intro', metFlag: 'met_laodu' },

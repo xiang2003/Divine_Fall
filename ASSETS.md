@@ -66,35 +66,37 @@
 
 **已知的風格落差**：房屋、樹、道具、植物仍是第三方的 3D 渲染圖，與角色的半寫實像素插畫風格不完全一致。
 
-## 遊戲內的角色精靈（2026-10-14，本機 AI 生成）
+## 遊戲內的角色精靈（2026-10-14，像素風，本機處理）
 
-主角與四位 NPC 在遊戲裡的樣子，是以上面五張形象圖為底做的：**正面、側面、背面**三個方向另外生成，**右側是左側的鏡像**，
-所以共四個方向；每個方向有 4 格待機（呼吸）動畫。Puny Characters（Shade，CC0）已經不再使用，相關檔案與腳本已移除。
+**地圖上看到的人物與「形象圖」是分開的兩套**：形象圖（上面的大張插畫）用在載入畫面、頭像、對話；地圖上走動的是像素小人，
+各有正面、右、背面、左四個方向和 4 格待機動畫。之後形象圖要換風格，不會影響地圖上的小人。
 
-做法（全部在本機 ComfyUI 的 Z-Image-Turbo 上，沒有使用付費 API）：
+像素小人是用每個角色的「正面、側面、背面」三張轉面圖縮出來的（轉面圖由本機 ComfyUI 的 Z-Image-Turbo 以形象圖為底局部重繪而成，
+沒有使用付費 API）。Puny Characters（Shade，CC0）已經不再使用，相關檔案與腳本已移除。
 
-1. 把形象圖放進一張畫布的左半邊，右半邊遮住，用**局部重繪**請模型畫出同一個角色的「正面」「側面」「背面」，
-   模型可以參考左邊那個完成的角色（服裝、配色、配件）。每個角色每個方向各畫兩個種子，我用眼睛挑最好的一張。
-2. 挑中的原圖放在 [docs/art/turnarounds/](docs/art/turnarounds/)（`<角色>_front / left / back.webp`），種子與完整提示詞在
-   [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)。
-3. [tools/prepare_sprites.py](tools/prepare_sprites.py) 去背、去掉腳下的灰色投影、每個角色用同一個縮放比例（轉身時大小不變）、
-   縮進 128×128 的格子，並產生右側（左側鏡像）與四格呼吸動畫（身體在腳底固定的情況下微微拉高再還原），輸出 `public/assets/characters/<角色>.png`。
+1. 轉面圖原檔放在 [docs/art/turnarounds/](docs/art/turnarounds/)（`<角色>_front / left / back.webp`），種子與完整提示詞在
+   [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)。每個角色每個方向各畫兩個種子，我用眼睛挑最好的一張。
+2. [tools/prepare_sprites.py](tools/prepare_sprites.py) 去背、去掉腳下的灰色投影、每個角色用同一個縮放比例縮成約 38 到 54 像素高
+   （轉身時大小不變）、提高飽和度與對比、把顏色減到每個角色共用的 28 色調色盤（不抖色）、邊緣變成硬邊（沒有半透明像素）、
+   外面描一圈深色輪廓，放進 64×64 的格子。右側是左側的鏡像。
+3. 待機是經典的「呼吸起伏」：上半身每隔兩格下沉一個像素，雙腳不動。
+4. 輸出 `public/assets/characters/<角色>.png`（256×256，4 方向 × 4 格），遊戲不做平滑處理地畫出。
 
-| 專案內檔案 | 角色 |
-| --- | --- |
-| public/assets/characters/hero.png | 主角 |
-| public/assets/characters/elder_qiyi.png | 祈漪 |
-| public/assets/characters/hunter_yanya.png | 岩牙 |
-| public/assets/characters/waterer_xi.png | 汐 |
-| public/assets/characters/boatwright_laodu.png | 老舵 |
+| 專案內檔案 | 角色 | 高度（像素） |
+| --- | --- | --- |
+| public/assets/characters/hero.png | 主角 | 50 |
+| public/assets/characters/elder_qiyi.png | 祈漪 | 45 |
+| public/assets/characters/hunter_yanya.png | 岩牙 | 54（含弓尖） |
+| public/assets/characters/waterer_xi.png | 汐 | 41 |
+| public/assets/characters/boatwright_laodu.png | 老舵 | 38 |
 
 **已知的限制**
-- **只有待機有真正的畫格**（4 格呼吸）。走路、攻擊、受傷、死亡由程式演出：走路＝上下跳動加左右微擺、攻擊＝往前衝並前傾、
-  受傷＝變紅並後退、死亡＝倒下淡出。沒有手腳擺動，所以看起來是「滑步」，不是真的走路。
-- **正面是正對鏡頭**，形象圖是微微轉向右邊 30 度，兩者姿勢不同；各視角之間的臉、手持物、配件有些許不一致
-  （例如主角的短劍在正面看不到、岩牙的長弓在側面看不到）。這是模型生成的，沒有逐一修正。
+- **是自動縮出來的像素風，不是手繪的像素畫**：細節（臉、配件）在 40 到 50 像素高時大多糊掉，只剩輪廓、髮型與主要顏色。
+- **只有待機有畫格**。走路、攻擊、受傷、死亡由程式演出：走路＝上下跳動加左右微擺、攻擊＝往前衝並前傾、受傷＝變紅並後退、死亡＝倒下淡出。
+  沒有手腳擺動，所以看起來是「滑步」。
+- **各視角之間有些不一致**：轉面圖是模型分別生成的，例如岩牙的長弓在側面看不到、主角的短劍在正面看不到。
 - **右側是左側鏡像**，不對稱的東西（劍掛的邊、手持木杖的手）在右側會換邊。
-- 角色比例是我定的：主角、祈漪、岩牙、汐、老舵的高度分別約 108、98、114、90、84 格（含弓尖），汐與老舵比較矮。
+- 角色高度是我定的，汐與老舵比較矮。
 
 ## 本機 AI 生成的角色圖（2026-10-13）
 
@@ -119,7 +121,7 @@
 ## 五位角色的形象圖（2026-10-14，本機 AI 生成）
 
 同樣在本機 ComfyUI 用 **Z-Image-Turbo**（Apache-2.0，授權與工作流程說明見上一節）生成，沒有使用付費 API。畫風參考你提供的附圖
-（半寫實、帶像素顆粒感的插畫）。這些是形象圖；遊戲內走動的角色精靈是以它們為底再生成其他方向做成的（見下一節）。
+（半寫實、帶像素顆粒感的插畫）。這些是形象圖；地圖上走動的像素小人是另一套（見下一節）。
 生成設定：832×1216、8 步，轉成 WebP（品質 92）。每張的種子與完整英文提示詞在 [docs/art/character-prompts.json](docs/art/character-prompts.json)。
 
 | 專案內檔案 | 角色 | 種子 |
