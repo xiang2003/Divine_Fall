@@ -240,8 +240,8 @@ function buildingSprite(style: (typeof BUILDING_VARIANTS)[number]['style'], w: n
   };
 }
 
-/** Frame size of the 4-facing pixel-art character sheets and how much they are enlarged (see directionalCharacters below). */
-const CHARACTER_FRAME = { width: 32, height: 32, scale: 2.5 };
+/** Frame size of the 4-facing character sheets and how much they are shrunk (see directionalCharacters below). */
+const CHARACTER_FRAME = { width: 128, height: 128, scale: 0.62 };
 
 export const ASSET_MANIFEST: SpriteAssetDef[] = [
   terrainSprite(SpriteKey.SHARD, 64, 64, 0.25, drawShard),
@@ -375,13 +375,13 @@ function characterSprite(
 }
 
 /**
- * Characters with 4 facings (front, right, back, left): Shade's pixel-art "Puny Characters" (see ASSETS.md and
- * tools/prepare_characters.py). Each sheet is 24 columns x 4 rows (one row per facing) of 32 px frames holding every pose
- * (columns per pose: DirectionalAnimator.POSE_FRAMES), drawn without smoothing at 2.5x. If an image fails to load, the old
- * procedural figure stands in (one frame repeated).
+ * Characters with 4 facings (front, right, back, left), drawn after their concept art (see ASSETS.md and tools/prepare_sprites.py).
+ * Each sheet is 4 columns (the idle breathing cycle) x 4 rows (one per facing) of 128 px frames, shown at 0.62x. The walk,
+ * attack, hurt and death poses are acted out by DirectionalAnimator. If an image fails to load, the old procedural figure
+ * stands in (one frame repeated).
  */
 
-export const CHARACTER_SHEET = { columns: 24, rows: 4 };
+export const CHARACTER_SHEET = { columns: 4, rows: 4 };
 
 function directionalPlaceholder(base: () => HTMLCanvasElement): () => HTMLCanvasElement {
   return () => {
@@ -404,8 +404,9 @@ function directionalSheet(key: string, name: string, base: () => HTMLCanvasEleme
     frameWidth: CHARACTER_FRAME.width,
     frameHeight: CHARACTER_FRAME.height,
     displayScale: CHARACTER_FRAME.scale,
-    // the figure's feet are at row 24 of the 32 px frame
-    anchor: { x: 0.5, y: 8 / CHARACTER_FRAME.height },
+    smooth: true,
+    // the soles are on row 124 of the 128 px frame (tools/prepare_sprites.py BASELINE)
+    anchor: { x: 0.5, y: 4 / CHARACTER_FRAME.height },
     placeholder: directionalPlaceholder(base),
   };
 }
@@ -413,10 +414,10 @@ function directionalSheet(key: string, name: string, base: () => HTMLCanvasEleme
 function directionalCharacters(): SpriteAssetDef[] {
   return [
     directionalSheet(SpriteKey.HERO, 'hero', drawPlayerSheet),
-    directionalSheet(SpriteKey.NPC_ELDER, 'elder', drawElderSheet),
-    directionalSheet(SpriteKey.NPC_HUNTER, 'hunter', drawHunterSheet),
-    directionalSheet(SpriteKey.NPC_WATERER, 'waterer', drawWatererSheet),
-    directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'boatwright', drawBoatwrightSheet),
+    directionalSheet(SpriteKey.NPC_ELDER, 'elder_qiyi', drawElderSheet),
+    directionalSheet(SpriteKey.NPC_HUNTER, 'hunter_yanya', drawHunterSheet),
+    directionalSheet(SpriteKey.NPC_WATERER, 'waterer_xi', drawWatererSheet),
+    directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'boatwright_laodu', drawBoatwrightSheet),
   ];
 }
 

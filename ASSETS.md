@@ -49,9 +49,8 @@
 **上面「目前使用中（Phase 1）」表格裡的玩家、NPC、房屋、道具、沙灘／洞窟／海水地面現在都改用下列圖片；
 原本的程式繪製佔位圖留作「圖片載入失敗時的備援」。** 怪物、遺跡的牆、洞窟的石筍與大石頭、水井、渡船仍是佔位圖。
 
-五個作品都是 OpenGameArt 上標示 **CC0 1.0** 的素材（我讀作品頁面確認標示，下載的壓縮檔沒有附授權文字檔，沒有法律意見）。
-處理腳本：[tools/prepare_assets.py](tools/prepare_assets.py)（地面、道具、房屋、植物）與
-[tools/prepare_characters.py](tools/prepare_characters.py)（角色）。原始下載不放進專案。
+四個作品都是 OpenGameArt 上標示 **CC0 1.0** 的素材（我讀作品頁面確認標示，下載的壓縮檔沒有附授權文字檔，沒有法律意見）。
+處理腳本：[tools/prepare_assets.py](tools/prepare_assets.py)（地面、道具、房屋、植物）。原始下載不放進專案。角色不再用第三方素材，見下面「遊戲內的角色精靈」。
 
 | 專案內檔案 | 用途 | 原作品 | 作者 | 授權 | 修改 |
 | --- | --- | --- | --- | --- | --- |
@@ -64,13 +63,38 @@
 | public/assets/tiles/sand_*.png、sea_*.png | 沙灘地面、海水（128×64，顯示為 64×32） | 同上（`sand_tiles.png`、`water_v01.png`） | rubberduck | CC0 | 裁切、調亮 |
 | public/assets/tiles/cave_*.png | 洞窟地面 | 同上（`dirt_tiles.png` 的石板色調，重新上色成藍灰） | rubberduck | CC0 | 裁切、改色 |
 | public/assets/props/plant_*.png | 灌木、矮樹叢、草叢、雜草、棕櫚、熱帶植物（草地與沙灘的散布裝飾） | [Free isometric plants-pack](https://opengameart.org/content/free-isometric-plants-pack) | rubberduck（打包），模型與貼圖 yughues | CC0 | 調亮 |
-| public/assets/characters/hero.png、elder.png、hunter.png、waterer.png、boatwright.png | 主角與四位 NPC：2D 像素小人，正面／右／背面／左四個朝向，每個朝向有待機、行走、揮劍、受傷、死亡的畫格（768×128，32×32 一格） | [Puny Characters](https://opengameart.org/content/puny-characters)（`Warrior-Blue`＝主角、`Mage-Cyan`＝祈漪、`Archer-Green`＝岩牙、`Archer-Purple`＝汐、`Warrior-Red`＝老舵） | Shade | CC0（頁面標示） | 原圖 8 個朝向只留前、右、後、左四列，沒有改色（[tools/prepare_characters.py](tools/prepare_characters.py)） |
 
-**角色的限制**：這包是 Q 版（約 16×16 的小人，頭身比大），五個人是現成的職業造型，不是依角色設定畫的：主角是戴角盔的戰士
-（不是黑髮的流浪者）、祈漪與汐不是老人／女性的樣子。素材的行走只有 2 格步伐，揮劍 4 格；沒有為每個角色做武器圖。
-**先前用過的 Kenney 3D 渲染人形（Isometric Miniature Dungeon）已經移除**，因為你要的是 2D 風格。
+**已知的風格落差**：房屋、樹、道具、植物仍是第三方的 3D 渲染圖，與角色的半寫實像素插畫風格不完全一致。
 
-**已知的風格落差**：房屋、樹、道具、植物仍是第三方的 3D 渲染圖，與 2D 像素小人並排會有風格差異。
+## 遊戲內的角色精靈（2026-10-14，本機 AI 生成）
+
+主角與四位 NPC 在遊戲裡的樣子，是以上面五張形象圖為底做的：**正面、側面、背面**三個方向另外生成，**右側是左側的鏡像**，
+所以共四個方向；每個方向有 4 格待機（呼吸）動畫。Puny Characters（Shade，CC0）已經不再使用，相關檔案與腳本已移除。
+
+做法（全部在本機 ComfyUI 的 Z-Image-Turbo 上，沒有使用付費 API）：
+
+1. 把形象圖放進一張畫布的左半邊，右半邊遮住，用**局部重繪**請模型畫出同一個角色的「正面」「側面」「背面」，
+   模型可以參考左邊那個完成的角色（服裝、配色、配件）。每個角色每個方向各畫兩個種子，我用眼睛挑最好的一張。
+2. 挑中的原圖放在 [docs/art/turnarounds/](docs/art/turnarounds/)（`<角色>_front / left / back.webp`），種子與完整提示詞在
+   [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)。
+3. [tools/prepare_sprites.py](tools/prepare_sprites.py) 去背、去掉腳下的灰色投影、每個角色用同一個縮放比例（轉身時大小不變）、
+   縮進 128×128 的格子，並產生右側（左側鏡像）與四格呼吸動畫（身體在腳底固定的情況下微微拉高再還原），輸出 `public/assets/characters/<角色>.png`。
+
+| 專案內檔案 | 角色 |
+| --- | --- |
+| public/assets/characters/hero.png | 主角 |
+| public/assets/characters/elder_qiyi.png | 祈漪 |
+| public/assets/characters/hunter_yanya.png | 岩牙 |
+| public/assets/characters/waterer_xi.png | 汐 |
+| public/assets/characters/boatwright_laodu.png | 老舵 |
+
+**已知的限制**
+- **只有待機有真正的畫格**（4 格呼吸）。走路、攻擊、受傷、死亡由程式演出：走路＝上下跳動加左右微擺、攻擊＝往前衝並前傾、
+  受傷＝變紅並後退、死亡＝倒下淡出。沒有手腳擺動，所以看起來是「滑步」，不是真的走路。
+- **正面是正對鏡頭**，形象圖是微微轉向右邊 30 度，兩者姿勢不同；各視角之間的臉、手持物、配件有些許不一致
+  （例如主角的短劍在正面看不到、岩牙的長弓在側面看不到）。這是模型生成的，沒有逐一修正。
+- **右側是左側鏡像**，不對稱的東西（劍掛的邊、手持木杖的手）在右側會換邊。
+- 角色比例是我定的：主角、祈漪、岩牙、汐、老舵的高度分別約 108、98、114、90、84 格（含弓尖），汐與老舵比較矮。
 
 ## 本機 AI 生成的角色圖（2026-10-13）
 
@@ -89,13 +113,13 @@
 - 全身圖：*Full-body character concept art of a young wanderer from a remote primordial island, androgynous, short messy dark hair, calm determined eyes, wearing a layered teal and cream linen tunic with brown leather straps and wrapped forearms, faint glowing golden veins along both forearms (ancient divine blood), a rusty iron short sword at the hip, simple leather sandals, standing pose, three-quarter view, entire body from head to toe visible, dark fantasy, highly detailed painterly illustration, soft rim light, plain flat light gray studio background, no text, no watermark*
 - 像素小人：*Pixel art game sprite of a chibi young adventurer, short messy dark hair, teal and cream tunic with brown leather straps, golden glowing lines on forearms, small rusty short sword at the hip, big head small body, full body, standing, front three-quarter view, crisp 1-pixel dark outline, flat shading, limited color palette, 16-bit RPG style, centered, solid flat pure magenta background*
 
-**使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。這兩張與遊戲內的主角（Puny Characters 的戰士）長得不一樣。
+**使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。這兩張與遊戲內的主角（見「遊戲內的角色精靈」）不是同一個造型。
 像素小人**只是一張靜態圖**，沒有行走或攻擊動畫，所以不能直接取代遊戲內角色的動畫表。
 
 ## 五位角色的形象圖（2026-10-14，本機 AI 生成）
 
 同樣在本機 ComfyUI 用 **Z-Image-Turbo**（Apache-2.0，授權與工作流程說明見上一節）生成，沒有使用付費 API。畫風參考你提供的附圖
-（半寫實、帶像素顆粒感的插畫）。**這些是形象圖，不是遊戲內的走動小人**：遊戲內仍是 Puny Characters 的像素小人，兩者長相不同。
+（半寫實、帶像素顆粒感的插畫）。這些是形象圖；遊戲內走動的角色精靈是以它們為底再生成其他方向做成的（見下一節）。
 生成設定：832×1216、8 步，轉成 WebP（品質 92）。每張的種子與完整英文提示詞在 [docs/art/character-prompts.json](docs/art/character-prompts.json)。
 
 | 專案內檔案 | 角色 | 種子 |

@@ -70,6 +70,7 @@ export class Player {
     this.hp = stats.maxHp;
     this.animator = new DirectionalAnimator(assets, SpriteKey.HERO);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
+    this.shadow.scale.setScalar(0.62); // the figure is slim: a smaller shadow than the old placeholder's
     this.group.add(this.shadow, this.animator.mesh);
     this.syncVisuals();
   }

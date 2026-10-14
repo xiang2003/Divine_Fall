@@ -4,30 +4,29 @@ import { DIRECTION_COUNT, Facing, directionIndex } from './directions';
 
 export type DirectionalPose = 'idle' | 'walk' | 'attack' | 'hurt' | 'die';
 
-/**
- * Columns of a character sheet (24 columns x 4 rows of 32 px frames, one row per facing; see tools/prepare_characters.py)
- * that make up each pose, and how fast they play.
- */
-export const POSE_FRAMES: Record<DirectionalPose, { frames: readonly number[]; fps: number }> = {
-  idle: { frames: [0, 1], fps: 2.5 },
-  walk: { frames: [2, 0, 3, 1], fps: 8 },
-  attack: { frames: [4, 5, 6, 7], fps: 0 }, // one-shot: spread over the pose length
-  hurt: { frames: [19, 20, 20], fps: 0 },
-  die: { frames: [21, 22, 23], fps: 0 },
-};
+/** Frames in a character sheet's idle (breathing) cycle; each facing is one row of this many columns. */
+export const IDLE_FRAMES = 4;
+const IDLE_FPS = 3;
 
 /** Natural length of the one-shot poses in "animation seconds"; the player scales it with setSpeed like any animator. */
 const ATTACK_LENGTH = 1;
 const HURT_LENGTH = 0.3;
 const DIE_LENGTH = 0.8;
 
-/** The attack steps forward this far (scene pixels) at its peak. */
-const LUNGE_PIXELS = 4;
+/** The attack steps forward this far (scene pixels) at its peak, and leans this far (radians). */
+const LUNGE_PIXELS = 6;
+const ATTACK_LEAN = 0.16;
+/** Walking: steps per second, how high the body hops (scene pixels) and how far it sways (radians). */
+const WALK_HZ = 2.2;
+const WALK_HOP = 2.4;
+const WALK_SWAY = 0.045;
 
 /**
- * Draws a character that has 4 facings (front, right, back, left): one sheet with a row per facing. It offers the same calls as
- * SpriteAnimator (`play`, `durationOf`, `setSpeed`, `update`, `mesh`) so the player can swap one for the other, plus
- * `setFacingWorld`. Every facing has its own picture, so nothing is mirrored.
+ * Draws a character that has 4 facings (front, right, back, left): one sheet with a row per facing. Every facing has its own
+ * picture, so nothing is mirrored at run time. The art only has a breathing idle cycle; the other poses are acted out by moving
+ * the picture: walking hops and sways, an attack lunges and leans into the swing, a hit flashes the figure red and pushes it back,
+ * and death topples it sideways and fades it. It offers the same calls as SpriteAnimator (`play`, `durationOf`, `setSpeed`,
+ * `update`, `mesh`) so the player can swap one for the other, plus `setFacingWorld`.
  */
 export class DirectionalAnimator {
   readonly mesh: THREE.Mesh;
@@ -39,7 +38,7 @@ export class DirectionalAnimator {
   private direction: number = Facing.FRONT;
   private hurtFlash = false;
   private shown = { col: -1, row: -1 };
-  /** Screen-space offset applied on top of the placed position (the lunge). */
+  /** Screen-space offset applied on top of the placed position (the hop, the lunge, the recoil). */
   offsetX = 0;
   offsetY = 0;
   private lungeX = 0;
@@ -69,7 +68,7 @@ export class DirectionalAnimator {
 
   play(name: string, restart = false): void {
     const pose = name as DirectionalPose;
-    if (!(pose in POSE_FRAMES)) return;
+    if (!['idle', 'walk', 'attack', 'hurt', 'die'].includes(pose)) return;
     if (pose === this.pose && !restart) return;
     this.pose = pose;
     this.time = 0;
@@ -106,25 +105,55 @@ export class DirectionalAnimator {
     this.apply();
   }
 
-  /** The column to show: looping poses cycle at their fps, one-shot poses spread their frames over the pose length. */
-  private column(): number {
-    const { frames, fps } = POSE_FRAMES[this.pose];
-    if (fps > 0) return frames[Math.floor(this.time * fps) % frames.length]!;
-    const length = this.durationOf(this.pose);
-    const progress = Math.min(0.999, this.time / length);
-    return frames[Math.floor(progress * frames.length)]!;
+  private progress(length: number): number {
+    return Math.min(1, this.time / length);
   }
 
   private apply(): void {
-    const col = this.column();
-    const row = this.direction;
+    let col = 0;
+    let rotation = 0;
+    let alpha = 1;
     this.offsetX = 0;
     this.offsetY = 0;
-    if (this.pose === 'attack') {
-      const lunge = Math.sin(Math.min(1, this.time / ATTACK_LENGTH) * Math.PI);
-      this.offsetX = this.lungeX * LUNGE_PIXELS * lunge;
-      this.offsetY = this.lungeY * LUNGE_PIXELS * lunge * 0.5;
+
+    switch (this.pose) {
+      case 'idle':
+        col = Math.floor(this.time * IDLE_FPS) % IDLE_FRAMES;
+        break;
+      case 'walk': {
+        const phase = this.time * WALK_HZ * Math.PI * 2;
+        this.offsetY = Math.abs(Math.sin(phase)) * WALK_HOP;
+        rotation = Math.sin(phase) * WALK_SWAY;
+        break;
+      }
+      case 'attack': {
+        const lean = Math.sin(this.progress(ATTACK_LENGTH) * Math.PI);
+        this.offsetX = this.lungeX * LUNGE_PIXELS * lean;
+        this.offsetY = this.lungeY * LUNGE_PIXELS * lean * 0.5;
+        // lean toward the side the figure faces (screen right is a clockwise turn, so a negative angle)
+        rotation = -this.lungeX * ATTACK_LEAN * lean;
+        break;
+      }
+      case 'hurt': {
+        const recoil = 1 - this.progress(HURT_LENGTH);
+        this.offsetX = -this.lungeX * 3 * recoil;
+        this.offsetY = -this.lungeY * 1.5 * recoil;
+        rotation = this.lungeX * 0.07 * recoil;
+        break;
+      }
+      case 'die': {
+        const eased = 1 - Math.pow(1 - this.progress(DIE_LENGTH), 2);
+        // topple toward the side the figure faces, sink a little, fade a little
+        rotation = (this.lungeX >= 0 ? -1 : 1) * eased * (Math.PI / 2);
+        this.offsetY = -eased * 3;
+        alpha = 1 - 0.2 * eased;
+        break;
+      }
     }
+
+    this.mesh.rotation.z = rotation;
+    this.material.opacity = alpha;
+    const row = this.direction;
     if (this.shown.col !== col || this.shown.row !== row) {
       this.shown = { col, row };
       this.loader.setFrameUv(this.geometry, this.key, col, row);

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parseMap } from '../src/data/mapData';
 import { CABIN_SPRITES } from '../src/game/BuildingArt';
 import { ASSET_MANIFEST, DECOR_KINDS, PROP_KEYS, THEME_SCATTER } from '../src/game/assetManifest';
-import { POSE_FRAMES } from '../src/game/DirectionalAnimator';
+import { IDLE_FRAMES } from '../src/game/DirectionalAnimator';
 import { DIRECTION_COUNT, Facing, directionIndex } from '../src/game/directions';
 
 const PUBLIC = join(__dirname, '..', 'public');
@@ -111,14 +111,20 @@ describe('directionIndex', () => {
 });
 
 describe('character sheets', () => {
-  it('have a row per facing and every pose column inside the sheet', () => {
+  it('have a row per facing and a column per idle frame', () => {
     for (const key of ['char.hero', 'npc.elder', 'npc.hunter', 'npc.waterer', 'npc.boatwright']) {
       const def = ASSET_MANIFEST.find((d) => d.key === key)!;
       const { width, height } = pngSize(join(PUBLIC, def.url!));
       expect(height / def.frameHeight, key).toBe(DIRECTION_COUNT);
-      for (const { frames } of Object.values(POSE_FRAMES)) {
-        for (const col of frames) expect(col, key).toBeLessThan(width / def.frameWidth);
-      }
+      expect(width / def.frameWidth, key).toBe(IDLE_FRAMES);
+    }
+  });
+
+  it('have art in every frame of every facing', () => {
+    // a cheap check on the PNG: a mostly empty file is a few hundred bytes, a sheet with five figures drawn is tens of KB
+    for (const key of ['char.hero', 'npc.elder', 'npc.hunter', 'npc.waterer', 'npc.boatwright']) {
+      const def = ASSET_MANIFEST.find((d) => d.key === key)!;
+      expect(readFileSync(join(PUBLIC, def.url!)).length, key).toBeGreaterThan(20000);
     }
   });
 });

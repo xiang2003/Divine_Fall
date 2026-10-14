@@ -7,8 +7,10 @@ export interface NpcDef {
   /** Short role shown under the name. */
   title: string;
   spriteKey: string;
-  /** Visual scale of the sprite (keep it 1: pixel art does not survive fractional scaling). */
+  /** Visual scale of the sprite. */
   scale: number;
+  /** Height of the name tag above the feet, in scene pixels (at scale 1): about the figure's height. */
+  tagHeight: number;
   /** Upper-body picture shown beside the conversation (a transparent WebP under public/). */
   portrait: string;
   conversation: NpcConversation;
@@ -21,6 +23,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '村長',
     spriteKey: SpriteKey.NPC_ELDER,
     scale: 1,
+    tagHeight: 68,
     portrait: 'assets/art/portraits/elder_qiyi.webp',
     conversation: {
       intro: { graph: 'elder_intro', metFlag: 'met_elder' },
@@ -46,6 +49,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '獵人',
     spriteKey: SpriteKey.NPC_HUNTER,
     scale: 1,
+    tagHeight: 75,
     portrait: 'assets/art/portraits/hunter_yanya.webp',
     conversation: {
       intro: { graph: 'hunter_intro', metFlag: 'met_yanya' },
@@ -68,6 +72,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '汲水人',
     spriteKey: SpriteKey.NPC_WATERER,
     scale: 1,
+    tagHeight: 63,
     portrait: 'assets/art/portraits/waterer_xi.webp',
     conversation: {
       intro: { graph: 'waterer_intro', metFlag: 'met_xi' },
@@ -91,6 +96,7 @@ export const NPCS: Record<string, NpcDef> = {
     title: '船匠',
     spriteKey: SpriteKey.NPC_BOATWRIGHT,
     scale: 1,
+    tagHeight: 59,
     portrait: 'assets/art/portraits/boatwright_laodu.webp',
     conversation: {
       intro: { graph: 'boatwright_intro', metFlag: 'met_laodu' },

@@ -14,8 +14,6 @@ export const NPC_HALF = 0.3;
 export const NPC_CLICK_RADIUS = 0.7;
 /** The player can start a conversation from this far (centre to centre, world units). */
 export const NPC_TALK_RANGE = 1.9;
-/** Height of the name tag above the feet, in scene pixels (at scale 1). */
-const NAME_HEIGHT = 46;
 
 /** Is this placement present given the world flags (checked when a map is entered)? */
 export function npcPresent(p: Pick<NpcPlacement, 'requiresFlag' | 'hiddenByFlag'>, hasFlag: (name: string) => boolean): boolean {
@@ -50,7 +48,7 @@ export class Npc {
     this.animator = new DirectionalAnimator(assets, this.def.spriteKey);
     this.animator.setScale(this.def.scale);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
-    this.shadow.scale.setScalar(0.95 * this.def.scale);
+    this.shadow.scale.setScalar(0.62 * this.def.scale);
     this.group.add(this.shadow, this.animator.mesh);
     placeAt(this.shadow, Layer.GROUND_DECAL, this.pos.x, this.pos.y);
     placeAt(this.animator.mesh, Layer.OBJECT, this.pos.x, this.pos.y);
@@ -89,7 +87,7 @@ export class Npc {
     if (face) this.animator.setFacingWorld(face.x - this.pos.x, face.y - this.pos.y);
     this.animator.update(dt);
     camera.worldToScreen(this.pos.x, this.pos.y, this.screen);
-    const lift = NAME_HEIGHT * this.def.scale * CAMERA_CONFIG.zoom;
+    const lift = this.def.tagHeight * this.def.scale * CAMERA_CONFIG.zoom;
     this.tag.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y - lift)}px) translate(-50%, -100%)`;
   }
 
