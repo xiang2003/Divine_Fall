@@ -32,6 +32,7 @@ function HudBridge({ game }: { game: Game }) {
   return (
     <HUD
       snapshot={snapshot}
+      getMinimapView={game.getMinimapView}
       onRestart={game.restart}
       inventoryActions={{
         onEquip: game.equipFromInventory,

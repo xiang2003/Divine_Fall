@@ -29,6 +29,7 @@ import { QuestLog, type QuestEvent, type QuestHappening, type QuestView } from '
 import { DialogueRunner, pickDialogue, type DialogueContext } from '../systems/dialogue';
 import { TOPIC_MARK, greetingFor, needsIntro, visibleTopics, type NpcTopic, type TopicKind } from '../systems/npcTopics';
 import type { NpcDef } from '../data/npcs';
+import type { MinimapView } from '../ui/minimapDraw';
 import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, npcPresent, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
@@ -331,6 +332,24 @@ export class Game {
   };
 
   getSnapshot = (): GameSnapshot => this.snapshot;
+
+  /** What the minimap draws (live positions; read every frame by the minimap, not published through the snapshot). */
+  getMinimapView = (): MinimapView | null => {
+    const w = this.world;
+    if (!w) return null;
+    const alive = w.monsters.all.filter((m) => !m.isDead);
+    return {
+      map: w.map,
+      player: w.player.pos,
+      npcs: w.npcs.all.map((n) => n.pos),
+      monsters: alive.filter((m) => !m.isElite && !m.isBoss).map((m) => m.pos),
+      bosses: alive.filter((m) => m.isElite || m.isBoss).map((m) => m.pos),
+      things: w.interactables.all.filter((i) => i.visible).map((i) => i.pos),
+      portals: w.map.portals
+        .filter((p) => !p.requiresFlag || this.flags.has(p.requiresFlag))
+        .map((p) => ({ x: (p.rect.minX + p.rect.maxX) / 2, y: (p.rect.minY + p.rect.maxY) / 2 })),
+    };
+  };
 
   private publish(patch: Partial<GameSnapshot>): void {
     this.snapshot = { ...this.snapshot, ...patch };

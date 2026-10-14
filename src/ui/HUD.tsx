@@ -9,6 +9,9 @@ import { QuestLog, QuestTracker } from './QuestPanels';
 import { WorldMapPanel } from './WorldMapPanel';
 import { getNpc } from '../data/npcs';
 import { assetUrl } from '../game/AssetLoader';
+import { Minimap } from './Minimap';
+import { Orb } from './Orb';
+import type { MinimapView } from './minimapDraw';
 import { SkillBar } from './SkillBar';
 
 const TOAST_MS = 1200;
@@ -53,6 +56,7 @@ export function HUD({
   onRestart,
   inventoryActions,
   dialogueActions,
+  getMinimapView,
   onCloseQuestLog,
   onCloseWorldMap,
   onDismissChapterEnd,
@@ -61,6 +65,7 @@ export function HUD({
   onRestart: () => void;
   inventoryActions: InventoryActions;
   dialogueActions: DialogueActions;
+  getMinimapView: () => MinimapView | null;
   onCloseQuestLog: () => void;
   onCloseWorldMap: () => void;
   onDismissChapterEnd: () => void;
@@ -88,40 +93,31 @@ export function HUD({
 
   return (
     <div className="hud">
-      <div className="panel hud-top-left">
-        <strong>{BRANDING.titleZh}</strong> · {snapshot.mapName}
+      <div className="hud-location">
+        <div className="hud-location-name">{snapshot.mapName}</div>
+        <div className="hud-location-sub">
+          擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
+        </div>
       </div>
-      <div className="panel hud-bottom-left">
-        左鍵 移動 · 右鍵 攻擊（可按住）· Space 閃避 · I 背包 · J 任務 · M 地圖 · F 拾取 / 交談 / 調查 · Q W E 技能 · F3 除錯
-      </div>
+      <div className="hud-hint">左鍵 移動 · 右鍵 攻擊 · Space 閃避 · Q W E 技能 · I 背包 · J 任務 · M 地圖 · F 互動 · F3 除錯</div>
       <HitFlash hitSeq={snapshot.hitSeq} />
       {snapshot.fade > 0 && <div className="fade-overlay" style={{ opacity: snapshot.fade }} />}
-      <div className="panel hud-hp">
-        <img className="hero-portrait" src={assetUrl('assets/art/hero_pixel.png')} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
-        <div className="hud-hp-main">
-        <div className="hp-track">
-          <div
-            className="hp-fill"
-            style={{ width: `${(100 * snapshot.playerHp) / Math.max(1, snapshot.playerMaxHp)}%` }}
-          />
-          <span className="hp-text">
-            {snapshot.playerHp} / {snapshot.playerMaxHp}
-          </span>
+      <div className="hud-hero">
+        <div className="hud-hero-clip">
+          <img className="hud-hero-face" src={assetUrl('assets/art/portraits/hero.webp')} alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
         </div>
-        <div className="hud-level">
-          <span>Lv {snapshot.level}</span>
-          <div className="xp-track">
-            <div
-              className="xp-fill"
-              style={{ width: `${snapshot.xpToNext > 0 ? (100 * snapshot.xp) / snapshot.xpToNext : 100}%` }}
-            />
-          </div>
-          <span className="muted">{snapshot.xpToNext > 0 ? `${snapshot.xp} / ${snapshot.xpToNext}` : 'MAX'}</span>
-        </div>
-        </div>
+        <span className="hud-hero-level">{snapshot.level}</span>
       </div>
-      <div className="panel hud-kills">
-        擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
+      <Orb kind="hp" fraction={snapshot.playerHp / Math.max(1, snapshot.playerMaxHp)} main={`${snapshot.playerHp}`} sub={`/ ${snapshot.playerMaxHp}`} title="生命" />
+      <Orb
+        kind="xp"
+        fraction={snapshot.xpToNext > 0 ? snapshot.xp / snapshot.xpToNext : 1}
+        main={`Lv ${snapshot.level}`}
+        sub={snapshot.xpToNext > 0 ? `${snapshot.xp} / ${snapshot.xpToNext}` : 'MAX'}
+        title="經驗"
+      />
+      <div className="hud-minimap-slot">
+        <Minimap getView={getMinimapView} title="小地圖（M：世界地圖）" />
       </div>
       {(snapshot.buffs.haste || snapshot.buffs.frenzy) && (
         <div className="hud-buffs">
@@ -137,9 +133,9 @@ export function HUD({
         </div>
       )}
       <SkillBar skills={snapshot.skills} />
-      <EquipmentSummary equipment={snapshot.inventory.equipment} />
+      {!snapshot.inventoryOpen && <EquipmentSummary equipment={snapshot.inventory.equipment} />}
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
-      <QuestTracker quests={snapshot.quests} npcName={npcName} />
+      {!snapshot.inventoryOpen && <QuestTracker quests={snapshot.quests} npcName={npcName} />}
       {snapshot.worldMapOpen && <WorldMapPanel graph={snapshot.worldMap} onClose={onCloseWorldMap} />}
       {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
       {snapshot.chapterEnd && (
