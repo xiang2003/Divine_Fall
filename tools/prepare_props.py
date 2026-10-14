@@ -22,7 +22,7 @@ OUT = ROOT / 'public' / 'assets'
 
 # name -> (source file, output file under public/assets, width in picture pixels (the game shows it at half), anchorY)
 PROPS = {
-    'well': ('well.webp', 'buildings/well.png', 200, 0.17),
+    'well': ('well.webp', 'buildings/well.png', 130, 0.17),
     'ferry': ('ferry.webp', 'buildings/ferry.png', 520, 0.27),
     'boulder_0': ('boulder_0.webp', 'props/boulder_0.png', 170, 0.27),
     'boulder_1': ('boulder_1.webp', 'props/boulder_1.png', 170, 0.27),

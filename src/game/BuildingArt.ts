@@ -43,7 +43,7 @@ export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: 
   tent: { url: 'assets/buildings/prop_tent.png', width: 240, height: 229, anchorY: 0.332 },
   campfire: { url: 'assets/buildings/prop_campfire.png', width: 147, height: 90, anchorY: 0.5 },
   // generated with Z-Image-Turbo in the same look as the cabins (tools/prepare_props.py, docs/art/prop-prompts.json)
-  well: { url: 'assets/buildings/well.png', width: 200, height: 272, anchorY: 0.2 },
+  well: { url: 'assets/buildings/well.png', width: 130, height: 177, anchorY: 0.2 },
   ferry: { url: 'assets/buildings/ferry.png', width: 520, height: 481, anchorY: 0.3 },
 };
 

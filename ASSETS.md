@@ -75,7 +75,7 @@
 
 | 專案內檔案 | 用途 | 大小（像素；遊戲以一半顯示） |
 | --- | --- | --- |
-| public/assets/buildings/well.png | 村子廣場的水井（石砌井圈、木頂、水桶） | 200×272 |
+| public/assets/buildings/well.png | 村子廣場的水井（石砌井圈、木頂、水桶） | 130×177 |
 | public/assets/buildings/ferry.png | 斷潮海岸擱淺的渡船（深灰金屬板船身、淡色骨肋、藍色提燈） | 520×481 |
 | public/assets/props/boulder_0 / 1 / 2.png | 沙灘邊界的岩石堆（三種，依格子位置挑一種；遊戲以 0.45 倍顯示） | 170×約 105 |
 
