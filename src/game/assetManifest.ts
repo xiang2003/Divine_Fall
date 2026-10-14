@@ -6,7 +6,6 @@ import {
   drawBoatwrightSheet,
   drawElderSheet,
   drawEchoSheet,
-  drawFangSheet,
   drawWarpedSheet,
   drawWaterShadeSheet,
   drawHunterSheet,
@@ -70,7 +69,8 @@ export const SpriteKey = {
   GHOUL: 'monster.ghoul',
   SHADE: 'monster.shade',
   HOUND: 'monster.hound',
-  FANG: 'monster.fang',
+  WOLF: 'monster.wolf',
+  VIPER: 'monster.viper',
   WARPED: 'monster.warped',
   WATER_SHADE: 'monster.water_shade',
   ECHO: 'monster.echo',
@@ -339,7 +339,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   characterSprite(SpriteKey.GHOUL, 8, drawGhoulSheet),
   characterSprite(SpriteKey.SHADE, 8, drawShadeSheet),
   characterSprite(SpriteKey.HOUND, 8, () => drawHoundSheet()),
-  characterSprite(SpriteKey.FANG, 8, drawFangSheet),
+  ...directionalMonsters(),
   characterSprite(SpriteKey.WARPED, 8, drawWarpedSheet),
   characterSprite(SpriteKey.WATER_SHADE, 8, drawWaterShadeSheet),
   characterSprite(SpriteKey.ECHO, 8, drawEchoSheet, 64),
@@ -410,6 +410,18 @@ function directionalSheet(key: string, name: string, base: () => HTMLCanvasEleme
     anchor: { x: 0.5, y: 2 / CHARACTER_FRAME.height },
     placeholder: directionalPlaceholder(base),
   };
+}
+
+/** A monster with 4 facings: same layout as a character's sheet but only the 4 idle frames per facing (no roll). */
+function directionalMonster(key: string, name: string, base: () => HTMLCanvasElement): SpriteAssetDef {
+  return { ...directionalSheet(key, name, base), url: `assets/monsters/${name}.png` };
+}
+
+function directionalMonsters(): SpriteAssetDef[] {
+  return [
+    directionalMonster(SpriteKey.WOLF, 'forest_wolf', drawHoundSheet),
+    directionalMonster(SpriteKey.VIPER, 'forest_viper', drawShadeSheet),
+  ];
 }
 
 function directionalCharacters(): SpriteAssetDef[] {

@@ -119,8 +119,9 @@ export function HUD({
       <div className="hud-minimap-slot">
         <Minimap getView={getMinimapView} title="小地圖（M：世界地圖）" />
       </div>
-      {(snapshot.buffs.haste || snapshot.buffs.frenzy) && (
+      {(snapshot.buffs.haste || snapshot.buffs.frenzy || snapshot.buffs.poison) && (
         <div className="hud-buffs">
+          {snapshot.buffs.poison && <span className="buff buff-poison">中毒</span>}
           {snapshot.buffs.haste && <span className="buff buff-haste">疾行 +移速</span>}
           {snapshot.buffs.frenzy && <span className="buff buff-frenzy">狂熱 +攻速</span>}
         </div>

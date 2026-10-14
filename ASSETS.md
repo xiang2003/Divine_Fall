@@ -29,7 +29,7 @@
 | terrain.sand / cave / sea / murk | 沙灘、洞窟地面，海水與混濁泉水（2 倍解析度繪製） | 專案內建佔位圖（[TerrainArt.ts](src/game/TerrainArt.ts)） | 專案自有 |
 | terrain.boulder / pillar | 沙灘的大石頭、洞窟的石筍 | 專案內建佔位圖（同上） | 專案自有 |
 | building.ferry | 擱淺的渡船 | 專案內建佔位圖（[BuildingArt.ts](src/game/BuildingArt.ts)） | 專案自有 |
-| monster.fang / warped / water_shade / echo | 林牙獸、畸變體、水影、仿神守衛（原有人形與獸形佔位圖的新配色） | 專案內建佔位圖（[CharacterArt.ts](src/game/CharacterArt.ts)） | 專案自有 |
+| monster.warped / water_shade / echo | 畸變體、水影、仿神守衛（原有人形與獸形佔位圖的新配色） | 專案內建佔位圖（[CharacterArt.ts](src/game/CharacterArt.ts)） | 專案自有 |
 | object.shard / object.relic | 洞底的發光碎片、遺跡的初胎之印 | 專案內建佔位圖（[TerrainArt.ts](src/game/TerrainArt.ts)） | 專案自有 |
 | fx.loot_ring | 地面掉落物的品質光圈（執行時依品質染色） | 專案內建佔位圖 | 專案自有 |
 
@@ -81,6 +81,25 @@
 
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
+
+## 森林怪物：野狼與毒蛇（2026-10-15，像素風，本機 AI 生成）
+
+臍帶林道原本放的是程式畫的「林牙獸」佔位圖，改成比較正常的野生動物：**野狼**（會撲咬）與**毒蛇**（吐毒液）。做法和地圖上的角色一樣，
+全部在本機 ComfyUI 的 Z-Image-Turbo 上完成（沒有使用付費 API，沒有套 LoRA）：
+
+1. 先各畫一張基礎圖（朝右的四分之三側面），挑最好的；再用局部重繪補出**正面**與**背面**（狼的背面是「從後方看、頭轉向左」）；
+   左側是右側的鏡像。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)，原圖在 [docs/art/turnarounds/](docs/art/turnarounds/)
+   （`forest_wolf_*`、`forest_viper_*`），基礎圖也在 [docs/art/monsters/](docs/art/monsters/)。
+2. [tools/prepare_sprites.py](tools/prepare_sprites.py) 與角色用同一套流程縮成像素精靈（去背、共用調色盤、硬邊、描邊）：狼側面長 46 像素，
+   蛇側面長 34 像素（蛇用了 44 色調色盤，不然顏色會糊成一片）；每個方向 4 格待機，沒有翻滾格。
+
+| 專案內檔案 | 怪物 |
+| --- | --- |
+| public/assets/monsters/forest_wolf.png | 野狼（256×256，4 方向 × 4 格） |
+| public/assets/monsters/forest_viper.png | 毒蛇（256×256，4 方向 × 4 格） |
+
+**已知的限制**：只有待機有畫格，走路、撲咬、吐毒、受傷、死亡都是程式演出（見 DirectionalAnimator：狼蹲下、跳起、落地，蛇後仰、前衝）；
+自動縮成像素後，蛇的花紋糊掉，只剩橄欖褐色的一團；狼的背面只是後側視角，不是正後方。
 
 ## 遊戲內的角色精靈（2026-10-14，像素風，本機處理）
 

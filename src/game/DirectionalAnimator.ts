@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { AssetLoader } from './AssetLoader';
+import type { AttackStyle } from '../data/monsters';
 import { DIRECTION_COUNT, Facing, directionIndex } from './directions';
 
 export type DirectionalPose = 'idle' | 'walk' | 'attack' | 'hurt' | 'die' | 'roll';
@@ -22,6 +23,13 @@ const DIE_LENGTH = 0.8;
 /** The roll hops up this far (scene pixels) in the middle of the tumble. */
 const ROLL_HOP = 4;
 const LUNGE_PIXELS = 6;
+/** The pounce: the crouch ends and the spring starts here (fractions of the attack), and the hop's height in scene pixels. */
+const POUNCE_CROUCH = 0.35;
+const POUNCE_LAND = 0.7;
+const POUNCE_HOP = 9;
+/** The spit: the head rears back until here, strikes forward by the end of the next stretch, then settles. */
+const SPIT_REAR = 0.45;
+const SPIT_STRIKE = 0.6;
 const ATTACK_LEAN = 0.16;
 /** Walking: steps per second, how high the body hops (scene pixels) and how far it sways (radians). */
 const WALK_HZ = 2.2;
@@ -44,6 +52,9 @@ export class DirectionalAnimator {
   private speed = 1;
   private direction: number = Facing.FRONT;
   private hurtFlash = false;
+  private poisoned = false;
+  private baseScale = 1;
+  private fade = 1;
   private shown = { col: -1, row: -1 };
   /** Screen-space offset applied on top of the placed position (the hop, the lunge, the recoil). */
   offsetX = 0;
@@ -54,6 +65,8 @@ export class DirectionalAnimator {
   constructor(
     private readonly loader: AssetLoader,
     private readonly key: string,
+    /** How the attack pose is acted out (the hero and the NPCs lunge). */
+    private readonly attackStyle: AttackStyle = 'lunge',
   ) {
     this.geometry = loader.createGeometry(key, 0, 0);
     this.material = loader.material(key).clone();
@@ -98,14 +111,33 @@ export class DirectionalAnimator {
   setFlipX(_flip: boolean): void {}
 
   setScale(scale: number): void {
+    this.baseScale = scale;
     this.mesh.scale.set(scale, scale, 1);
   }
 
-  /** Tints the figure red while the player has just been hit. */
+  /** Tints the figure red while it has just been hit. */
   setHurtFlash(on: boolean): void {
     if (on === this.hurtFlash) return;
     this.hurtFlash = on;
-    this.material.color.setRGB(1, on ? 0.5 : 1, on ? 0.5 : 1);
+    this.applyTint();
+  }
+
+  /** Tints the figure green while it is poisoned (a hit flash takes precedence). */
+  setPoisoned(on: boolean): void {
+    if (on === this.poisoned) return;
+    this.poisoned = on;
+    this.applyTint();
+  }
+
+  /** Multiplies the figure's opacity (a corpse fading away); 1 is fully visible. */
+  setFade(fade: number): void {
+    this.fade = fade;
+  }
+
+  private applyTint(): void {
+    if (this.hurtFlash) this.material.color.setRGB(1, 0.5, 0.5);
+    else if (this.poisoned) this.material.color.setRGB(0.62, 1, 0.62);
+    else this.material.color.setRGB(1, 1, 1);
   }
 
   update(dt: number): void {
@@ -121,6 +153,7 @@ export class DirectionalAnimator {
     let col = 0;
     let rotation = 0;
     let alpha = 1;
+    let squash = 1; // vertical scale (a crouch), with the width growing a little as it shrinks
     this.offsetX = 0;
     this.offsetY = 0;
 
@@ -142,11 +175,52 @@ export class DirectionalAnimator {
         break;
       }
       case 'attack': {
-        const lean = Math.sin(this.progress(ATTACK_LENGTH) * Math.PI);
-        this.offsetX = this.lungeX * LUNGE_PIXELS * lean;
-        this.offsetY = this.lungeY * LUNGE_PIXELS * lean * 0.5;
-        // lean toward the side the figure faces (screen right is a clockwise turn, so a negative angle)
-        rotation = -this.lungeX * ATTACK_LEAN * lean;
+        const p = this.progress(ATTACK_LENGTH);
+        if (this.attackStyle === 'pounce') {
+          if (p < POUNCE_CROUCH) {
+            // crouch: sink and draw back a little
+            const c = p / POUNCE_CROUCH;
+            squash = 1 - 0.14 * c;
+            this.offsetX = -this.lungeX * 2.5 * c;
+            this.offsetY = -this.lungeY * 1.2 * c;
+          } else if (p < POUNCE_LAND) {
+            // in the air: an arc, stretched forward and leaning into the leap (the monster itself moves on the ground)
+            const a = (p - POUNCE_CROUCH) / (POUNCE_LAND - POUNCE_CROUCH);
+            this.offsetY = Math.sin(a * Math.PI) * POUNCE_HOP;
+            rotation = -this.lungeX * 0.22 * Math.sin(a * Math.PI);
+            squash = 0.96;
+          } else {
+            const r = (p - POUNCE_LAND) / (1 - POUNCE_LAND);
+            squash = 0.9 + 0.1 * r; // lands and rises
+          }
+        } else if (this.attackStyle === 'spit') {
+          if (p < SPIT_REAR) {
+            // rear back: lean away and rise
+            const r = p / SPIT_REAR;
+            this.offsetX = -this.lungeX * 3 * r;
+            this.offsetY = 2.5 * r;
+            rotation = this.lungeX * 0.14 * r;
+            squash = 1 + 0.06 * r;
+          } else if (p < SPIT_STRIKE) {
+            // strike: snap forward
+            const s = (p - SPIT_REAR) / (SPIT_STRIKE - SPIT_REAR);
+            this.offsetX = this.lungeX * (-3 + 8 * s);
+            this.offsetY = 2.5 * (1 - s);
+            rotation = -this.lungeX * 0.2 * s;
+            squash = 1.06 - 0.12 * s;
+          } else {
+            const r = (p - SPIT_STRIKE) / (1 - SPIT_STRIKE);
+            this.offsetX = this.lungeX * 5 * (1 - r);
+            rotation = -this.lungeX * 0.2 * (1 - r);
+            squash = 0.94 + 0.06 * r;
+          }
+        } else {
+          const lean = Math.sin(p * Math.PI);
+          this.offsetX = this.lungeX * LUNGE_PIXELS * lean;
+          this.offsetY = this.lungeY * LUNGE_PIXELS * lean * 0.5;
+          // lean toward the side the figure faces (screen right is a clockwise turn, so a negative angle)
+          rotation = -this.lungeX * ATTACK_LEAN * lean;
+        }
         break;
       }
       case 'hurt': {
@@ -167,7 +241,8 @@ export class DirectionalAnimator {
     }
 
     this.mesh.rotation.z = rotation;
-    this.material.opacity = alpha;
+    this.mesh.scale.set(this.baseScale * (1 + (1 - squash) * 0.5), this.baseScale * squash, 1);
+    this.material.opacity = alpha * this.fade;
     const row = this.direction;
     if (this.shown.col !== col || this.shown.row !== row) {
       this.shown = { col, row };

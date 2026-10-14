@@ -9,7 +9,7 @@ import { CollisionSystem } from '../src/systems/CollisionSystem';
 import type { ProjectileSystem } from '../src/systems/ProjectileSystem';
 import type { SkillProjectileSystem } from '../src/systems/SkillProjectileSystem';
 import { parseMap } from '../src/data/mapData';
-import { Buffs } from '../src/systems/buffs';
+import { Buffs, PoisonEffect } from '../src/systems/buffs';
 import { computeStats, emptyEquipment } from '../src/systems/stats';
 import type { LegendaryEffectId } from '../src/data/legendaryEffects';
 
@@ -29,6 +29,20 @@ function fakePlayer(armor = 5, effects: LegendaryEffectId[] = []) {
     hp: stats.maxHp,
     isDead: false,
     buffs: new Buffs(),
+    poison: new PoisonEffect(),
+    get isPoisoned() {
+      return p.poison.active;
+    },
+    applyPoison(dps: number, duration: number) {
+      p.poison.apply(dps, duration);
+    },
+    tickPoison(dt: number) {
+      const amount = p.poison.tick(dt);
+      if (amount === 0 || p.isDead) return null;
+      p.hp = Math.max(0, p.hp - amount);
+      if (p.hp === 0) p.isDead = true;
+      return { amount, died: p.isDead };
+    },
     hasEffect: (id: LegendaryEffectId) => effects.includes(id),
     heal(amount: number) {
       const before = p.hp;
@@ -253,5 +267,37 @@ describe('CombatSystem: legendary effects', () => {
     m.hp = 1;
     combat.playerSwingHit(1, 0);
     expect(player.buffs.attackSpeedMultiplier).toBeCloseTo(1.3, 9);
+  });
+});
+
+describe('CombatSystem: poison', () => {
+  it('a hit from a poisonous monster poisons the player, and the poison keeps ticking until it runs out', () => {
+    const { player, combat, events } = setup();
+    const viper = new Monster(MONSTERS.forest_viper, { x: 4.5, y: 2.5 });
+    combat.meleeStrike(viper);
+    expect(player.isPoisoned).toBe(true);
+    const afterHit = player.hp;
+    expect(events.taken).toHaveLength(1);
+    for (let i = 0; i < 60 * 5; i++) combat.update(1 / 60);
+    expect(player.isPoisoned).toBe(false);
+    const poison = MONSTERS.forest_viper.poison!;
+    const ticks = Math.floor(poison.duration / 0.5);
+    expect(afterHit - player.hp).toBe(ticks * Math.max(1, Math.round(poison.dps * 0.5)));
+    expect(events.taken).toHaveLength(1 + ticks);
+  });
+
+  it('poison that kills reports the death once', () => {
+    const { player, combat, events } = setup();
+    player.hp = 3;
+    player.applyPoison(10, 4);
+    for (let i = 0; i < 60 * 3; i++) combat.update(1 / 60);
+    expect(player.isDead).toBe(true);
+    expect(events.deaths).toBe(1);
+  });
+
+  it('a monster without venom does not poison', () => {
+    const { player, combat } = setup();
+    combat.meleeStrike(new Monster(MONSTERS.ghoul, { x: 2.9, y: 2.5 }));
+    expect(player.isPoisoned).toBe(false);
   });
 });

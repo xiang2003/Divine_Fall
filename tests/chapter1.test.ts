@@ -183,7 +183,7 @@ describe('playing chapter 1 from the first word to the ferry', () => {
     expect(w.npc('hunter_yanya')).toBe('hunter_intro'); // first choices: accept
     expect(w.log.state('q1_first_hunt')).toBe('active');
     w.goTo('pure_forest');
-    for (let i = 0; i < 5; i++) w.kill('forest_fang');
+    for (let i = 0; i < 5; i++) w.kill('forest_wolf');
     expect(w.log.state('q1_first_hunt')).toBe('ready');
     w.goTo('pure_village');
     expect(w.npc('hunter_yanya')).toBe('hunter_turnin');

@@ -343,22 +343,23 @@ describe('map populations', () => {
       for (const m of ids) expect(Object.keys(MONSTERS), `${id}: ${m}`).toContain(m);
       used.set(id, new Set(ids));
     }
-    expect(used.get('pure_forest')).toContain('forest_fang');
+    expect(used.get('pure_forest')).toContain('forest_wolf');
+    expect(used.get('pure_forest')).toContain('forest_viper');
     expect(used.get('pure_spring_cave')).toContain('water_shade');
     expect(used.get('pure_ruins')).toContain('ruins_guardian');
   });
 
   it('planSpawns follows the population in order, falls back to the default mix, and rejects unknown ids', () => {
     const spawns = { player: { x: 1, y: 1 }, monsters: [{ x: 2, y: 2 }, { x: 3, y: 3 }, { x: 4, y: 4 }], elites: [{ x: 5, y: 5 }], boss: { x: 6, y: 6 }, exit: null };
-    const plan = planSpawns(spawns, mulberry32(1), { monsters: ['forest_fang', 'warped'], elites: ['echo_guard'], boss: 'ruins_guardian' });
-    expect(plan.map((p) => p.def.id)).toEqual(['forest_fang', 'warped', 'forest_fang', 'echo_guard', 'ruins_guardian']);
+    const plan = planSpawns(spawns, mulberry32(1), { monsters: ['forest_wolf', 'warped'], elites: ['echo_guard'], boss: 'ruins_guardian' });
+    expect(plan.map((p) => p.def.id)).toEqual(['forest_wolf', 'warped', 'forest_wolf', 'echo_guard', 'ruins_guardian']);
     expect(plan[3]!.affixes.length).toBeGreaterThan(0);
     expect(planSpawns(spawns, mulberry32(1)).map((p) => p.def.id)).toEqual(['ghoul', 'shade', 'hound', 'ghoul', 'archon']);
     expect(() => planSpawns(spawns, mulberry32(1), { monsters: ['nope'], elites: [], boss: null })).toThrow(/Unknown monster/);
   });
 
   it('the island monsters are weaker than the boss and fit their roles', () => {
-    expect(MONSTERS.forest_fang.maxHp).toBeLessThan(MONSTERS.warped.maxHp);
+    expect(MONSTERS.forest_wolf.maxHp).toBeLessThan(MONSTERS.warped.maxHp);
     expect(MONSTERS.warped.maxHp).toBeLessThan(MONSTERS.echo_guard.maxHp);
     expect(MONSTERS.water_shade.behavior).toBe('ranged');
     expect(MONSTERS.ruins_guardian.isBoss).toBe(true);

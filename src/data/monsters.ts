@@ -27,6 +27,27 @@ export interface BossAttackDef {
   hitFraction?: number;
 }
 
+/** How a monster with directional art acts out its attack (see DirectionalAnimator). */
+export type AttackStyle = 'lunge' | 'pounce' | 'spit';
+
+/** A leaping attack: from `range` away (edge to edge) the monster crouches, springs at where the target stood, and bites where it lands. */
+export interface PounceDef {
+  /** Starts the leap when the target is at most this far away (edge to edge), but farther than the normal bite reach. */
+  range: number;
+  /** Speed of the leap in world units per second. */
+  speed: number;
+  /** Length of the whole move (crouch + leap + landing) in seconds. */
+  duration: number;
+  /** Multiplier of the monster's damage for the bite at the end of the leap. */
+  damageMult: number;
+}
+
+/** Venom: each hit of this monster also poisons the target for `duration` seconds, `dps` damage per second (armor does not reduce it). */
+export interface PoisonDef {
+  dps: number;
+  duration: number;
+}
+
 export interface MonsterDef {
   id: string;
   name: string;
@@ -57,6 +78,14 @@ export interface MonsterDef {
   lootTable: LootTableId;
   /** Height of the health bar above the feet, in art pixels. */
   barHeight: number;
+  /** True when spriteKey is a 4-facing sheet (front, right, back, left) drawn by DirectionalAnimator instead of a one-facing sheet. */
+  directional?: boolean;
+  /** How the attack is acted out (directional art only). */
+  attackStyle?: AttackStyle;
+  /** Melee only: leaps at the target from a distance. */
+  pounce?: PounceDef;
+  /** Its hits poison. */
+  poison?: PoisonDef;
 
   // --- boss only ---------------------------------------------------------------------------
   isBoss?: boolean;
@@ -124,23 +153,49 @@ export const MONSTERS = {
     barHeight: 34,
   },
   // ---- chapter 1: Pure Source Island (see docs/design/chapter1-pure-source-island.md) ------------
-  /** Wild beast of the forest road: dangerous but not corrupted. */
-  forest_fang: {
-    id: 'forest_fang',
-    name: '林牙獸',
-    spriteKey: SpriteKey.FANG,
+  /** Ordinary wildlife of the forest road: dangerous, not corrupted. A wolf bites, and leaps at you from a few steps away. */
+  forest_wolf: {
+    id: 'forest_wolf',
+    name: '野狼',
+    spriteKey: SpriteKey.WOLF,
+    directional: true,
+    attackStyle: 'pounce',
     behavior: 'melee',
-    maxHp: 24,
-    damage: 6,
-    moveSpeed: 4.2,
-    detectRange: 7,
-    attackRange: 0.3,
-    attackCooldown: 1.0,
-    attackDuration: 0.4,
-    radius: 0.27,
+    maxHp: 30,
+    damage: 7,
+    moveSpeed: 3.4,
+    detectRange: 8,
+    attackRange: 0.35,
+    attackCooldown: 1.5,
+    attackDuration: 0.45,
+    radius: 0.3,
+    pounce: { range: 2.6, speed: 7.5, duration: 0.8, damageMult: 1.4 },
+    xp: 10,
+    lootTable: 'normalMonster',
+    barHeight: 44,
+  },
+  /** A forest viper: slow, keeps its distance and spits venom that poisons. */
+  forest_viper: {
+    id: 'forest_viper',
+    name: '毒蛇',
+    spriteKey: SpriteKey.VIPER,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 18,
+    damage: 4,
+    moveSpeed: 1.8,
+    detectRange: 8,
+    attackRange: 5.5,
+    attackCooldown: 2.4,
+    attackDuration: 0.8,
+    radius: 0.28,
+    keepDistance: 2.5,
+    projectileSpeed: 5.5,
+    poison: { dps: 3, duration: 4 },
     xp: 9,
     lootTable: 'normalMonster',
-    barHeight: 34,
+    barHeight: 36,
   },
   /** Tier 1 of the abyss: a corrupted island creature. */
   warped: {

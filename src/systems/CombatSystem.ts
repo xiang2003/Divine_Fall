@@ -179,6 +179,12 @@ export class CombatSystem implements MonsterHooks {
 
   /** Moves projectiles and bolts, applying the ones that reached their targets. */
   update(dt: number): void {
+    // poison that is already in the blood keeps ticking
+    const tick = this.player.tickPoison(dt);
+    if (tick) {
+      this.events.damageTaken(this.player.pos.x, this.player.pos.y, tick.amount);
+      if (tick.died) this.events.playerDied();
+    }
     this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage, p.owner));
     this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult));
   }
@@ -244,6 +250,7 @@ export class CombatSystem implements MonsterHooks {
       return;
     }
     if (!source) return;
+    if (source.def.poison) this.player.applyPoison(source.def.poison.dps, source.def.poison.duration);
     if (source.stats.lifestealRatio > 0) source.heal(Math.round(result.amount * source.stats.lifestealRatio));
     if (source.stats.lightningRatio > 0) {
       this.events.lightningArc(source.pos.x, source.pos.y, this.player.pos.x, this.player.pos.y);

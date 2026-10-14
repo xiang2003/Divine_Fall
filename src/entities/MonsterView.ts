@@ -6,6 +6,7 @@ import type { AssetLoader } from '../game/AssetLoader';
 import type { CameraController } from '../game/CameraController';
 import { EffectAssets, HealthBar } from '../game/effects';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
+import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { SpriteAnimator } from '../game/SpriteAnimator';
 import { CORPSE_LIFETIME, type Monster, type MonsterState } from './Monster';
 
@@ -26,7 +27,9 @@ const ANIMATION_FOR_STATE: Record<MonsterState, string> = {
  */
 export class MonsterView {
   readonly group = new THREE.Group();
-  private readonly animator: SpriteAnimator;
+  private readonly animator: SpriteAnimator | DirectionalAnimator;
+  /** Set when the monster has 4-facing art (the same object as `animator`). */
+  private readonly directional: DirectionalAnimator | null;
   private readonly shadow: THREE.Mesh;
   private readonly bar: HealthBar;
   private readonly nameplate: HTMLDivElement | null = null;
@@ -41,7 +44,8 @@ export class MonsterView {
     nameplateLayer: HTMLElement | null,
     camera: CameraController,
   ) {
-    this.animator = new SpriteAnimator(assets, monster.def.spriteKey, 'idle');
+    this.directional = monster.def.directional ? new DirectionalAnimator(assets, monster.def.spriteKey, monster.def.attackStyle ?? 'lunge') : null;
+    this.animator = this.directional ?? new SpriteAnimator(assets, monster.def.spriteKey, 'idle');
     this.animator.setScale(monster.scale);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
     this.shadow.scale.setScalar((monster.def.radius > 0.28 ? 1.15 : 0.95) * monster.scale * (monster.isBoss ? 1.6 : 1));
@@ -87,16 +91,26 @@ export class MonsterView {
     }
 
     this.animator.setFlipX(m.facing < 0);
+    if (this.directional) {
+      this.directional.setFacingWorld(m.facingDir.x, m.facingDir.y);
+      this.directional.setHurtFlash(m.state === 'hurt');
+    }
     this.animator.update(dt);
 
     const dead = m.state === 'dead';
     placeAt(this.shadow, Layer.GROUND_DECAL, m.pos.x, m.pos.y);
     // Corpses lie on the ground so living things never sort behind them.
     placeAt(this.animator.mesh, dead ? Layer.GROUND_DECAL : Layer.OBJECT, m.pos.x, m.pos.y);
+    if (this.directional) {
+      // the hop of a pounce, the recoil of a hit
+      this.animator.mesh.position.x += this.directional.offsetX;
+      this.animator.mesh.position.y += this.directional.offsetY;
+    }
     this.shadow.visible = !dead;
 
     const fade = dead ? Math.min(1, Math.max(0, (CORPSE_LIFETIME - m.stateTime) / CORPSE_FADE)) : 1;
-    this.animator.mesh.scale.y = m.scale * fade;
+    if (this.directional) this.directional.setFade(fade);
+    else this.animator.mesh.scale.y = m.scale * fade;
 
     this.bar.visible = !dead && m.hp < m.maxHp;
     if (this.bar.group.visible) {

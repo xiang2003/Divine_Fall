@@ -98,5 +98,37 @@
       "generated_as": "back",
       "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light, highly detailed fabric, leather and skin. Character reference sheet on a plain flat very light gray background: two full-body views of the SAME single character side by side. On the left is the finished front three-quarter view. On the right draw the same character as a exact back view, facing directly away from the viewer, the back of the head and back of the clothes visible, no face visible. Identical outfit, colours, hair, accessories and proportions, same relaxed standing pose with arms at the sides, whole body from head to toe, same height as the left figure. No text, no labels, no watermark. A very short, extremely stocky middle-aged human man boatwright, chest-high to an ordinary adult but with a huge broad barrel chest and thick strong arms, realistic weathered face with a heavy brow, strong jaw and ordinary human round ears, thick russet-brown beard braided into two plaits, short cropped hair, a stub of cigar clamped between his teeth, narrowed angry eyes, a heavy scorched leather apron over a rolled-sleeve coarse shirt, a tool belt with hammer and chisel, heavy work boots, iron grey, dark red and burnt brown tones."
     }
+  },
+  "forest_wolf": {
+    "base_seed": 9103,
+    "front": {
+      "seed": 9311,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single animal side by side. On the left is the finished three-quarter view. On the right draw the same animal in a front view, the animal facing straight toward the viewer with its head toward the camera. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A wild grey forest wolf, lean and muscular, thick coarse fur darker along the back and paler on the belly, alert amber eyes, ears pricked, standing on all four legs."
+    },
+    "back": {
+      "seed": 9424,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single animal side by side. On the left is the finished three-quarter view. On the right draw the same animal in a rear view seen from directly behind: the tail and hindquarters are closest to the camera, the animal is walking away from the viewer, its head is turned away and its face is not visible. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A wild grey forest wolf, lean and muscular, thick coarse fur darker along the back and paler on the belly, alert amber eyes, ears pricked, standing on all four legs."
+    },
+    "right": {
+      "seed": 9103,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. A wild grey forest wolf, lean and muscular, thick coarse fur darker along the back and paler on the belly, alert amber eyes, ears pricked, standing on all four legs with its head slightly lowered, in a three-quarter view facing right, nose to tail all visible. Whole animal fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
+  },
+  "forest_viper": {
+    "base_seed": 9204,
+    "front": {
+      "seed": 9311,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single animal side by side. On the left is the finished three-quarter view. On the right draw the same animal in a front view, the animal facing straight toward the viewer with its head toward the camera. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A venomous forest viper snake, thick body coiled in a loose S-shape with the front third raised, its head lifted and its fanged mouth slightly open, olive-green and brown diamond-patterned scales with a pale yellow underside."
+    },
+    "back": {
+      "seed": 9322,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single animal side by side. On the left is the finished three-quarter view. On the right draw the same animal in a back view, seen from behind, the animal facing straight away from the viewer. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A venomous forest viper snake, thick body coiled in a loose S-shape with the front third raised, its head lifted and its fanged mouth slightly open, olive-green and brown diamond-patterned scales with a pale yellow underside."
+    },
+    "right": {
+      "seed": 9204,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed fur and scales. Dark fantasy wildlife, no cartoon or chibi look. A venomous forest viper snake, thick body coiled in a loose S-shape with the front third raised, its head lifted and its fanged mouth slightly open, olive-green and brown diamond-patterned scales with a pale yellow underside, in a three-quarter view facing right, the whole snake visible. Whole animal fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
   }
 }

@@ -1,11 +1,12 @@
-"""Builds the in-game pixel-art character sheets (public/assets/characters/<name>.png) from the turnaround figures in docs/art/turnarounds.
+"""Builds the in-game pixel-art sheets of the characters (public/assets/characters/<name>.png) and of the forest monsters
+(public/assets/monsters/<name>.png) from the turnaround figures in docs/art/turnarounds.
 
 Usage:  python tools/prepare_sprites.py [--preview <dir>]
 Needs Pillow. Developer tool only; the game never runs it.
 
-The characters on the map are pixel art, separate from the large concept pictures. Each character has three source pictures
-(front, left, back: the same figure drawn from three sides, see docs/art/turnaround-prompts.json); the right-facing picture is the
-left one mirrored. For each character:
+The characters on the map are pixel art, separate from the large concept pictures. Each one has three source pictures (front, a side
+view, back: the same figure drawn from three sides, see docs/art/turnaround-prompts.json); the missing side is the given one mirrored
+(characters were drawn facing left, the monsters facing right). For each one:
 
   1. every picture is cut out of its flat grey background and its ground shadow is removed;
   2. all three are shrunk by ONE factor (so turning around never changes the size) to a few dozen pixels tall;
@@ -28,7 +29,6 @@ from PIL import Image, ImageEnhance
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'docs' / 'art' / 'turnarounds'
-OUT = ROOT / 'public' / 'assets' / 'characters'
 
 FRAME = 64
 BASELINE = 62  # row of the soles inside the frame (the outline takes the row below)
@@ -43,14 +43,21 @@ ROLL_SINK = 3
 # idle: how many pixels the upper body sinks in each frame, and where "upper body" ends (fraction of the figure's height from the top)
 BOB = [0, 0, 1, 1]
 BOB_SPLIT = 0.52
-# how tall each character is, in pixels (the dwarf boatwright and the small water-carrier are shorter;
-# the hunter's bow tip rises above his head, so he is listed taller)
-HEIGHT_PX = {
-    'hero': 50,
-    'elder_qiyi': 45,
-    'hunter_yanya': 54,
-    'waterer_xi': 41,
-    'boatwright_laodu': 38,
+# How big each one is, in pixels, and where its sheet goes.
+#   size   ('height', n): the figure stands n px tall (characters: the source figures were drawn about SOURCE_HEIGHT tall);
+#          ('width', n): the side view is n px long (animals, which are wider than tall)
+#   side   which way the side picture faces; the other side is its mirror
+#   colors / saturation / contrast (optional)  palette size and colour boost when the defaults wash a creature out (the viper's green)
+#   roll   True: the sheet also carries the dodge-roll frames (only the hero rolls, but all characters have them)
+# The dwarf boatwright and the small water-carrier are shorter; the hunter's bow tip rises above his head, so he is listed taller.
+SPRITES = {
+    'hero': {'size': ('height', 50), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'elder_qiyi': {'size': ('height', 45), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'hunter_yanya': {'size': ('height', 54), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'waterer_xi': {'size': ('height', 41), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'boatwright_laodu': {'size': ('height', 38), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'forest_wolf': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters'},
+    'forest_viper': {'size': ('width', 34), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'saturation': 1.2, 'contrast': 1.25},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall
 PALETTE_COLORS = 28
@@ -99,19 +106,19 @@ def drop_ground_shadow(im: Image.Image) -> None:
                 px[x, y] = (r, g, b, 0)
 
 
-def shrink(figure: Image.Image, factor: float) -> Image.Image:
+def shrink(figure: Image.Image, factor: float, saturation: float = SATURATION, contrast: float = CONTRAST) -> Image.Image:
     """Area-averaged shrink (premultiplied, so the grey background never bleeds into the edge); colours are lifted to survive the palette."""
     size = (max(1, round(figure.width * factor)), max(1, round(figure.height * factor)))
     small = figure.convert('RGBa').resize(size, Image.BOX).convert('RGBA')
     rgb = small.convert('RGB')
-    rgb = ImageEnhance.Color(rgb).enhance(SATURATION)
-    rgb = ImageEnhance.Contrast(rgb).enhance(CONTRAST)
+    rgb = ImageEnhance.Color(rgb).enhance(saturation)
+    rgb = ImageEnhance.Contrast(rgb).enhance(contrast)
     out = rgb.convert('RGBA')
     out.putalpha(small.getchannel('A').point(lambda v: 255 if v >= ALPHA_CUTOFF else 0))
     return out
 
 
-def shared_palette(views: list[Image.Image]) -> Image.Image:
+def shared_palette(views: list[Image.Image], palette_size: int = PALETTE_COLORS) -> Image.Image:
     """One palette (as a 'P' image) from every opaque pixel of all the views."""
     colors = []
     for v in views:
@@ -123,7 +130,7 @@ def shared_palette(views: list[Image.Image]) -> Image.Image:
                     colors.append((r, g, b))
     strip = Image.new('RGB', (len(colors), 1))
     strip.putdata(colors)
-    return strip.quantize(colors=PALETTE_COLORS, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    return strip.quantize(colors=palette_size, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
 
 
 def apply_palette(view: Image.Image, palette: Image.Image) -> Image.Image:
@@ -199,21 +206,29 @@ def place(figure: Image.Image, sheet: Image.Image, col: int, row: int) -> None:
 
 
 def build(name: str, preview: Path | None) -> None:
-    factor = HEIGHT_PX[name] / SOURCE_HEIGHT
-    views = {v: shrink(cut_out(SRC / f'{name}_{v}.webp'), factor) for v in ('front', 'left', 'back')}
-    palette = shared_palette(list(views.values()))
+    spec = SPRITES[name]
+    side = spec['side']
+    cuts = {v: cut_out(SRC / f'{name}_{v}.webp') for v in ('front', side, 'back')}
+    mode, px = spec['size']
+    factor = px / SOURCE_HEIGHT if mode == 'height' else px / cuts[side].width
+    views = {v: shrink(img, factor, spec.get('saturation', SATURATION), spec.get('contrast', CONTRAST)) for v, img in cuts.items()}
+    palette = shared_palette(list(views.values()), spec.get('colors', PALETTE_COLORS))
     done = {v: outline(apply_palette(img, palette)) for v, img in views.items()}
-    left = done['left']
-    rows = [done['front'], left.transpose(Image.FLIP_LEFT_RIGHT), done['back'], left]  # front, right, back, left
-    sheet = Image.new('RGBA', (FRAME * (IDLE_FRAMES + ROLL_FRAMES), FRAME * len(rows)))
+    mirrored = done[side].transpose(Image.FLIP_LEFT_RIGHT)
+    right, left = (done[side], mirrored) if side == 'right' else (mirrored, done[side])
+    rows = [done['front'], right, done['back'], left]  # front, right, back, left
+    columns = IDLE_FRAMES + (ROLL_FRAMES if spec['roll'] else 0)
+    sheet = Image.new('RGBA', (FRAME * columns, FRAME * len(rows)))
     clockwise = [True, True, False, False]  # front, right, back, left
     for row, figure in enumerate(rows):
         for col in range(IDLE_FRAMES):
             place(bob(figure, BOB[col]), sheet, col, row)
-        for step in range(ROLL_FRAMES):
-            sheet.alpha_composite(roll_frame(figure, step, clockwise[row]), ((IDLE_FRAMES + step) * FRAME, row * FRAME))
-    OUT.mkdir(parents=True, exist_ok=True)
-    sheet.save(OUT / f'{name}.png', optimize=True)
+        if spec['roll']:
+            for step in range(ROLL_FRAMES):
+                sheet.alpha_composite(roll_frame(figure, step, clockwise[row]), ((IDLE_FRAMES + step) * FRAME, row * FRAME))
+    out_dir = ROOT / 'public' / 'assets' / spec['out']
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sheet.save(out_dir / f'{name}.png', optimize=True)
     print(name, sheet.size, {v: img.size for v, img in done.items()})
     if preview:
         preview.mkdir(parents=True, exist_ok=True)
@@ -225,7 +240,7 @@ def build(name: str, preview: Path | None) -> None:
 
 def main() -> None:
     preview = Path(sys.argv[sys.argv.index('--preview') + 1]) if '--preview' in sys.argv else None
-    for name in HEIGHT_PX:
+    for name in SPRITES:
         build(name, preview)
 
 

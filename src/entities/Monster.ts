@@ -34,7 +34,7 @@ export interface MonsterHooks {
 
 /** What one attack looks like right now (normal attacks and boss moves alike). */
 interface AttackSpec {
-  kind: 'melee' | 'projectile' | BossAttackKind;
+  kind: 'melee' | 'projectile' | 'pounce' | BossAttackKind;
   duration: number;
   hitFraction: number;
   damageMult: number;
@@ -57,6 +57,11 @@ export const LEASH_FACTOR = 2;
 export const CORPSE_LIFETIME = 4;
 /** Extra reach allowed at the moment of a melee strike, so a step back doesn't dodge a blow already in flight. */
 export const MELEE_STRIKE_SLACK = 0.35;
+
+/** A pounce: the fraction of the move at which the springing starts and at which the bite lands, and how much farther than the bite reach it must be. */
+export const POUNCE_LEAP_START = 0.35;
+export const POUNCE_HIT_FRACTION = 0.7;
+const POUNCE_MIN_GAP = 0.15;
 
 const STUCK_TIMEOUT = 1;
 const HOME_ARRIVE = 0.3;
@@ -91,6 +96,8 @@ export class Monster {
   moving = false;
   /** Horizontal facing in screen space: +1 right, -1 left. */
   facing: 1 | -1 = 1;
+  /** Which way it looks in world space (unit-ish vector; directional art picks front, right, back or left from it). */
+  readonly facingDir: Vec2 = { x: 1, y: 1 };
   /** True once it has noticed the player (used to show the boss health bar). */
   engaged = false;
   /** Boss phase, 0-based. Always 0 for non-bosses. */
@@ -105,6 +112,8 @@ export class Monster {
   private hurtDuration = HURT_DURATION;
   private lostSightTime = 0;
   private stuckTime = 0;
+  /** A pounce in progress: the direction of the leap, fixed at the moment it springs. */
+  private leapDir: Vec2 | null = null;
 
   constructor(
     readonly def: MonsterDef,
@@ -227,7 +236,7 @@ export class Monster {
         if (this.stateTime >= this.hurtDuration) this.enter(target.isDead ? 'idle' : 'chase');
         break;
       case 'attack':
-        this.updateAttack(dt, target, hooks);
+        this.updateAttack(dt, target, collision, hooks);
         break;
       case 'idle':
         this.updateIdle(dt, target, collision);
@@ -250,6 +259,7 @@ export class Monster {
     this.lostSightTime = 0;
     if (state === 'chase') this.engaged = true;
     if (state !== 'attack') this.currentAttack = null;
+    this.leapDir = null;
   }
 
   private updateIdle(dt: number, target: MonsterTarget, collision: CollisionSystem): void {
@@ -314,7 +324,24 @@ export class Monster {
       return;
     }
 
-    // melee
+    // melee: a pouncing monster springs from a few steps away, and bites when it is already close
+    const pounce = this.def.pounce;
+    if (pounce && sees && reach <= pounce.range && reach > this.def.attackRange + POUNCE_MIN_GAP && this.attack.canStart) {
+      this.beginAttack(
+        {
+          kind: 'pounce',
+          duration: pounce.duration,
+          hitFraction: POUNCE_HIT_FRACTION,
+          damageMult: pounce.damageMult,
+          radius: 0,
+          count: 1,
+          spread: 0,
+        },
+        target,
+        hooks,
+      );
+      return;
+    }
     if (reach <= this.def.attackRange && this.attack.canStart) {
       this.beginAttack(this.standardAttack('melee'), target, hooks);
       return;
@@ -382,11 +409,33 @@ export class Monster {
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
   }
 
-  private updateAttack(dt: number, target: MonsterTarget, hooks: MonsterHooks): void {
+  private updateAttack(dt: number, target: MonsterTarget, collision: CollisionSystem, hooks: MonsterHooks): void {
     const spec = this.currentAttack;
+    if (spec?.kind === 'pounce') this.leap(spec, dt, target, collision);
     const { hit, finished } = this.attack.update(dt);
     if (hit && spec) this.strike(spec, target, hooks);
     if (finished) this.enter(target.isDead ? 'idle' : 'chase');
+  }
+
+  /**
+   * The leap of a pounce: stands crouched for the first part of the move, then springs along the line to where the target
+   * stood when it sprang (so a dodge or a step aside makes it land short), then stands still while it lands.
+   */
+  private leap(spec: AttackSpec, dt: number, target: MonsterTarget, collision: CollisionSystem): void {
+    const pounce = this.def.pounce;
+    if (!pounce) return;
+    const progress = this.stateTime / spec.duration;
+    if (progress < POUNCE_LEAP_START || progress >= POUNCE_HIT_FRACTION) return;
+    if (!this.leapDir) {
+      const dx = target.pos.x - this.pos.x;
+      const dy = target.pos.y - this.pos.y;
+      const len = Math.hypot(dx, dy) || 1;
+      this.leapDir = { x: dx / len, y: dy / len };
+      this.face(dx, dy);
+    }
+    const step = pounce.speed * dt;
+    collision.moveCircle(this.pos, this.def.radius, this.leapDir.x * step, this.leapDir.y * step);
+    this.moving = true;
   }
 
   /** The moment an attack lands. */
@@ -402,6 +451,7 @@ export class Monster {
     const len = Math.hypot(dx, dy) || 1;
     switch (spec.kind) {
       case 'melee':
+      case 'pounce':
       case 'cleave':
         hooks.meleeStrike(this, spec.damageMult);
         break;
@@ -448,6 +498,11 @@ export class Monster {
   }
 
   private face(worldDx: number, worldDy: number): void {
+    if (Math.abs(worldDx) + Math.abs(worldDy) > 1e-6) {
+      const len = Math.hypot(worldDx, worldDy);
+      this.facingDir.x = worldDx / len;
+      this.facingDir.y = worldDy / len;
+    }
     const screenX = worldDx - worldDy;
     if (Math.abs(screenX) > 1e-3) this.facing = screenX < 0 ? -1 : 1;
   }

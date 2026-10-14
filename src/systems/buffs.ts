@@ -51,6 +51,55 @@ export class DodgeController {
   }
 }
 
+/** Seconds between two poison ticks. */
+export const POISON_TICK = 0.5;
+
+/**
+ * Poison: damage over time. Applying it again keeps the stronger rate and the longer time (it does not stack). Pure logic;
+ * armor and a dodge do not stop poison that is already in the blood, so the owner just takes the damage `tick` returns.
+ */
+export class PoisonEffect {
+  private left = 0;
+  private dps = 0;
+  private clock = 0;
+
+  get active(): boolean {
+    return this.left > 0;
+  }
+  get secondsLeft(): number {
+    return this.left;
+  }
+
+  apply(dps: number, duration: number): void {
+    this.dps = this.left > 0 ? Math.max(this.dps, dps) : dps;
+    this.left = Math.max(this.left, duration);
+  }
+
+  clear(): void {
+    this.left = 0;
+    this.dps = 0;
+    this.clock = 0;
+  }
+
+  /** Advances by `dt` seconds; returns the damage of the tick that fell in it (at least 1), or 0 if none did. */
+  tick(dt: number): number {
+    if (this.left <= 0) return 0;
+    const step = Math.min(dt, this.left);
+    this.left -= step;
+    this.clock += step;
+    let damage = 0;
+    if (this.clock >= POISON_TICK) {
+      this.clock -= POISON_TICK;
+      damage = Math.max(1, Math.round(this.dps * POISON_TICK));
+    }
+    if (this.left <= 0) {
+      this.dps = 0;
+      this.clock = 0;
+    }
+    return damage;
+  }
+}
+
 /** Timed multipliers granted by legendary effects. Re-triggering refreshes (does not stack) the timer. */
 export class Buffs {
   private moveLeft = 0;

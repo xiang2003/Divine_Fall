@@ -12,6 +12,9 @@ const PROJECTILE_LIFE = 3;
 /** Height of the orb above the ground, in art pixels. */
 const FLIGHT_HEIGHT = 18;
 
+/** The tint of a poisonous monster's projectile (venom). */
+const VENOM_COLOR = 0x8fe05a;
+
 interface Slot {
   projectile: Projectile;
   mesh: THREE.Mesh;
@@ -21,10 +24,15 @@ interface Slot {
 export class ProjectileSystem {
   readonly group = new THREE.Group();
   private readonly slots: Slot[] = [];
+  private readonly orbMaterial: THREE.MeshBasicMaterial;
+  private readonly venomMaterial: THREE.MeshBasicMaterial;
 
   constructor(assets: AssetLoader) {
     const geometry = assets.sharedGeometry(SpriteKey.ORB);
     const material = assets.material(SpriteKey.ORB);
+    this.orbMaterial = material;
+    this.venomMaterial = material.clone();
+    this.venomMaterial.color.setHex(VENOM_COLOR);
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.visible = false;
@@ -46,6 +54,7 @@ export class ProjectileSystem {
     const slot = this.slots.find((s) => !s.projectile.active);
     if (!slot) return false;
     slot.projectile.launch(x, y, dirX, dirY, speed, damage, PROJECTILE_LIFE, owner);
+    slot.mesh.material = owner?.def.poison ? this.venomMaterial : this.orbMaterial;
     slot.mesh.visible = true;
     this.place(slot);
     return true;
@@ -81,7 +90,8 @@ export class ProjectileSystem {
   }
 
   dispose(): void {
-    // Geometry and material belong to AssetLoader.
+    // Geometry and the orb material belong to AssetLoader; the venom copy is ours.
+    this.venomMaterial.dispose();
     this.group.clear();
     this.slots.length = 0;
   }

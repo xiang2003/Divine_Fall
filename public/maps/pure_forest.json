@@ -104,11 +104,11 @@
  ],
  "population": {
   "monsters": [
-   "forest_fang",
-   "forest_fang",
-   "forest_fang",
-   "forest_fang",
-   "warped"
+   "forest_wolf",
+   "forest_viper",
+   "forest_wolf",
+   "forest_wolf",
+   "forest_viper"
   ]
  },
  "decor": [

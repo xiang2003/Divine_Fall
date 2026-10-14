@@ -457,10 +457,6 @@ export function drawEchoSheet(): HTMLCanvasElement {
   return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, ECHO_STYLE));
 }
 
-export function drawFangSheet(): HTMLCanvasElement {
-  return drawHoundSheet(true);
-}
-
 export function drawShadeSheet(): HTMLCanvasElement {
   return buildSheet((ctx, pose) => drawHumanoid(ctx, pose, SHADE_STYLE));
 }

@@ -7,7 +7,7 @@ import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
 import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
-import { Buffs, DodgeController } from '../systems/buffs';
+import { Buffs, DodgeController, PoisonEffect } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
@@ -56,6 +56,7 @@ export class Player {
   private readonly dodgeDir: Vec2 = { x: 1, y: 1 };
   /** True from the start of a dodge until the first tick after its dash (the animator runs at roll speed meanwhile). */
   private rolling = false;
+  private readonly poison = new PoisonEffect();
   private effects: ReadonlySet<LegendaryEffectId> = new Set();
   private activeSkill: ActiveSkill | null = null;
   private hurtTimer = 0;
@@ -174,14 +175,43 @@ export class Player {
     this.sinceDamaged = 0;
     this.hurtTimer = HURT_FLASH;
     if (this.hp > 0) return { amount, died: false };
+    this.die();
+    return { amount, died: true };
+  }
 
+  private die(): void {
     this.isDead = true;
     this.activeSkill = null;
     this.attack.cancel();
     this.mover.stop();
+    this.poison.clear();
     this.animator.setSpeed(1);
     this.animator.play('die', true);
-    return { amount, died: true };
+  }
+
+  get isPoisoned(): boolean {
+    return this.poison.active && !this.isDead;
+  }
+
+  /** Poisons the player (a stronger poison replaces a weaker one; the time left never shortens). */
+  applyPoison(dps: number, duration: number): void {
+    if (this.isDead) return;
+    this.poison.apply(dps, duration);
+  }
+
+  /**
+   * Advances the poison by `dt` seconds. Returns the damage of a tick that fell in it (armor and a dodge's invulnerability do not
+   * stop poison that is already in the blood) and whether it was fatal, or null when no tick fell.
+   */
+  tickPoison(dt: number): { amount: number; died: boolean } | null {
+    if (this.isDead) return null;
+    const amount = this.poison.tick(dt);
+    if (amount === 0) return null;
+    this.hp = Math.max(0, this.hp - amount);
+    this.sinceDamaged = 0; // no regeneration while it burns
+    const died = this.hp <= 0;
+    if (died) this.die();
+    return { amount, died };
   }
 
   /**
@@ -208,6 +238,7 @@ export class Player {
     this.hp = this.stats.maxHp;
     this.isDead = false;
     this.hurtTimer = 0;
+    this.poison.clear();
     this.sinceDamaged = Infinity;
     this.attack.reset();
     this.activeSkill = null;
@@ -231,6 +262,7 @@ export class Player {
     this.sinceDamaged += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.animator.setHurtFlash(this.hurtTimer > 0);
+    this.animator.setPoisoned(this.isPoisoned);
     if (this.sinceDamaged > PLAYER_CONFIG.regenDelay && this.hp < this.stats.maxHp) {
       this.hp = Math.min(this.stats.maxHp, this.hp + PLAYER_CONFIG.regenPerSecond * dt);
     }

@@ -142,7 +142,7 @@ export interface GameSnapshot {
   inventoryOpen: boolean;
   inventory: InventoryView;
   /** Timed buffs from legendary effects, for the HUD badges. */
-  buffs: { haste: boolean; frenzy: boolean };
+  buffs: { haste: boolean; frenzy: boolean; poison: boolean };
   skills: readonly SkillView[];
   boss: BossView | null;
   /** True from the moment the boss dies until the next restart. */
@@ -198,7 +198,7 @@ const INITIAL: GameSnapshot = {
   xpToNext: 0,
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
-  buffs: { haste: false, frenzy: false },
+  buffs: { haste: false, frenzy: false, poison: false },
   skills: [],
   boss: null,
   bossDefeated: false,
@@ -1408,8 +1408,9 @@ export class Game {
 
     const haste = player.buffs.moveActive;
     const frenzy = player.buffs.attackActive;
-    if (haste !== this.snapshot.buffs.haste || frenzy !== this.snapshot.buffs.frenzy) {
-      this.publish({ buffs: { haste, frenzy } });
+    const poison = player.isPoisoned;
+    if (haste !== this.snapshot.buffs.haste || frenzy !== this.snapshot.buffs.frenzy || poison !== this.snapshot.buffs.poison) {
+      this.publish({ buffs: { haste, frenzy, poison } });
     }
 
     const moveTarget = player.mover.currentTarget;
