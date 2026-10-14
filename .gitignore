@@ -4,3 +4,4 @@ dist/
 .vite/
 coverage/
 .claude/settings.local.json
+docs/art/cast-drafts/

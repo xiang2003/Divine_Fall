@@ -92,6 +92,25 @@
 **使用處**：載入畫面（全身圖）、HUD 左下角的肖像（像素小人）。這兩張與遊戲內的主角（Puny Characters 的戰士）長得不一樣。
 像素小人**只是一張靜態圖**，沒有行走或攻擊動畫，所以不能直接取代遊戲內角色的動畫表。
 
+## 五位角色的形象圖（2026-10-14，本機 AI 生成）
+
+同樣在本機 ComfyUI 用 **Z-Image-Turbo**（Apache-2.0，授權與工作流程說明見上一節）生成，沒有使用付費 API。畫風參考你提供的附圖
+（半寫實、帶像素顆粒感的插畫）。**這些是形象圖，不是遊戲內的走動小人**：遊戲內仍是 Puny Characters 的像素小人，兩者長相不同。
+生成設定：832×1216、8 步，轉成 WebP（品質 92）。每張的種子與完整英文提示詞在 [docs/art/character-prompts.json](docs/art/character-prompts.json)。
+
+| 專案內檔案 | 角色 | 種子 |
+| --- | --- | --- |
+| public/assets/art/characters/hero.webp | 主角（中性，青綠亞麻束腰、腰間短劍、前臂金色紋路） | 5102 |
+| public/assets/art/characters/elder_qiyi.webp | 祈漪（老婆婆，草繩披肩、木杖、貝殼串） | 5201 |
+| public/assets/art/characters/hunter_yanya.webp | 岩牙（壯年男獵人，弓、匕首、爪痕） | 5301 |
+| public/assets/art/characters/waterer_xi.webp | 汐（瘦小白皙的年輕女性，竹桶與布包） | 5901 |
+| public/assets/art/characters/boatwright_laodu.webp | 老舵（矮壯的男船匠，編辮鬍、雪茄、皮圍裙） | 5702 |
+
+**性別是我替沒有指定的角色選的預設**（設計文件只明確寫了汐是女性）：主角中性、祈漪女、岩牙男、老舵男。
+**已知的偏差**：主角的劍比「短劍」長一點、金色紋路很淡；老舵為了避開模型自行加上的尖耳朵，提示詞改寫成「矮壯的人類男子」，
+所以不太像矮人；五人的轉身角度不一致（有的接近 30 度，有的偏正面）；汐的矮小單張圖看不出來。
+第一輪的草稿（較卡通，已被取代）與其他備選圖在 docs/art/cast-drafts/，沒有提交。
+
 **下載過、評估後沒有採用的**（沒有放進專案）：
 
 | 作品 | 授權（頁面標示） | 為什麼沒用 |

@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "seed": 5102,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. A young androgynous wanderer, lean athletic build, short messy black hair, calm determined dark eyes, layered teal and cream linen tunic with brown leather cross straps on the chest, cloth-wrapped forearms with faint golden glowing veins, both hands empty and open, a small short sword sheathed in a scabbard hanging from the belt on the left side, simple leather sandals. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "elder_qiyi": {
+    "seed": 5201,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. An elderly woman village chief about seventy, small, thin and upright, white hair in a low bun, deeply lined calm face with kind but guarded eyes, undyed cream linen long robe with a hand-woven straw-rope shawl, work-worn hands, a short string of polished seashells hanging at her waist, one hand resting on a plain wooden walking staff, the other hand empty at her side, muted ivory and grey-blue tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "hunter_yanya": {
+    "seed": 5301,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. A rugged adult male hunter in his forties, broad-shouldered and heavily built, weathered sun-tanned face, dark hair tied back, rough stubble beard, hard watchful expression, beast-hide and coarse cloth clothing with large crooked patch stitching, leather shoulder guard, old claw scars across his left forearm, a long bow slung across his back fully inside the frame, two daggers of different lengths at the belt, worn leather boots, dark brown and olive tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "waterer_xi": {
+    "seed": 5901,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. A very petite, short and slight young woman of about twenty-two working as a water-carrier, small slender frame with narrow shoulders, very pale ivory skin and a fair light complexion (not tanned), plain serious face with sharp watchful dark eyes and a guarded closed-mouth expression, short uneven dark hair, worn faded linen short tunic and loose trousers with a rope belt, barefoot with pale feet, a bamboo water bucket on a shoulder strap and a small cloth pouch at the hip with feathers and pottery shards sticking out, sea blue-green and faded brown tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "boatwright_laodu": {
+    "seed": 5702,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. A very short, extremely stocky middle-aged human man boatwright, chest-high to an ordinary adult but with a huge broad barrel chest and thick strong arms, realistic weathered face with a heavy brow, strong jaw and ordinary human round ears, thick russet-brown beard braided into two plaits, short cropped hair, a stub of cigar clamped between his teeth, narrowed angry eyes, a heavy scorched leather apron over a rolled-sleeve coarse shirt, a tool belt with hammer and chisel, heavy work boots, iron grey, dark red and burnt brown tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  }
+}
