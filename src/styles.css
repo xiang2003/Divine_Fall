@@ -507,6 +507,10 @@ body,
   color: #8fe05a;
 }
 
+.buff-slow {
+  color: #7fffd8;
+}
+
 .buff-frenzy {
   color: #ff9a42;
 }

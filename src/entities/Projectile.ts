@@ -1,7 +1,16 @@
 import { MAX_MOVE_STEP } from '../config/gameConfig';
 import type { Vec2 } from '../game/iso';
+import type { PoisonDef, SlowDef } from '../data/monsters';
 import type { Monster } from './Monster';
 import type { CollisionSystem } from '../systems/CollisionSystem';
+
+/** What a shot does to whoever it hits, beyond its damage (a monster's shots take these from its definition). */
+export interface ShotEffects {
+  poison?: PoisonDef;
+  slow?: SlowDef;
+  /** Colour of the shot (0xRRGGBB). */
+  tint?: number;
+}
 
 export type ProjectileOutcome = 'hit' | 'wall' | 'expired' | null;
 
@@ -24,6 +33,8 @@ export class Projectile {
   life = 0;
   /** Who fired it (so elite effects like lifesteal apply when it hits). */
   owner: Monster | null = null;
+  /** Effects of its own (a trap's arrow); a shot without them uses its owner's. */
+  effects: ShotEffects | null = null;
 
   launch(
     x: number,
@@ -34,8 +45,10 @@ export class Projectile {
     damage: number,
     life: number,
     owner: Monster | null = null,
+    effects: ShotEffects | null = null,
   ): void {
     this.owner = owner;
+    this.effects = effects;
     this.active = true;
     this.pos.x = x;
     this.pos.y = y;

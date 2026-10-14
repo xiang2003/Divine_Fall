@@ -22,6 +22,9 @@ export interface BossContext {
 
 /** Ranged attacks are pointless point-blank; the fan needs at least this much gap. */
 const FAN_MIN_REACH = 2;
+/** A charge needs room to run: not point-blank, and not from across the room. */
+const CHARGE_MIN_REACH = 2.5;
+const CHARGE_MAX_REACH = 9;
 /** A nova is worth using when the player is within its blast radius plus a little margin. */
 const NOVA_MARGIN = 0.8;
 
@@ -34,6 +37,8 @@ export function isAttackAvailable(attack: BossAttackDef, phase: number, ctx: Bos
       return ctx.dist <= (attack.radius ?? 3) + NOVA_MARGIN;
     case 'fan':
       return ctx.sees && ctx.reach >= FAN_MIN_REACH;
+    case 'charge':
+      return ctx.sees && ctx.reach >= CHARGE_MIN_REACH && ctx.reach <= CHARGE_MAX_REACH;
   }
 }
 

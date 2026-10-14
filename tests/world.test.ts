@@ -285,7 +285,7 @@ describe('beach and cave maps', () => {
     expect(collision.hasLineOfSight(1.5, 1.5, 3.5, 1.5)).toBe(true);
   });
 
-  it('the coast is a sand map with sea and the stranded ferry; the cave is a cave map with a pool, an elite and enough monsters', () => {
+  it('the coast is a sand map with sea and the stranded ferry; the cave is a cave map with a pool, a boss and enough monsters', () => {
     const coast = load('pure_coast');
     expect(coast.theme).toBe('sand');
     expect(coast.buildings.map((b) => b.style)).toEqual(['ferry']);
@@ -296,7 +296,8 @@ describe('beach and cave maps', () => {
 
     const cave = load('pure_spring_cave');
     expect(cave.theme).toBe('cave');
-    expect(cave.spawns.elites).toHaveLength(1);
+    expect(cave.spawns.boss).not.toBeNull();
+    expect(cave.spawns.elites).toHaveLength(0);
     expect(cave.spawns.monsters.length).toBeGreaterThanOrEqual(8);
     let pool = 0;
     for (let y = 0; y < cave.height; y++) for (let x = 0; x < cave.width; x++) if (tileAt(cave, x, y) === TileType.WATER) pool++;
@@ -345,7 +346,8 @@ describe('map populations', () => {
     }
     expect(used.get('pure_forest')).toContain('forest_wolf');
     expect(used.get('pure_forest')).toContain('forest_viper');
-    expect(used.get('pure_spring_cave')).toContain('water_shade');
+    expect([...used.get('pure_spring_cave')!].sort()).toEqual(['corroded_deer', 'crystal_bat', 'spring_gel']);
+    expect(used.get('pure_ruins')).toContain('rock_golem');
     expect(used.get('pure_ruins')).toContain('ruins_guardian');
   });
 

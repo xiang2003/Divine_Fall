@@ -19,6 +19,8 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
+import { SPIKE_SPRITE, drawArrowSlit, drawGlow, drawSpikes, drawTorch } from './HazardArt';
+import { drawMossyWall } from './RuinsArt';
 import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
 import type { MapTheme } from '../data/mapData';
@@ -71,12 +73,24 @@ export const SpriteKey = {
   HOUND: 'monster.hound',
   WOLF: 'monster.wolf',
   VIPER: 'monster.viper',
+  GEL: 'monster.spring_gel',
+  BAT: 'monster.crystal_bat',
+  DEER: 'monster.corroded_deer',
+  GOLEM: 'monster.rock_golem',
   WARPED: 'monster.warped',
   WATER_SHADE: 'monster.water_shade',
   ECHO: 'monster.echo',
   BOSS: 'monster.boss',
   SHARD: 'object.shard',
   RELIC: 'object.relic',
+  SPIKES_HIDDEN: 'trap.spikes_hidden',
+  SPIKES_WARN: 'trap.spikes_warn',
+  SPIKES_UP: 'trap.spikes_up',
+  SLIT: 'trap.slit',
+  SLIT_HOT: 'trap.slit_hot',
+  TORCH_A: 'fx.torch_a',
+  TORCH_B: 'fx.torch_b',
+  GLOW: 'fx.glow',
   NPC_ELDER: 'npc.elder',
   NPC_HUNTER: 'npc.hunter',
   NPC_WATERER: 'npc.waterer',
@@ -113,16 +127,24 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   tuft: { keys: ['plant.grasses01', 'plant.grasses03', 'plant.grasses05', 'plant.weed01', 'plant.weed03'], scale: 0.5 },
   palm: { keys: ['plant.palm01', 'plant.palm03', 'plant.palm05'], scale: 0.5 },
   tropical: { keys: ['plant.tropical01'], scale: 0.5 },
+  // generated pictures (docs/art/props): glowing moss and creeping vines
+  moss: { keys: ['decor.moss_a', 'decor.moss_b'], scale: 0.4 },
+  vines: { keys: ['decor.vines_a', 'decor.vines_b', 'decor.vines_c'], scale: 0.4 },
 };
 export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density: number } | null> = {
   stone: null,
+  ruins: { kinds: ['vines', 'moss', 'vines'], density: 0.05 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
-  cave: null,
+  cave: { kinds: ['moss', 'moss', 'vines'], density: 0.045 },
 };
 export const MURK_KEYS = [0, 1].map((i) => `terrain.murk_${i}`);
 export const BOULDER_KEYS = [0, 1, 2].map((i) => `terrain.boulder_${i}`);
 export const PILLAR_KEYS = [0, 1, 2].map((i) => `terrain.pillar_${i}`);
+/** The cave's "T" tiles: clusters of glowing crystal (generated pictures; the drawn rock pillar is the fallback). */
+export const CRYSTAL_KEYS = [0, 1, 2].map((i) => `terrain.crystal_${i}`);
+/** The ruins' wall blocks: stone with moss and vines (drawn with canvas code, see RuinsArt). */
+export const MOSSY_WALL_KEYS = [0, 1, 2, 3].map((i) => `tile.wall_mossy_${i}`);
 
 /** What a map theme is made of: floor tiles, what a "T" tile looks like, and its water. */
 export interface ThemeArt {
@@ -132,13 +154,17 @@ export interface ThemeArt {
   /** Sprites for "T" tiles; null means they are drawn like walls. */
   obstacles: readonly string[] | null;
   water: readonly string[];
+  /** Wall block variants, chosen per tile; omitted means the plain wall. */
+  walls?: readonly string[];
 }
 
 export const THEME_ART: Record<MapTheme, ThemeArt> = {
   stone: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS },
+  ruins: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
   grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
   sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
-  cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: PILLAR_KEYS, water: MURK_KEYS },
+  // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
+  cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: [PILLAR_KEYS[0]!, CRYSTAL_KEYS[0]!, PILLAR_KEYS[1]!, PILLAR_KEYS[2]!, CRYSTAL_KEYS[1]!, PILLAR_KEYS[0]!, PILLAR_KEYS[1]!, CRYSTAL_KEYS[2]!, PILLAR_KEYS[2]!], water: MURK_KEYS },
 };
 
 /** A procedural terrain sprite drawn at TERRAIN_SUPERSAMPLE x and shown at 1 / TERRAIN_SUPERSAMPLE with smoothing. */
@@ -258,6 +284,8 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   // beach boulders: generated pictures (docs/art/props), shown at 0.45x; the drawn rock is the fallback
   ...BOULDER_KEYS.map((key, i) => propSprite(key, `assets/props/boulder_${i}.png`, 0.45, 0.27, enlarged(() => drawRock('boulder', i), 64, 64))),
   ...PILLAR_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('pillar', i))),
+  ...CRYSTAL_KEYS.map((key, i) => propSprite(key, `assets/props/crystal_${i}.png`, 0.34, 0.2, enlarged(() => drawRock('pillar', i), 170, 220))),
+  ...MOSSY_WALL_KEYS.map((key, i): SpriteAssetDef => ({ key, frameWidth: 64, frameHeight: 64, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawMossyWall(i) })),
   ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),
   ...TREE_KEYS.map((_, i) => treeSprite(i)),
@@ -345,6 +373,15 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   characterSprite(SpriteKey.ECHO, 8, drawEchoSheet, 64),
   characterSprite(SpriteKey.BOSS, 8, drawArchonSheet, BOSS_FRAME),
   ...directionalCharacters(),
+  // the ruins' hazards and torches: drawn with canvas code (HazardArt)
+  { key: SpriteKey.SPIKES_HIDDEN, frameWidth: SPIKE_SPRITE.width, frameHeight: SPIKE_SPRITE.height, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawSpikes('hidden') },
+  { key: SpriteKey.SPIKES_WARN, frameWidth: SPIKE_SPRITE.width, frameHeight: SPIKE_SPRITE.height, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawSpikes('warn') },
+  { key: SpriteKey.SPIKES_UP, frameWidth: SPIKE_SPRITE.width, frameHeight: SPIKE_SPRITE.height, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawSpikes('up') },
+  { key: SpriteKey.SLIT, frameWidth: 24, frameHeight: 32, anchor: { x: 0.5, y: 0.5 }, placeholder: () => drawArrowSlit(false) },
+  { key: SpriteKey.SLIT_HOT, frameWidth: 24, frameHeight: 32, anchor: { x: 0.5, y: 0.5 }, placeholder: () => drawArrowSlit(true) },
+  { key: SpriteKey.TORCH_A, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(0) },
+  { key: SpriteKey.TORCH_B, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(1) },
+  { key: SpriteKey.GLOW, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawGlow },
 ];
 
 /** Ground sprite for an item icon, standing on its bottom edge. */
@@ -385,42 +422,46 @@ function characterSprite(
 /** 4 idle frames + 8 roll frames per facing (see DirectionalAnimator IDLE_FRAMES / ROLL_FRAMES). */
 export const CHARACTER_SHEET = { columns: 12, rows: 4 };
 
-function directionalPlaceholder(base: () => HTMLCanvasElement): () => HTMLCanvasElement {
+function directionalPlaceholder(base: () => HTMLCanvasElement, frame: number, baseFrame = 64): () => HTMLCanvasElement {
   return () => {
-    const frame = base(); // the procedural sheets start with a 64 x 64 idle frame
-    const { width, height } = CHARACTER_FRAME;
-    const [canvas, ctx] = makeCanvas(width * CHARACTER_SHEET.columns, height * CHARACTER_SHEET.rows);
+    const art = base(); // the procedural sheets start with a square idle frame at the top left
+    const [canvas, ctx] = makeCanvas(frame * CHARACTER_SHEET.columns, frame * CHARACTER_SHEET.rows);
+    const source = baseFrame;
     for (let r = 0; r < CHARACTER_SHEET.rows; r++) {
       for (let c = 0; c < CHARACTER_SHEET.columns; c++) {
-        ctx.drawImage(frame, 0, 0, 64, 64, c * width, r * height, width, height);
+        ctx.drawImage(art, 0, 0, source, source, c * frame, r * frame, frame, frame);
       }
     }
     return canvas;
   };
 }
 
-function directionalSheet(key: string, name: string, base: () => HTMLCanvasElement): SpriteAssetDef {
+function directionalSheet(key: string, name: string, base: () => HTMLCanvasElement, frame = CHARACTER_FRAME.width, baseFrame = 64): SpriteAssetDef {
   return {
     key,
     url: `assets/characters/${name}.png`,
-    frameWidth: CHARACTER_FRAME.width,
-    frameHeight: CHARACTER_FRAME.height,
+    frameWidth: frame,
+    frameHeight: frame,
     displayScale: CHARACTER_FRAME.scale,
     // the soles are on row 62 of the 64 px frame, with the outline below them (tools/prepare_sprites.py BASELINE)
-    anchor: { x: 0.5, y: 2 / CHARACTER_FRAME.height },
-    placeholder: directionalPlaceholder(base),
+    anchor: { x: 0.5, y: 2 / frame },
+    placeholder: directionalPlaceholder(base, frame, baseFrame),
   };
 }
 
-/** A monster with 4 facings: same layout as a character's sheet but only the 4 idle frames per facing (no roll). */
-function directionalMonster(key: string, name: string, base: () => HTMLCanvasElement): SpriteAssetDef {
-  return { ...directionalSheet(key, name, base), url: `assets/monsters/${name}.png` };
+/** A monster with 4 facings: same layout as a character's sheet but only the 4 idle frames per facing (no roll). Big ones use a larger frame. */
+function directionalMonster(key: string, name: string, base: () => HTMLCanvasElement, frame = CHARACTER_FRAME.width, baseFrame = 64): SpriteAssetDef {
+  return { ...directionalSheet(key, name, base, frame, baseFrame), url: `assets/monsters/${name}.png` };
 }
 
 function directionalMonsters(): SpriteAssetDef[] {
   return [
     directionalMonster(SpriteKey.WOLF, 'forest_wolf', drawHoundSheet),
     directionalMonster(SpriteKey.VIPER, 'forest_viper', drawShadeSheet),
+    directionalMonster(SpriteKey.GEL, 'spring_gel', drawWaterShadeSheet),
+    directionalMonster(SpriteKey.BAT, 'crystal_bat', drawShadeSheet),
+    directionalMonster(SpriteKey.DEER, 'corroded_deer', drawArchonSheet, BOSS_FRAME, BOSS_FRAME),
+    directionalMonster(SpriteKey.GOLEM, 'rock_golem', drawEchoSheet, 96),
   ];
 }
 

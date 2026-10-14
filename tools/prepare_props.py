@@ -1,4 +1,4 @@
-"""Builds the generated map props (the village well, the beach boulders, the stranded ferry) from the pictures in docs/art/props.
+"""Builds the generated map props (the village well, the beach boulders, the stranded ferry, the cave's crystals, moss and vines) from the pictures in docs/art/props.
 
 Usage:  python tools/prepare_props.py [--preview <dir>]
 Needs Pillow. Developer tool only; the game never runs it.
@@ -20,13 +20,22 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'docs' / 'art' / 'props'
 OUT = ROOT / 'public' / 'assets'
 
-# name -> (source file, output file under public/assets, width in picture pixels (the game shows it at half), anchorY)
+# name -> (source file, output file under public/assets, width in picture pixels (the game shows it at half), anchorY, optional colour key: 'orange' instead of magenta)
 PROPS = {
     'well': ('well.webp', 'buildings/well.png', 130, 0.17),
     'ferry': ('ferry.webp', 'buildings/ferry.png', 520, 0.27),
     'boulder_0': ('boulder_0.webp', 'props/boulder_0.png', 170, 0.27),
     'boulder_1': ('boulder_1.webp', 'props/boulder_1.png', 170, 0.27),
     'boulder_2': ('boulder_2.webp', 'props/boulder_2.png', 170, 0.27),
+    # the spring cave and the ruins (the crystals stand in the place of the cave's rock pillars)
+    'crystal_0': ('crystal_0.webp', 'props/crystal_0.png', 170, 0.2, 'orange'),
+    'crystal_1': ('crystal_1.webp', 'props/crystal_1.png', 170, 0.2, 'orange'),
+    'crystal_2': ('crystal_2.webp', 'props/crystal_2.png', 170, 0.2, 'orange'),
+    'moss_a': ('moss_a.webp', 'props/decor_moss_a.png', 230, 0.4),
+    'moss_b': ('moss_b.webp', 'props/decor_moss_b.png', 230, 0.4),
+    'vines_a': ('vines_a.webp', 'props/decor_vines_a.png', 160, 0.25),
+    'vines_b': ('vines_b.webp', 'props/decor_vines_b.png', 160, 0.25),
+    'vines_c': ('vines_c.webp', 'props/decor_vines_c.png', 160, 0.25),
 }
 KEY_FULL = 0.26  # "magentaness" (min(red, blue) - green, as a fraction of min(red, blue)) at or above this can be background
 KEY_NONE = 0.12  # at or below this an edge pixel is fully the object; in between the edge is soft
@@ -34,18 +43,24 @@ POCKET_MIN_AREA = 700  # smaller patches of magenta-looking pixels inside the ob
 EDGE = 2  # how many pixels in from the background the soft edge reaches
 
 
-def magenta(px, x, y):
+def magenta(px, x, y, mode='magenta'):
+    """How much like the background colour key a pixel is (0 = not at all, about 0.3 or more = background): magenta by default;
+    'orange' is for objects that are themselves violet, pink or green (the crystals), drawn on flat orange: its cast shadow is a darker
+    orange, which is keyed out together with the background."""
     r, g, b = px[x, y][:3]
+    if mode == 'orange':
+        return (r - b) / max(r, 40) if r > g else 0.0
     m = min(r, b)
     return (m - g) / max(m, 40)
 
 
-def cut_out(path: Path) -> Image.Image:
+def cut_out(path: Path, mode: str = 'magenta') -> Image.Image:
     """The object with a transparent background, cropped to its outline.
 
     The background is the magenta that can be reached from the picture's border (a flood fill over pixels that are magenta enough, so
     magenta-tinted metal or paint inside the object is never mistaken for it); along that border the edge is made soft and the magenta
     fringe is pulled out of the colour."""
+    key_full, key_none = (KEY_FULL, KEY_NONE) if mode == 'magenta' else (0.3, 0.15)
     im = Image.open(path).convert('RGB')
     w, h = im.size
     px = im.load()
@@ -59,7 +74,7 @@ def cut_out(path: Path) -> Image.Image:
         x, y = queue.popleft()
         if x < 0 or y < 0 or x >= w or y >= h or bg[y * w + x]:
             continue
-        if magenta(px, x, y) < KEY_FULL:
+        if magenta(px, x, y, mode) < key_full:
             continue
         bg[y * w + x] = 1
         queue.extend([(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
@@ -69,7 +84,7 @@ def cut_out(path: Path) -> Image.Image:
     for sy in range(h):
         for sx in range(w):
             i0 = sy * w + sx
-            if bg[i0] or pocket_seen[i0] or magenta(px, sx, sy) < KEY_FULL:
+            if bg[i0] or pocket_seen[i0] or magenta(px, sx, sy, mode) < key_full:
                 continue
             region = []
             stack = [(sx, sy)]
@@ -78,7 +93,7 @@ def cut_out(path: Path) -> Image.Image:
                 x, y = stack.pop()
                 region.append((x, y))
                 for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                    if 0 <= nx < w and 0 <= ny < h and not bg[ny * w + nx] and not pocket_seen[ny * w + nx] and magenta(px, nx, ny) >= KEY_FULL:
+                    if 0 <= nx < w and 0 <= ny < h and not bg[ny * w + nx] and not pocket_seen[ny * w + nx] and magenta(px, nx, ny, mode) >= key_full:
                         pocket_seen[ny * w + nx] = 1
                         stack.append((nx, ny))
             if len(region) >= POCKET_MIN_AREA:
@@ -110,13 +125,18 @@ def cut_out(path: Path) -> Image.Image:
             r, g, b = px[x, y]
             alpha = 255
             if near[i]:
-                key = magenta(px, x, y)
+                key = magenta(px, x, y, mode)
                 if key > 0:
-                    alpha = 255 if key <= KEY_NONE else round(255 * (KEY_FULL - key) / (KEY_FULL - KEY_NONE))
-                    spill = (min(r, b) - g) * 0.8
-                    if spill > 0:
-                        r = int(r - spill)
-                        b = int(b - spill)
+                    alpha = 255 if key <= key_none else round(255 * (key_full - key) / (key_full - key_none))
+                    if mode == 'orange':
+                        spill = (r - b) * 0.5
+                        if spill > 0 and r > g:
+                            r = int(r - spill)
+                    else:
+                        spill = (min(r, b) - g) * 0.8
+                        if spill > 0:
+                            r = int(r - spill)
+                            b = int(b - spill)
             op[x, y] = (max(0, r), g, max(0, b), max(0, alpha))
     box = out.getchannel('A').point(lambda v: 255 if v > 40 else 0).getbbox()
     assert box, path
@@ -124,8 +144,8 @@ def cut_out(path: Path) -> Image.Image:
 
 
 def build(name: str, preview: Path | None) -> None:
-    source, out, width, anchor = PROPS[name]
-    figure = cut_out(SRC / source)
+    source, out, width, anchor, *rest = PROPS[name]
+    figure = cut_out(SRC / source, rest[0] if rest else 'magenta')
     size = (width, max(1, round(figure.height * width / figure.width)))
     figure = figure.convert('RGBa').resize(size, Image.LANCZOS).convert('RGBA')
     target = OUT / out

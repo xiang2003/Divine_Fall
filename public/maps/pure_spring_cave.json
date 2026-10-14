@@ -5,11 +5,11 @@
  "legend": {
   "P": "arrival from the forest",
   "m": "normal monster spawn",
-  "e": "elite spawn (guards the pool)",
   "c": "crate",
   "T": "rock pillar (blocks)",
   "W": "spring water (blocks walking, not sight)",
-  ".": "cave floor"
+  ".": "cave floor",
+  "B": "boss spawn (the corroded deer, at the pool)"
  },
  "layout": [
   "                                            ",
@@ -43,7 +43,7 @@
   "      T.....T.T...WWWWWWWW...TT......T      ",
   "      TT.....................T......TT      ",
   "       TTT........................TTT       ",
-  "         TTT...m......e......m..TTT         ",
+  "         TTT...m......B......m..TTT         ",
   "           TTTTT............TTTTT           ",
   "               TTTTTTTTTTTTTT               ",
   "                                            ",
@@ -70,13 +70,12 @@
  ],
  "population": {
   "monsters": [
-   "warped",
-   "warped",
-   "water_shade"
+   "spring_gel",
+   "spring_gel",
+   "crystal_bat"
   ],
-  "elites": [
-   "warped"
-  ]
+  "elites": [],
+  "boss": "corroded_deer"
  },
  "interactables": [
   {

@@ -3,7 +3,7 @@ import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
 
-export type BossAttackKind = 'cleave' | 'nova' | 'fan';
+export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge';
 
 /** One move in a boss's repertoire. Which are available depends on the current phase and distance to the player. */
 export interface BossAttackDef {
@@ -25,10 +25,12 @@ export interface BossAttackDef {
   spread?: number;
   /** Fraction of the attack at which it lands (a nova uses a late strike so its ground warning is readable). */
   hitFraction?: number;
+  /** charge: how far the rush carries the boss, in world units. */
+  rush?: number;
 }
 
 /** How a monster with directional art acts out its attack (see DirectionalAnimator). */
-export type AttackStyle = 'lunge' | 'pounce' | 'spit';
+export type AttackStyle = 'lunge' | 'pounce' | 'spit' | 'charge' | 'slam';
 
 /** A leaping attack: from `range` away (edge to edge) the monster crouches, springs at where the target stood, and bites where it lands. */
 export interface PounceDef {
@@ -46,6 +48,28 @@ export interface PounceDef {
 export interface PoisonDef {
   dps: number;
   duration: number;
+}
+
+/** Slowing: each hit of this monster also slows the target to `factor` of its speed for `duration` seconds (a refreshed, not stacked, effect). */
+export interface SlowDef {
+  factor: number;
+  duration: number;
+}
+
+/** Hopping: it only moves while airborne. A hop lasts `period` seconds, of which the last `air` fraction is the flight. */
+export interface HopDef {
+  period: number;
+  air: number;
+}
+
+/** A ground slam centred on the monster (its normal attack): a warning of `radius` shows, then everything inside is hit. */
+export interface SlamDef {
+  radius: number;
+  /** Length of the whole slam in seconds. */
+  duration: number;
+  /** Fraction of the slam at which the blow lands. */
+  hitFraction: number;
+  damageMult: number;
 }
 
 export interface MonsterDef {
@@ -86,6 +110,22 @@ export interface MonsterDef {
   pounce?: PounceDef;
   /** Its hits poison. */
   poison?: PoisonDef;
+  /** Its hits slow. */
+  slow?: SlowDef;
+  /** Moves by hopping (see HopDef). */
+  hop?: HopDef;
+  /** Flies: drawn hovering above its shadow, fluttering. */
+  flyer?: boolean;
+  /** Ranged: circles the target sideways while it keeps its distance. */
+  strafe?: boolean;
+  /** Melee: the normal attack is a slam around itself instead of a swing. */
+  slam?: SlamDef;
+  /** Appears in a group: this many of them stand around each spawn point of the map. */
+  packSize?: number;
+  /** A glowing core drawn over the sprite (additive), pulsing: colour, height above the feet in art pixels, size and beats per second. */
+  glow?: { color: number; height: number; size: number; hz: number };
+  /** Tint of this monster's projectiles (0xRRGGBB). Poisonous monsters default to venom green. */
+  projectileTint?: number;
 
   // --- boss only ---------------------------------------------------------------------------
   isBoss?: boolean;
@@ -196,6 +236,112 @@ export const MONSTERS = {
     xp: 9,
     lootTable: 'normalMonster',
     barHeight: 36,
+  },
+  // ---- the spring cave ------------------------------------------------------------------------------
+  /** A translucent blob with a glowing core. It hops after you and lobs gel that slows whatever it hits. */
+  spring_gel: {
+    id: 'spring_gel',
+    name: '源泉凝膠',
+    spriteKey: SpriteKey.GEL,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 26,
+    damage: 5,
+    moveSpeed: 1.7,
+    detectRange: 8,
+    attackRange: 5.5,
+    attackCooldown: 2.6,
+    attackDuration: 0.8,
+    radius: 0.3,
+    keepDistance: 2.5,
+    projectileSpeed: 4.5,
+    hop: { period: 0.9, air: 0.45 },
+    slow: { factor: 0.55, duration: 2.5 },
+    projectileTint: 0x7fffd8,
+    glow: { color: 0x6ffff0, height: 11, size: 0.3, hz: 0.8 },
+    xp: 10,
+    lootTable: 'normalMonster',
+    barHeight: 32,
+  },
+  /** A bat with purple crystals on its wings: fast, comes in a flock, circles you and shoots crystal shards. */
+  crystal_bat: {
+    id: 'crystal_bat',
+    name: '晶翼蝠',
+    spriteKey: SpriteKey.BAT,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 12,
+    damage: 4,
+    moveSpeed: 4.4,
+    detectRange: 9,
+    attackRange: 6,
+    attackCooldown: 1.8,
+    attackDuration: 0.5,
+    radius: 0.22,
+    keepDistance: 2.8,
+    projectileSpeed: 7.5,
+    flyer: true,
+    strafe: true,
+    packSize: 3,
+    projectileTint: 0xc58cff,
+    xp: 5,
+    lootTable: 'normalMonster',
+    barHeight: 30,
+  },
+  /** The boss of the spring cave: a deer-headed figure, eaten by the spring's corruption. Charges, and blasts the ground around itself. */
+  corroded_deer: {
+    id: 'corroded_deer',
+    name: '蝕靈鹿',
+    spriteKey: SpriteKey.DEER,
+    directional: true,
+    attackStyle: 'charge',
+    behavior: 'melee',
+    maxHp: 560,
+    damage: 14,
+    moveSpeed: 2.7,
+    detectRange: 11,
+    attackRange: 0.8,
+    attackCooldown: 1.8,
+    attackDuration: 0.9,
+    radius: 0.5,
+    xp: 220,
+    lootTable: 'boss',
+    barHeight: 96,
+    isBoss: true,
+    phaseThresholds: [0.66, 0.33],
+    phaseSpeed: [1, 1.15, 1.3],
+    phaseCooldown: [1, 0.8, 0.65],
+    bossAttacks: [
+      { id: 'gore', kind: 'cleave', minPhase: 0, weight: 3, duration: 0.9, damageMult: 1 },
+      { id: 'charge', kind: 'charge', minPhase: 0, weight: 3, duration: 1.4, damageMult: 1.5, rush: 6.5, hitFraction: 0.95 },
+      { id: 'stomp', kind: 'nova', minPhase: 0, weight: 2, duration: 1.5, damageMult: 1.3, radius: 4.2, hitFraction: 0.85 },
+      { id: 'quake', kind: 'nova', minPhase: 2, weight: 2, duration: 1.6, damageMult: 1.5, radius: 5.2, hitFraction: 0.85 },
+    ],
+  },
+  // ---- the ruins --------------------------------------------------------------------------------------
+  /** A golem of ruin stone, furred with moss, a red core in its chest. Slow, and every blow is a slam that hits everything around it. */
+  rock_golem: {
+    id: 'rock_golem',
+    name: '胎岩魔像',
+    spriteKey: SpriteKey.GOLEM,
+    directional: true,
+    attackStyle: 'slam',
+    behavior: 'melee',
+    maxHp: 140,
+    damage: 12,
+    moveSpeed: 1.3,
+    detectRange: 6,
+    attackRange: 1.7,
+    attackCooldown: 2.6,
+    attackDuration: 1.4,
+    radius: 0.5,
+    slam: { radius: 2.4, duration: 1.4, hitFraction: 0.75, damageMult: 1.2 },
+    glow: { color: 0xff3a2a, height: 44, size: 0.4, hz: 0.6 },
+    xp: 24,
+    lootTable: 'normalMonster',
+    barHeight: 76,
   },
   /** Tier 1 of the abyss: a corrupted island creature. */
   warped: {

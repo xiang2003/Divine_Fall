@@ -33,5 +33,64 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A cluster of large weathered beige-grey granite boulders half buried in pale beach sand, with a few small stones around them, rough and natural, the whole cluster fully visible."
+  },
+  "crystal_0": {
+    "seed": 8432,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat orange (colour key orange)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure orange (#FF8000) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A tall cluster of glowing translucent violet and cyan quartz crystals growing up out of a small mossy dark grey rock base, long pointed crystal spires of different heights, a soft inner glow, the whole cluster fully visible."
+  },
+  "crystal_1": {
+    "seed": 8434,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat orange (colour key orange)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure orange (#FF8000) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A tall cluster of glowing translucent violet and cyan quartz crystals growing up out of a small mossy dark grey rock base, long pointed crystal spires of different heights, a soft inner glow, the whole cluster fully visible."
+  },
+  "crystal_2": {
+    "seed": 8435,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat orange (colour key orange)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure orange (#FF8000) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A tall cluster of glowing translucent violet and cyan quartz crystals growing up out of a small mossy dark grey rock base, long pointed crystal spires of different heights, a soft inner glow, the whole cluster fully visible."
+  },
+  "moss_a": {
+    "seed": 8512,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low flat patch of bioluminescent teal-green moss with a few tiny glowing pale mushrooms, lying on the ground like a rug, seen from above at an angle, soft glow, the whole patch fully visible."
+  },
+  "moss_b": {
+    "seed": 8514,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low flat patch of bioluminescent teal-green moss with a few tiny glowing pale mushrooms, lying on the ground like a rug, seen from above at an angle, soft glow, the whole patch fully visible."
+  },
+  "vines_a": {
+    "seed": 8611,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick dark green creeping vines with broad leaves and a few small pale flowers sprawled over two small mossy stones, lying on the ground, the whole tangle fully visible."
+  },
+  "vines_b": {
+    "seed": 8612,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick dark green creeping vines with broad leaves and a few small pale flowers sprawled over two small mossy stones, lying on the ground, the whole tangle fully visible."
+  },
+  "vines_c": {
+    "seed": 8614,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick dark green creeping vines with broad leaves and a few small pale flowers sprawled over two small mossy stones, lying on the ground, the whole tangle fully visible."
   }
 }

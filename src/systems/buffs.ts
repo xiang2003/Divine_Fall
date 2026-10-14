@@ -100,6 +100,38 @@ export class PoisonEffect {
   }
 }
 
+/**
+ * Slow: the owner moves at a fraction of its speed for a while. Applying it again keeps the stronger slow (the lower factor) and
+ * the longer time; it does not stack. Pure logic.
+ */
+export class SlowEffect {
+  private left = 0;
+  private factor = 1;
+
+  get active(): boolean {
+    return this.left > 0;
+  }
+  /** Multiplier for movement speed (1 = not slowed). */
+  get multiplier(): number {
+    return this.left > 0 ? this.factor : 1;
+  }
+
+  apply(factor: number, duration: number): void {
+    this.factor = this.left > 0 ? Math.min(this.factor, factor) : factor;
+    this.left = Math.max(this.left, duration);
+  }
+
+  clear(): void {
+    this.left = 0;
+    this.factor = 1;
+  }
+
+  update(dt: number): void {
+    this.left = Math.max(0, this.left - dt);
+    if (this.left === 0) this.factor = 1;
+  }
+}
+
 /** Timed multipliers granted by legendary effects. Re-triggering refreshes (does not stack) the timer. */
 export class Buffs {
   private moveLeft = 0;

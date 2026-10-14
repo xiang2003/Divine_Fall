@@ -4,7 +4,7 @@ import type { Vec2 } from '../game/iso';
 export interface DungeonMapFile {
   id: string;
   name: string;
-  /** Look of the map: "stone" (default, dungeon), "grass", "sand" or "cave" (where "T" tiles are trees, boulders or rock pillars). */
+  /** Look of the map: "stone" (default, dungeon), "ruins" (mossy walls), "grass", "sand" or "cave" (where "T" tiles are trees, boulders or crystals). */
   theme?: MapTheme;
   /** Human-readable legend; informational only. */
   legend?: Record<string, string>;
@@ -24,7 +24,17 @@ export interface DungeonMapFile {
   decor?: { kind: string; x: number; y: number }[];
   /** Things to examine (tile coordinates; the definition lives in data/interactables.ts). */
   interactables?: { id: string; x: number; y: number }[];
+  /**
+   * Hazards. `spikes` stand on a floor tile (x, y) and rise and fall on a timer (`phase` shifts the timer, in seconds). `arrow` is a slit
+   * in the wall tile (x, y) that shoots poisoned arrows along `dir` into the floor tile next to it.
+   */
+  traps?: { kind: string; x: number; y: number; dir?: string; phase?: number }[];
+  /** Wall torches: the wall tile (x, y) and the side `dir` its flame looks out on (`e` or `s`: the sides the camera sees). */
+  torches?: { x: number; y: number; dir: string }[];
 }
+
+/** A side of a wall as seen from the floor next to it, in world axes: e = +x, s = +y (the two the camera sees). */
+export type WallSide = 'e' | 's';
 
 /** On-disk portal: a tile rectangle that moves the player to `to.entrance` of map `to.map`. */
 export interface PortalFile {
@@ -41,9 +51,9 @@ export interface PortalFile {
   blockedText?: string;
 }
 
-/** stone: dungeon bricks; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water and "T" art. */
-export type MapTheme = 'stone' | 'grass' | 'sand' | 'cave';
-export const MAP_THEMES: readonly MapTheme[] = ['stone', 'grass', 'sand', 'cave'];
+/** stone: dungeon bricks; ruins: the same with moss and vines; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water, wall and "T" art. */
+export type MapTheme = 'stone' | 'ruins' | 'grass' | 'sand' | 'cave';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'grass', 'sand', 'cave'];
 
 export const TileType = {
   VOID: 0,
@@ -123,6 +133,33 @@ export interface InteractablePlacement {
   pos: Vec2;
 }
 
+export interface SpikeTrapPlacement {
+  kind: 'spikes';
+  /** Centre of its tile. */
+  pos: Vec2;
+  phase: number;
+}
+
+export interface ArrowTrapPlacement {
+  kind: 'arrow';
+  /** Centre of the wall tile the slit is in. */
+  pos: Vec2;
+  /** Unit vector the arrows fly along. */
+  dir: Vec2;
+}
+
+export type TrapPlacement = SpikeTrapPlacement | ArrowTrapPlacement;
+
+/** A torch on a wall. */
+export interface TorchPlacement {
+  /** Centre of the wall tile. */
+  pos: Vec2;
+  /** Unit vector pointing out of the wall, toward the floor it lights. */
+  dir: Vec2;
+}
+
+const SIDE_VECTOR: Record<WallSide, Vec2> = { e: { x: 1, y: 0 }, s: { x: 0, y: 1 } };
+
 /** The entrance every map has: where a new game (or a restart) puts the player. */
 export const DEFAULT_ENTRANCE = 'start';
 
@@ -155,6 +192,8 @@ export interface MapData {
   population: Population | null;
   interactables: InteractablePlacement[];
   decor: DecorPlacement[];
+  traps: TrapPlacement[];
+  torches: TorchPlacement[];
 }
 
 const CRATE_HALF = 0.36;
@@ -368,8 +407,39 @@ export function parseMap(raw: unknown): MapData {
     decor.push({ kind: d.kind, x: d.x, y: d.y });
   }
 
+  const sideOf = (what: string, x: number, y: number, dir: unknown): Vec2 => {
+    if (dir !== 'e' && dir !== 's') throw new MapParseError(`${what} at (${x}, ${y}) needs "dir" to be "e" or "s"`);
+    const v = SIDE_VECTOR[dir];
+    if (tileAtRaw(tiles, width, height, x, y) !== TileType.WALL) throw new MapParseError(`${what} at (${x}, ${y}) is not on a wall tile`);
+    if (tileAtRaw(tiles, width, height, x + v.x, y + v.y) !== TileType.FLOOR) {
+      throw new MapParseError(`${what} at (${x}, ${y}) looks out on (${x + v.x}, ${y + v.y}), which is not a floor tile`);
+    }
+    return v;
+  };
+
+  const traps: TrapPlacement[] = [];
+  for (const t of file.traps ?? []) {
+    if (!Number.isInteger(t?.x) || !Number.isInteger(t?.y)) throw new MapParseError('Every trap needs integer tile x / y');
+    if (t.kind === 'spikes') {
+      if (tileAtRaw(tiles, width, height, t.x, t.y) !== TileType.FLOOR) throw new MapParseError(`Spikes at (${t.x}, ${t.y}) are not on a floor tile`);
+      if (props.some((p) => p.tileX === t.x && p.tileY === t.y)) throw new MapParseError(`Spikes at (${t.x}, ${t.y}) are under a crate`);
+      traps.push({ kind: 'spikes', pos: { x: t.x + 0.5, y: t.y + 0.5 }, phase: t.phase ?? 0 });
+    } else if (t.kind === 'arrow') {
+      const dir = sideOf('Arrow trap', t.x, t.y, t.dir);
+      traps.push({ kind: 'arrow', pos: { x: t.x + 0.5, y: t.y + 0.5 }, dir });
+    } else {
+      throw new MapParseError(`Unknown trap kind "${String(t.kind)}"`);
+    }
+  }
+
+  const torches: TorchPlacement[] = [];
+  for (const t of file.torches ?? []) {
+    if (!Number.isInteger(t?.x) || !Number.isInteger(t?.y)) throw new MapParseError('Every torch needs integer tile x / y');
+    torches.push({ pos: { x: t.x + 0.5, y: t.y + 0.5 }, dir: sideOf('Torch', t.x, t.y, t.dir) });
+  }
+
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor };
+  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor, traps, torches };
 }

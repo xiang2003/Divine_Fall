@@ -3,7 +3,31 @@ import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
 import { DECOR_KINDS, DIRT_EDGE_KEYS, DIRT_KEYS, PROP_KEYS, SpriteKey, THEME_ART, THEME_SCATTER } from './assetManifest';
 import { buildingKey } from './BuildingArt';
-import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY } from './iso';
+import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY, type Vec2 } from './iso';
+
+/** Walls (and the rock pillars of a cave) that stand between the camera and the player turn see-through, so the player is never hidden. */
+export const FADE_OPACITY = 0.3;
+const FADE_SPEED = 8;
+/** A wall fades when it is in front of the player (nearer the camera) within this many tiles, and no farther than this much to the side. */
+const FADE_AHEAD = 5;
+const FADE_ASIDE = 2.1;
+
+/** Whether the tile at (tileX + 0.5, tileY + 0.5) hides the player standing at `player` (world units). */
+export function hidesPlayer(tileX: number, tileY: number, player: Vec2): boolean {
+  const dx = tileX + 0.5 - player.x;
+  const dy = tileY + 0.5 - player.y;
+  const ahead = dx + dy; // larger x + y is nearer the camera
+  const aside = Math.abs(dx - dy) / 2;
+  return ahead > 0.3 && ahead <= FADE_AHEAD && aside <= FADE_ASIDE;
+}
+
+interface Fader {
+  tileX: number;
+  tileY: number;
+  mesh: THREE.Mesh;
+  material: THREE.MeshBasicMaterial;
+  level: number;
+}
 
 /** Stable pseudo-random number per tile, so a map always looks the same (variant of grass, kind of tree). */
 function tileHash(x: number, y: number): number {
@@ -18,6 +42,7 @@ function tileHash(x: number, y: number): number {
  */
 export class MapView {
   readonly root = new THREE.Group();
+  private readonly faders: Fader[] = [];
 
   constructor(map: MapData, assets: AssetLoader) {
     this.buildFloor(map, assets);
@@ -33,7 +58,7 @@ export class MapView {
 
   private buildFloor(map: MapData, assets: AssetLoader): void {
     const art = THEME_ART[map.theme];
-    const stone = map.theme === 'stone';
+    const stone = map.theme === 'stone' || map.theme === 'ruins';
     // tiles to draw per sprite key (floor variants and water variants)
     const groups = new Map<string, { x: number; y: number }[]>();
     const add = (key: string, x: number, y: number) => {
@@ -99,8 +124,7 @@ export class MapView {
       sprite.updateMatrix();
       this.root.add(sprite);
     }
-    const wallGeo = assets.sharedGeometry(SpriteKey.WALL);
-    const wallMat = assets.material(SpriteKey.WALL);
+    const wallKeys = THEME_ART[map.theme].walls ?? [SpriteKey.WALL];
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = tileAt(map, x, y);
@@ -108,14 +132,21 @@ export class MapView {
         if (covered.has(y * map.width + x)) continue; // drawn by its building sprite
         const obstacles = THEME_ART[map.theme].obstacles;
         const obstacleKey = obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
+        const wallKey = wallKeys[tileHash(y, x) % wallKeys.length]!;
         const wall =
           tile === TileType.TREE && obstacleKey
             ? new THREE.Mesh(assets.sharedGeometry(obstacleKey), assets.material(obstacleKey))
-            : new THREE.Mesh(wallGeo, wallMat);
+            : new THREE.Mesh(assets.sharedGeometry(wallKey), assets.material(wallKey));
         placeAt(wall, Layer.OBJECT, x + 0.5, y + 0.5);
         wall.matrixAutoUpdate = false;
         wall.updateMatrix();
         this.root.add(wall);
+        if (map.theme === 'stone' || map.theme === 'ruins' || map.theme === 'cave') {
+          // its own copy of the material, so that one wall can fade without the others
+          const material = (wall.material as THREE.MeshBasicMaterial).clone();
+          wall.material = material;
+          this.faders.push({ tileX: x, tileY: y, mesh: wall, material, level: 1 });
+        }
       }
     }
     for (const prop of map.props) {
@@ -198,8 +229,22 @@ export class MapView {
     this.root.add(marker);
   }
 
-  /** Geometry and materials belong to AssetLoader; only the scene graph is released here. */
+  /** Fades the walls that hide the player (call every frame). */
+  update(dt: number, player: Vec2): void {
+    const step = Math.min(1, dt * FADE_SPEED);
+    for (const f of this.faders) {
+      const target = hidesPlayer(f.tileX, f.tileY, player) ? FADE_OPACITY : 1;
+      if (f.level === target) continue;
+      f.level += (target - f.level) * step;
+      if (Math.abs(f.level - target) < 0.01) f.level = target;
+      f.material.opacity = f.level;
+    }
+  }
+
+  /** Geometry and the original materials belong to AssetLoader; the per-wall copies are ours. */
   dispose(): void {
+    for (const f of this.faders) f.material.dispose();
+    this.faders.length = 0;
     for (const child of this.root.children) {
       if (child instanceof THREE.InstancedMesh) child.dispose();
     }

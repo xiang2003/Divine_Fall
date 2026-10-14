@@ -1,4 +1,4 @@
-"""Builds the in-game pixel-art sheets of the characters (public/assets/characters/<name>.png) and of the forest monsters
+"""Builds the in-game pixel-art sheets of the characters (public/assets/characters/<name>.png) and of the monsters
 (public/assets/monsters/<name>.png) from the turnaround figures in docs/art/turnarounds.
 
 Usage:  python tools/prepare_sprites.py [--preview <dir>]
@@ -58,6 +58,11 @@ SPRITES = {
     'boatwright_laodu': {'size': ('height', 38), 'side': 'left', 'roll': True, 'out': 'characters'},
     'forest_wolf': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters'},
     'forest_viper': {'size': ('width', 34), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'saturation': 1.2, 'contrast': 1.25},
+    # the spring cave and the ruins; the big ones stand in a 96 px frame
+    'spring_gel': {'size': ('width', 38), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40},
+    'crystal_bat': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40},
+    'corroded_deer': {'size': ('height', 92), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 96},
+    'rock_golem': {'size': ('height', 72), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 96},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall
 PALETTE_COLORS = 28
@@ -199,9 +204,9 @@ def roll_frame(figure: Image.Image, step: int, clockwise: bool) -> Image.Image:
     return frame
 
 
-def place(figure: Image.Image, sheet: Image.Image, col: int, row: int) -> None:
-    x = col * FRAME + (FRAME - figure.width) // 2
-    y = row * FRAME + BASELINE - figure.height + 1
+def place(figure: Image.Image, sheet: Image.Image, col: int, row: int, frame: int = FRAME) -> None:
+    x = col * frame + (frame - figure.width) // 2
+    y = row * frame + (frame - 2) - figure.height + 1  # the soles are on the row two above the frame's bottom (BASELINE for a 64 px frame)
     sheet.alpha_composite(figure, (x, y))
 
 
@@ -218,11 +223,12 @@ def build(name: str, preview: Path | None) -> None:
     right, left = (done[side], mirrored) if side == 'right' else (mirrored, done[side])
     rows = [done['front'], right, done['back'], left]  # front, right, back, left
     columns = IDLE_FRAMES + (ROLL_FRAMES if spec['roll'] else 0)
-    sheet = Image.new('RGBA', (FRAME * columns, FRAME * len(rows)))
+    frame = spec.get('frame', FRAME)
+    sheet = Image.new('RGBA', (frame * columns, frame * len(rows)))
     clockwise = [True, True, False, False]  # front, right, back, left
     for row, figure in enumerate(rows):
         for col in range(IDLE_FRAMES):
-            place(bob(figure, BOB[col]), sheet, col, row)
+            place(bob(figure, BOB[col]), sheet, col, row, frame)
         if spec['roll']:
             for step in range(ROLL_FRAMES):
                 sheet.alpha_composite(roll_frame(figure, step, clockwise[row]), ((IDLE_FRAMES + step) * FRAME, row * FRAME))

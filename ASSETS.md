@@ -82,6 +82,39 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 源泉洞與初胎遺跡的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
+
+全部在本機 ComfyUI 的 Z-Image-Turbo 上完成（沒有使用付費 API，沒有套 LoRA），流程和野狼、毒蛇相同：
+
+**四種新怪物**（像素精靈，方向與待機格式同其他怪物；大的用 96 像素的格子）：
+
+1. 先各畫一張基礎圖（朝右的四分之三側面），挑最好的；再用局部重繪補出**正面**與**背面**（蝙蝠、鹿、魔像）。
+   凝膠是圓的，四個方向共用同一張圖。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)，
+   原圖在 [docs/art/turnarounds/](docs/art/turnarounds/)（`spring_gel_*`、`crystal_bat_*`、`corroded_deer_*`、`rock_golem_*`）。
+2. [tools/prepare_sprites.py](tools/prepare_sprites.py) 縮成像素精靈（去背、共用調色盤、硬邊、描邊）。
+
+| 專案內檔案 | 怪物 |
+| --- | --- |
+| public/assets/monsters/spring_gel.png | 源泉凝膠（256×256） |
+| public/assets/monsters/crystal_bat.png | 晶翼蝠（256×256） |
+| public/assets/monsters/corroded_deer.png | 蝕靈鹿（Boss，384×384） |
+| public/assets/monsters/rock_golem.png | 胎岩魔像（384×384） |
+
+凝膠與魔像胸口的核心在遊戲裡另外加了一層會脈動的發光（程式畫），因為縮成像素後調色盤把核心的亮度壓暗了。
+
+**場景小物**（生成圖，去背後縮放；水晶用橘色底，其他用洋紅底，見 [tools/prepare_props.py](tools/prepare_props.py)，提示詞在 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)）：
+
+| 專案內檔案 | 用途 |
+| --- | --- |
+| public/assets/props/crystal_0..2.png | 洞窟裡的水晶叢（取代三分之一的石柱，擋路） |
+| public/assets/props/decor_moss_a/b.png | 發光苔癬（地面裝飾，不擋路；洞窟與遺跡都會撒） |
+| public/assets/props/decor_vines_a/b/c.png | 藤蔓（地面裝飾，不擋路；洞窟與遺跡都會撒） |
+
+**程式畫的（沒有圖檔）**：遺跡的長滿青苔與藤蔓的牆（[RuinsArt.ts](src/game/RuinsArt.ts)，4 種）、地刺（三個狀態）、箭孔、牆上的青藍火把與光暈（[HazardArt.ts](src/game/HazardArt.ts)）。
+
+**已知的限制**：只有待機有畫格，其餘動作（彈跳、蝙蝠的拍翅、蝕靈鹿的衝刺、魔像的重擊）是程式演出；蝕靈鹿與魔像的背面是模型另外畫的，細節和正面有出入（魔像背面看得到的發光核心被省掉了）；
+水晶的底座（石頭與苔）去背時被吃掉一些，邊緣有零星的殘留；蝙蝠的正面與背面翅膀展開比側面寬很多，在小格子裡有點擠。
+
 ## 森林怪物：野狼與毒蛇（2026-10-15，像素風，本機 AI 生成）
 
 臍帶林道原本放的是程式畫的「林牙獸」佔位圖，改成比較正常的野生動物：**野狼**（會撲咬）與**毒蛇**（吐毒液）。做法和地圖上的角色一樣，

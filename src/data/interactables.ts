@@ -13,7 +13,7 @@ export interface InteractableDef {
   prompt: string;
   /** Sprite drawn on the map, or null for a spot that only has a tag (the ferry is already a building). */
   spriteKey: string | null;
-  /** Only present while this world flag is set (the seal appears once the guardian is down). */
+  /** Only present while this world flag is set (the seal appears once the guardian is down, the shard once the deer is). */
   requiresFlag?: string;
   /** Disappears once this flag is set (picked up). */
   hideFlag?: string;
@@ -28,6 +28,7 @@ export const INTERACTABLES: Record<string, InteractableDef> = {
     name: '發光的碎片',
     prompt: '調查',
     spriteKey: SpriteKey.SHARD,
+    requiresFlag: 'pure_spring_cave_boss_defeated',
     hideFlag: 'has_shard',
     reportOnUse: true,
     dialogue: [{ graph: 'shard_find' }],

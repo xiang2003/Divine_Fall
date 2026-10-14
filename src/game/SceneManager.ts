@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
 import { DebugOverlay } from './DebugOverlay';
+import type { Vec2 } from './iso';
 import { MapView } from './MapView';
 
 /** Owns the WebGL renderer, the scene graph, and the static map visuals. */
@@ -44,6 +45,11 @@ export class SceneManager {
     this.debug = new DebugOverlay(map);
     this.scene.add(this.mapView.root, this.debug.root);
     return this.debug;
+  }
+
+  /** Per-frame upkeep of the map visuals (walls that hide the player fade out). */
+  updateMap(dt: number, player: Vec2): void {
+    this.mapView?.update(dt, player);
   }
 
   resize(width: number, height: number): void {

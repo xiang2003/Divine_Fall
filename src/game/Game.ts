@@ -37,6 +37,9 @@ import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/p
 import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
+import { TrapSystem } from '../systems/TrapSystem';
+import { TorchSystem } from '../systems/TorchSystem';
+import { ARROW_DAMAGE, ARROW_POISON, ARROW_SPEED } from '../systems/hazards';
 import { defaultRng } from '../systems/rng';
 import { activeEffects, computeStats, type Equipment, type PlayerStats } from '../systems/stats';
 import { AssetLoader, assetUrl } from './AssetLoader';
@@ -163,7 +166,7 @@ export interface GameSnapshot {
   inventoryOpen: boolean;
   inventory: InventoryView;
   /** Timed buffs from legendary effects, for the HUD badges. */
-  buffs: { haste: boolean; frenzy: boolean; poison: boolean };
+  buffs: { haste: boolean; frenzy: boolean; poison: boolean; slow: boolean };
   skills: readonly SkillView[];
   boss: BossView | null;
   /** True from the moment the boss dies until the next restart. */
@@ -222,7 +225,7 @@ const INITIAL: GameSnapshot = {
   xpToNext: 0,
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
-  buffs: { haste: false, frenzy: false, poison: false },
+  buffs: { haste: false, frenzy: false, poison: false, slow: false },
   skills: [],
   boss: null,
   bossDefeated: false,
@@ -272,6 +275,8 @@ interface World {
   nameplateLayer: HTMLDivElement;
   npcs: NpcSystem;
   interactables: InteractableSystem;
+  traps: TrapSystem;
+  torches: TorchSystem;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -546,6 +551,8 @@ export class Game {
     w.nameplateLayer.remove();
     w.npcs.dispose();
     w.interactables.dispose();
+    w.traps.dispose();
+    w.torches.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
     w.effects.dispose();
@@ -554,6 +561,8 @@ export class Game {
         w.groundLoot.group,
         w.npcs.group,
         w.interactables.group,
+        w.traps.group,
+        w.torches.group,
         w.monsters.group,
         w.projectiles.group,
         w.skillBolts.group,
@@ -660,6 +669,11 @@ export class Game {
     });
     monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
     monsters.spawnAll(map.spawns, defaultRng, map.population);
+    const traps = new TrapSystem(map.traps, assets, collision, {
+      stab: (damage) => combat.trapHit(damage),
+      shoot: (x, y, dx, dy) => projectiles.fire(x, y, dx, dy, ARROW_SPEED, ARROW_DAMAGE, null, { poison: ARROW_POISON }),
+    });
+    const torches = new TorchSystem(map.torches, assets);
 
     player.hooks = {
       swingStarted: (dx, dy, duration) =>
@@ -678,6 +692,8 @@ export class Game {
       groundLoot.group,
       npcs.group,
       interactables.group,
+      traps.group,
+      torches.group,
       monsters.group,
       projectiles.group,
       skillBolts.group,
@@ -709,6 +725,8 @@ export class Game {
       nameplateLayer,
       npcs,
       interactables,
+      traps,
+      torches,
       lightning,
       numbers,
       debug,
@@ -1296,7 +1314,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, npcs, interactables, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, interactables, traps, torches, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -1441,6 +1459,9 @@ export class Game {
     monsters.syncViews(dt);
     npcs.update(dt, player.pos);
     interactables.update(dt, (f) => this.flags.has(f));
+    traps.update(dt, player);
+    torches.update(dt, player.pos);
+    this.scene.updateMap(dt, player.pos);
     slash.update(dt);
     spinFx.update(dt);
     slamFx.update(dt);
@@ -1470,8 +1491,10 @@ export class Game {
     const haste = player.buffs.moveActive;
     const frenzy = player.buffs.attackActive;
     const poison = player.isPoisoned;
-    if (haste !== this.snapshot.buffs.haste || frenzy !== this.snapshot.buffs.frenzy || poison !== this.snapshot.buffs.poison) {
-      this.publish({ buffs: { haste, frenzy, poison } });
+    const slow = player.isSlowed;
+    const shown = this.snapshot.buffs;
+    if (haste !== shown.haste || frenzy !== shown.frenzy || poison !== shown.poison || slow !== shown.slow) {
+      this.publish({ buffs: { haste, frenzy, poison, slow } });
     }
 
     const moveTarget = player.mover.currentTarget;

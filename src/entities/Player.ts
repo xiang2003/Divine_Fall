@@ -8,7 +8,7 @@ import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
 import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
-import { Buffs, DodgeController, PoisonEffect } from '../systems/buffs';
+import { Buffs, DodgeController, PoisonEffect, SlowEffect } from '../systems/buffs';
 import { applyArmor, normalizeInto } from '../systems/combatMath';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
@@ -62,6 +62,7 @@ export class Player {
   /** True from the start of a dodge until the first tick after its dash (the animator runs at roll speed meanwhile). */
   private rolling = false;
   private readonly poison = new PoisonEffect();
+  private readonly slow = new SlowEffect();
   private effects: ReadonlySet<LegendaryEffectId> = new Set();
   private activeSkill: ActiveSkill | null = null;
   private hurtTimer = 0;
@@ -214,12 +215,23 @@ export class Player {
     this.attack.cancel();
     this.mover.stop();
     this.poison.clear();
+    this.slow.clear();
     this.animator.setSpeed(1);
     this.animator.play('die', true);
   }
 
   get isPoisoned(): boolean {
     return this.poison.active && !this.isDead;
+  }
+
+  get isSlowed(): boolean {
+    return this.slow.active && !this.isDead;
+  }
+
+  /** Slows the player to `factor` of its speed for `duration` seconds (a stronger slow replaces a weaker one; the time left never shortens). */
+  applySlow(factor: number, duration: number): void {
+    if (this.isDead) return;
+    this.slow.apply(factor, duration);
   }
 
   /** Poisons the player (a stronger poison replaces a weaker one; the time left never shortens). */
@@ -270,6 +282,7 @@ export class Player {
     this.isDead = false;
     this.hurtTimer = 0;
     this.poison.clear();
+    this.slow.clear();
     this.sinceDamaged = Infinity;
     this.attack.reset();
     this.activeSkill = null;
@@ -294,6 +307,8 @@ export class Player {
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.animator.setHurtFlash(this.hurtTimer > 0);
     this.animator.setPoisoned(this.isPoisoned);
+    this.animator.setSlowed(this.isSlowed);
+    this.slow.update(dt);
     if (this.sinceDamaged > PLAYER_CONFIG.regenDelay && this.hp < this.stats.maxHp) {
       this.hp = Math.min(this.stats.maxHp, this.hp + PLAYER_CONFIG.regenPerSecond * dt);
     }
@@ -333,7 +348,7 @@ export class Player {
       moving = this.mover.update(
         this.pos,
         dt,
-        this.stats.moveSpeed * this.buffs.moveMultiplier,
+        this.stats.moveSpeed * this.buffs.moveMultiplier * this.slow.multiplier,
         this.radius,
         this.collision,
       );

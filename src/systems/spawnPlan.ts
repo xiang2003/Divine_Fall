@@ -5,6 +5,9 @@ import type { Vec2 } from '../game/iso';
 import { rollEliteAffixes } from './elite';
 import type { Rng } from './rng';
 
+/** How far from the spawn point the members of a pack stand (world units). */
+export const PACK_RADIUS = 0.7;
+
 export interface SpawnEntry {
   def: MonsterDef;
   pos: Vec2;
@@ -25,9 +28,15 @@ export function planSpawns(spawns: MapSpawns, rng: Rng, population: Population |
     if (!def) throw new Error(`Unknown monster "${id}" in a map population`);
     return def;
   };
-  spawns.monsters.forEach((pos, i) =>
-    plan.push({ def: pick(population?.monsters, i, () => monsterForSpawnIndex(i)), pos, affixes: [] }),
-  );
+  spawns.monsters.forEach((pos, i) => {
+    const def = pick(population?.monsters, i, () => monsterForSpawnIndex(i));
+    // a pack stands in a ring around its spawn point
+    const size = def.packSize ?? 1;
+    for (let n = 0; n < size; n++) {
+      const angle = (n / size) * Math.PI * 2 + i;
+      plan.push({ def, pos: size === 1 ? pos : { x: pos.x + Math.cos(angle) * PACK_RADIUS, y: pos.y + Math.sin(angle) * PACK_RADIUS }, affixes: [] });
+    }
+  });
   spawns.elites.forEach((pos, i) =>
     plan.push({ def: pick(population?.elites, i, () => monsterForEliteIndex(i)), pos, affixes: rollEliteAffixes(rng) }),
   );

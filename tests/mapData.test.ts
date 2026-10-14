@@ -62,13 +62,26 @@ describe('public/maps/pure_ruins.json', () => {
     }
   });
 
-  it('does not snag when sliding along a wall into and through a corridor', () => {
+  it('does not snag when sliding along a wall through a long corridor', () => {
     const collision = new CollisionSystem(map);
-    // Hug the corridor's north wall (y = 5 + radius) and run +x from the start room through the doorway.
-    const pos = { x: 9.5, y: 5 + PLAYER_CONFIG.radius };
-    for (let i = 0; i < 120; i++) collision.moveCircle(pos, PLAYER_CONFIG.radius, PLAYER_CONFIG.baseStats.moveSpeed / 60, 0);
-    expect(pos.x).toBeGreaterThan(14);
-    expect(pos.y).toBeCloseTo(5 + PLAYER_CONFIG.radius, 5);
+    // Find a long straight stretch of floor with a wall along its north side, hug that wall and run +x along it.
+    let best = { y: 0, x: 0, length: 0 };
+    for (let y = 1; y < map.height; y++) {
+      let x = 0;
+      while (x < map.width) {
+        let length = 0;
+        while (x + length < map.width && tileAt(map, x + length, y) === TileType.FLOOR && tileAt(map, x + length, y - 1) === TileType.WALL) length++;
+        if (length > best.length) best = { y, x, length };
+        x += Math.max(1, length);
+      }
+    }
+    expect(best.length).toBeGreaterThanOrEqual(8);
+    const wallY = best.y + PLAYER_CONFIG.radius;
+    const pos = { x: best.x + 0.5, y: wallY };
+    const steps = Math.floor(((best.length - 2) / (PLAYER_CONFIG.baseStats.moveSpeed / 60)));
+    for (let i = 0; i < steps; i++) collision.moveCircle(pos, PLAYER_CONFIG.radius, PLAYER_CONFIG.baseStats.moveSpeed / 60, 0);
+    expect(pos.x).toBeGreaterThan(best.x + best.length - 2.5);
+    expect(pos.y).toBeCloseTo(wallY, 5);
   });
 
   it('lets the player body physically walk from the start to every spawn and portal', () => {

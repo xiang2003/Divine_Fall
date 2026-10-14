@@ -1,7 +1,7 @@
 import type { EliteAffixId } from '../data/eliteAffixes';
 import { ELITE_XP_MULT } from '../data/progression';
 import type { LootTableId } from '../data/lootTables';
-import type { BossAttackKind, MonsterDef } from '../data/monsters';
+import type { BossAttackKind, MonsterDef, SlamDef } from '../data/monsters';
 import type { Vec2 } from '../game/iso';
 import { AttackTimer } from '../systems/AttackTimer';
 import { chooseBossAttack, phaseForHpRatio } from '../systems/bossAI';
@@ -41,6 +41,8 @@ interface AttackSpec {
   radius: number;
   count: number;
   spread: number;
+  /** charge: distance of the rush in world units. */
+  rush?: number;
 }
 
 /** Fraction of the attack animation at which the blow lands. */
@@ -62,6 +64,13 @@ export const MELEE_STRIKE_SLACK = 0.35;
 export const POUNCE_LEAP_START = 0.35;
 export const POUNCE_HIT_FRACTION = 0.7;
 const POUNCE_MIN_GAP = 0.15;
+
+/** A charge: the windup ends and the rush starts here, and the rush is over here (fractions of the move). */
+export const CHARGE_START = 0.35;
+export const CHARGE_END = 0.8;
+
+/** A circling monster turns the other way round every this many seconds. */
+const STRAFE_TURN = 1.6;
 
 const STUCK_TIMEOUT = 1;
 const HOME_ARRIVE = 0.3;
@@ -112,8 +121,12 @@ export class Monster {
   private hurtDuration = HURT_DURATION;
   private lostSightTime = 0;
   private stuckTime = 0;
-  /** A pounce in progress: the direction of the leap, fixed at the moment it springs. */
+  /** A pounce or charge in progress: the direction of the leap, fixed at the moment it springs. */
   private leapDir: Vec2 | null = null;
+  /** True once a charge in progress has hit (it hurts once per rush). */
+  private chargeHit = false;
+  /** Seconds spent trying to move, for hopping monsters (they only travel while airborne). */
+  private hopClock = 0;
 
   constructor(
     readonly def: MonsterDef,
@@ -166,6 +179,11 @@ export class Monster {
   /** Seconds between the start of one attack and the next (faster in later boss phases). */
   get attackCooldown(): number {
     return this.stats.attackCooldown * (this.def.phaseCooldown?.[this.phase] ?? 1);
+  }
+  /** Where a hopping monster is in its hop (0 to 1; the last part of the cycle is the flight). 0 for monsters that do not hop. */
+  get hopPhase(): number {
+    const hop = this.def.hop;
+    return hop ? (this.hopClock % hop.period) / hop.period : 0;
   }
   /** Length of the attack in progress, or of a standard attack when idle (used to fit the animation). */
   get attackDuration(): number {
@@ -260,6 +278,7 @@ export class Monster {
     if (state === 'chase') this.engaged = true;
     if (state !== 'attack') this.currentAttack = null;
     this.leapDir = null;
+    this.chargeHit = false;
   }
 
   private updateIdle(dt: number, target: MonsterTarget, collision: CollisionSystem): void {
@@ -318,6 +337,10 @@ export class Monster {
         this.beginAttack(this.standardAttack('projectile'), target, hooks);
         return;
       }
+      if (this.def.strafe && sees && reach <= this.def.attackRange) {
+        this.strafeAround(target, dt, collision);
+        return;
+      }
       if (reach > this.def.attackRange * 0.9 || !sees) {
         this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
       }
@@ -343,12 +366,32 @@ export class Monster {
       return;
     }
     if (reach <= this.def.attackRange && this.attack.canStart) {
-      this.beginAttack(this.standardAttack('melee'), target, hooks);
+      this.beginAttack(this.def.slam ? this.slamAttack(this.def.slam) : this.standardAttack('melee'), target, hooks);
       return;
     }
     if (reach > this.def.attackRange * 0.9) {
       this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
     }
+  }
+
+  /** Keeps its distance by circling: sideways to the target, drifting in or out to stay in the middle of its range. */
+  private strafeAround(target: MonsterTarget, dt: number, collision: CollisionSystem): void {
+    const dx = target.pos.x - this.pos.x;
+    const dy = target.pos.y - this.pos.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const turn = (Math.floor(this.stateTime / STRAFE_TURN) + this.id) % 2 === 0 ? 1 : -1;
+    const mid = ((this.def.keepDistance ?? 0) + this.def.attackRange) / 2;
+    const radial = Math.max(-1, Math.min(1, (this.reachTo(target) - mid) * 0.4));
+    const dirX = -uy * turn + ux * radial;
+    const dirY = ux * turn + uy * radial;
+    this.moveToward(this.pos.x + dirX * 2, this.pos.y + dirY * 2, this.moveSpeed, dt, collision, false);
+    this.face(dx, dy); // it keeps looking at the target while it circles
+  }
+
+  private slamAttack(slam: SlamDef): AttackSpec {
+    return { kind: 'nova', duration: slam.duration, hitFraction: slam.hitFraction, damageMult: slam.damageMult, radius: slam.radius, count: 1, spread: 0 };
   }
 
   /** A boss picks from its repertoire whenever it is ready; otherwise it closes the distance. */
@@ -376,6 +419,7 @@ export class Monster {
             radius: choice.radius ?? 0,
             count: choice.count ?? 1,
             spread: choice.spread ?? 0,
+            rush: choice.rush,
           },
           target,
           hooks,
@@ -412,6 +456,7 @@ export class Monster {
   private updateAttack(dt: number, target: MonsterTarget, collision: CollisionSystem, hooks: MonsterHooks): void {
     const spec = this.currentAttack;
     if (spec?.kind === 'pounce') this.leap(spec, dt, target, collision);
+    if (spec?.kind === 'charge') this.rush(spec, dt, target, collision, hooks);
     const { hit, finished } = this.attack.update(dt);
     if (hit && spec) this.strike(spec, target, hooks);
     if (finished) this.enter(target.isDead ? 'idle' : 'chase');
@@ -438,6 +483,30 @@ export class Monster {
     this.moving = true;
   }
 
+  /**
+   * The rush of a charge: stands still for the windup, then runs along the line to where the target stood when it set off (so
+   * a step aside or a dodge makes it miss), hurting the target once if it runs into it, then comes to a stop.
+   */
+  private rush(spec: AttackSpec, dt: number, target: MonsterTarget, collision: CollisionSystem, hooks: MonsterHooks): void {
+    const progress = this.stateTime / spec.duration;
+    if (progress < CHARGE_START || progress >= CHARGE_END) return;
+    if (!this.leapDir) {
+      const dx = target.pos.x - this.pos.x;
+      const dy = target.pos.y - this.pos.y;
+      const len = Math.hypot(dx, dy) || 1;
+      this.leapDir = { x: dx / len, y: dy / len };
+      this.face(dx, dy);
+    }
+    const speed = (spec.rush ?? 6) / ((CHARGE_END - CHARGE_START) * spec.duration);
+    const step = speed * dt;
+    collision.moveCircle(this.pos, this.def.radius, this.leapDir.x * step, this.leapDir.y * step);
+    this.moving = true;
+    if (!this.chargeHit && !target.isDead && this.reachTo(target) <= this.def.attackRange + MELEE_STRIKE_SLACK * 0.5) {
+      this.chargeHit = true;
+      hooks.meleeStrike(this, spec.damageMult);
+    }
+  }
+
   /** The moment an attack lands. */
   private strike(spec: AttackSpec, target: MonsterTarget, hooks: MonsterHooks): void {
     if (spec.kind === 'nova') {
@@ -455,6 +524,8 @@ export class Monster {
       case 'cleave':
         hooks.meleeStrike(this, spec.damageMult);
         break;
+      case 'charge':
+        break; // a charge hurts on contact, while it runs (see rush)
       case 'projectile':
         hooks.fireProjectile(this, dx / len, dy / len, spec.damageMult);
         break;
@@ -481,6 +552,18 @@ export class Monster {
     const dy = ty - this.pos.y;
     const dist = Math.hypot(dx, dy);
     if (dist < 1e-6) return;
+    const hop = this.def.hop;
+    if (hop) {
+      // a hopper only travels in the air: the rest of the cycle it crouches, then the flight covers the whole stretch
+      this.hopClock += dt;
+      const inAir = this.hopClock % hop.period >= hop.period * (1 - hop.air);
+      speed = inAir ? speed / hop.air : 0;
+      if (speed === 0) {
+        this.moving = true; // still "walking" for the animation
+        this.face(dx, dy);
+        return;
+      }
+    }
     const step = Math.min(speed * dt, dist);
     const bx = this.pos.x;
     const by = this.pos.y;

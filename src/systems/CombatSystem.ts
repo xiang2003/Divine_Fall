@@ -2,6 +2,7 @@ import { PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS } from '../data/legendaryEffects';
 import type { SkillDef } from '../data/skills';
 import type { BoltTarget } from '../entities/Bolt';
+import type { ShotEffects } from '../entities/Projectile';
 import {
   MELEE_STRIKE_SLACK,
   type Monster,
@@ -185,7 +186,7 @@ export class CombatSystem implements MonsterHooks {
       this.events.damageTaken(this.player.pos.x, this.player.pos.y, tick.amount);
       if (tick.died) this.events.playerDied();
     }
-    this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage, p.owner));
+    this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage, p.owner, p.effects));
     this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult));
   }
 
@@ -241,7 +242,12 @@ export class CombatSystem implements MonsterHooks {
    * Applies a monster hit to the player. `source` (if known) adds its elite effects: lifesteal heals it by a
    * share of the damage dealt, and lightning adds a second, separate hit that armor also reduces.
    */
-  private hurtPlayer(rawDamage: number, source: Monster | null = null): void {
+  /** A trap hurt the player (armor applies, a dodge avoids it). */
+  trapHit(rawDamage: number): void {
+    this.hurtPlayer(rawDamage);
+  }
+
+  private hurtPlayer(rawDamage: number, source: Monster | null = null, effects: ShotEffects | null = null): void {
     const result = this.player.takeDamage(rawDamage);
     if (result.amount === 0) return; // dodged (invulnerable) or already dead
     this.events.damageTaken(this.player.pos.x, this.player.pos.y, result.amount);
@@ -249,8 +255,11 @@ export class CombatSystem implements MonsterHooks {
       this.events.playerDied();
       return;
     }
+    const poison = effects?.poison ?? source?.def.poison;
+    const slow = effects?.slow ?? source?.def.slow;
+    if (poison) this.player.applyPoison(poison.dps, poison.duration);
+    if (slow) this.player.applySlow(slow.factor, slow.duration);
     if (!source) return;
-    if (source.def.poison) this.player.applyPoison(source.def.poison.dps, source.def.poison.duration);
     if (source.stats.lifestealRatio > 0) source.heal(Math.round(result.amount * source.stats.lifestealRatio));
     if (source.stats.lightningRatio > 0) {
       this.events.lightningArc(source.pos.x, source.pos.y, this.player.pos.x, this.player.pos.y);

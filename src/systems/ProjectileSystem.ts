@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Monster } from '../entities/Monster';
-import { Projectile, type ProjectileOutcome, type ProjectileTarget } from '../entities/Projectile';
+import { Projectile, type ProjectileOutcome, type ProjectileTarget, type ShotEffects } from '../entities/Projectile';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, sortKey, worldToSceneX, worldToSceneY } from '../game/iso';
@@ -25,14 +25,13 @@ export class ProjectileSystem {
   readonly group = new THREE.Group();
   private readonly slots: Slot[] = [];
   private readonly orbMaterial: THREE.MeshBasicMaterial;
-  private readonly venomMaterial: THREE.MeshBasicMaterial;
+  /** One tinted copy of the orb material per colour that has been used (venom green, gel, crystal...). */
+  private readonly tinted = new Map<number, THREE.MeshBasicMaterial>();
 
   constructor(assets: AssetLoader) {
     const geometry = assets.sharedGeometry(SpriteKey.ORB);
     const material = assets.material(SpriteKey.ORB);
     this.orbMaterial = material;
-    this.venomMaterial = material.clone();
-    this.venomMaterial.color.setHex(VENOM_COLOR);
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.visible = false;
@@ -50,11 +49,13 @@ export class ProjectileSystem {
     speed: number,
     damage: number,
     owner: Monster | null = null,
+    effects: ShotEffects | null = null,
   ): boolean {
     const slot = this.slots.find((s) => !s.projectile.active);
     if (!slot) return false;
-    slot.projectile.launch(x, y, dirX, dirY, speed, damage, PROJECTILE_LIFE, owner);
-    slot.mesh.material = owner?.def.poison ? this.venomMaterial : this.orbMaterial;
+    slot.projectile.launch(x, y, dirX, dirY, speed, damage, PROJECTILE_LIFE, owner, effects);
+    const tint = effects?.tint ?? owner?.def.projectileTint ?? (effects?.poison || owner?.def.poison ? VENOM_COLOR : null);
+    slot.mesh.material = this.materialFor(tint);
     slot.mesh.visible = true;
     this.place(slot);
     return true;
@@ -90,10 +91,22 @@ export class ProjectileSystem {
   }
 
   dispose(): void {
-    // Geometry and the orb material belong to AssetLoader; the venom copy is ours.
-    this.venomMaterial.dispose();
+    // Geometry and the orb material belong to AssetLoader; the tinted copies are ours.
+    for (const m of this.tinted.values()) m.dispose();
+    this.tinted.clear();
     this.group.clear();
     this.slots.length = 0;
+  }
+
+  private materialFor(tint: number | null): THREE.MeshBasicMaterial {
+    if (tint === null) return this.orbMaterial;
+    let m = this.tinted.get(tint);
+    if (!m) {
+      m = this.orbMaterial.clone();
+      m.color.setHex(tint);
+      this.tinted.set(tint, m);
+    }
+    return m;
   }
 
   private place(slot: Slot): void {

@@ -196,9 +196,9 @@ describe('playing chapter 1 from the first word to the ferry', () => {
     expect(w.log.state('q2_muddy_water')).toBe('active');
     w.goTo('pure_forest');
     w.goTo('pure_spring_cave');
-    w.kill('warped'); // an ordinary kill does not count
+    w.kill('spring_gel'); // an ordinary kill does not count
     expect(w.log.state('q2_muddy_water')).toBe('active');
-    w.kill('warped', { elite: true });
+    w.kill('corroded_deer', { boss: true });
     expect(w.use('spring_shard')).toBe('shard_find');
     expect(w.flags.has('has_shard')).toBe(true);
     expect(w.log.state('q2_muddy_water')).toBe('ready');

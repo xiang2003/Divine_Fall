@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { AssetLoader } from './AssetLoader';
-import type { AttackStyle } from '../data/monsters';
+import type { AttackStyle, HopDef } from '../data/monsters';
 import { DIRECTION_COUNT, Facing, directionIndex } from './directions';
 
 export type DirectionalPose = 'idle' | 'walk' | 'attack' | 'hurt' | 'die' | 'roll';
@@ -30,7 +30,20 @@ const POUNCE_HOP = 9;
 /** The spit: the head rears back until here, strikes forward by the end of the next stretch, then settles. */
 const SPIT_REAR = 0.45;
 const SPIT_STRIKE = 0.6;
+/** The charge: wind up (crouch and draw back) until the first fraction, rush until the second, then recover (see CHARGE_START / CHARGE_END in Monster). */
+const CHARGE_WINDUP = 0.35;
+const CHARGE_RUSH_END = 0.8;
+/** The slam: the figure rises until the first fraction, brings itself down on the second, then recovers. */
+const SLAM_RAISE = 0.6;
+const SLAM_HIT = 0.75;
 const ATTACK_LEAN = 0.16;
+/** A hopper's jump: height in scene pixels, and where in the grounded part of the cycle it has recovered from landing. */
+const HOP_HEIGHT = 9;
+const HOP_RECOVER = 0.35;
+/** A flier hovers this high (scene pixels), and its wings lift it and drop it by FLAP_BOB this many times a second. */
+const FLY_HOVER = 12;
+const FLAP_BOB = 2.5;
+const FLAP_HZ = 3;
 /** Walking: steps per second, how high the body hops (scene pixels) and how far it sways (radians). */
 const WALK_HZ = 2.2;
 const WALK_HOP = 2.4;
@@ -53,6 +66,10 @@ export class DirectionalAnimator {
   private direction: number = Facing.FRONT;
   private hurtFlash = false;
   private poisoned = false;
+  private slowed = false;
+  /** Where a hopping monster is in its hop (0 to 1), set by the monster's own clock so the picture and the movement agree. */
+  private gait = 0;
+  private flap = 0;
   private baseScale = 1;
   private fade = 1;
   private shown = { col: -1, row: -1 };
@@ -67,6 +84,8 @@ export class DirectionalAnimator {
     private readonly key: string,
     /** How the attack pose is acted out (the hero and the NPCs lunge). */
     private readonly attackStyle: AttackStyle = 'lunge',
+    /** A hopping monster jumps instead of walking; a flier hovers and flutters. */
+    private readonly gaitOptions: { hop?: HopDef; flyer?: boolean } = {},
   ) {
     this.geometry = loader.createGeometry(key, 0, 0);
     this.material = loader.material(key).clone();
@@ -129,6 +148,18 @@ export class DirectionalAnimator {
     this.applyTint();
   }
 
+  /** Tints the figure blue-green while it is slowed. */
+  setSlowed(on: boolean): void {
+    if (on === this.slowed) return;
+    this.slowed = on;
+    this.applyTint();
+  }
+
+  /** Where a hopping monster is in its hop (0 to 1; the last part of the cycle is the flight). */
+  setGait(phase: number): void {
+    this.gait = phase;
+  }
+
   /** Multiplies the figure's opacity (a corpse fading away); 1 is fully visible. */
   setFade(fade: number): void {
     this.fade = fade;
@@ -137,11 +168,13 @@ export class DirectionalAnimator {
   private applyTint(): void {
     if (this.hurtFlash) this.material.color.setRGB(1, 0.5, 0.5);
     else if (this.poisoned) this.material.color.setRGB(0.62, 1, 0.62);
+    else if (this.slowed) this.material.color.setRGB(0.6, 0.9, 1);
     else this.material.color.setRGB(1, 1, 1);
   }
 
   update(dt: number): void {
     this.time += dt * this.speed;
+    this.flap += dt;
     this.apply();
   }
 
@@ -162,8 +195,22 @@ export class DirectionalAnimator {
         col = Math.floor(this.time * IDLE_FPS) % IDLE_FRAMES;
         break;
       case 'walk': {
+        const hop = this.gaitOptions.hop;
+        if (hop) {
+          // a jump: crouch, leap, land (the monster's own clock says where in the jump it is)
+          const air = hop.air;
+          if (this.gait >= 1 - air) {
+            const a = (this.gait - (1 - air)) / air;
+            this.offsetY = Math.sin(a * Math.PI) * HOP_HEIGHT;
+            squash = 1 + 0.08 * Math.sin(a * Math.PI);
+          } else {
+            const c = this.gait / (1 - air);
+            squash = c < HOP_RECOVER ? 0.84 + 0.16 * (c / HOP_RECOVER) : 1 - 0.12 * ((c - HOP_RECOVER) / (1 - HOP_RECOVER));
+          }
+          break;
+        }
         const phase = this.time * WALK_HZ * Math.PI * 2;
-        this.offsetY = Math.abs(Math.sin(phase)) * WALK_HOP;
+        if (!this.gaitOptions.flyer) this.offsetY = Math.abs(Math.sin(phase)) * WALK_HOP;
         rotation = Math.sin(phase) * WALK_SWAY;
         break;
       }
@@ -176,7 +223,40 @@ export class DirectionalAnimator {
       }
       case 'attack': {
         const p = this.progress(ATTACK_LENGTH);
-        if (this.attackStyle === 'pounce') {
+        if (this.attackStyle === 'charge') {
+          if (p < CHARGE_WINDUP) {
+            // paw the ground: sink and draw back
+            const c = p / CHARGE_WINDUP;
+            squash = 1 - 0.12 * c;
+            this.offsetX = -this.lungeX * 4 * c;
+            this.offsetY = -this.lungeY * 2 * c;
+            rotation = this.lungeX * 0.1 * c;
+          } else if (p < CHARGE_RUSH_END) {
+            // the rush: stretched and leaning into it (the monster itself runs along the ground)
+            squash = 0.95;
+            this.offsetX = this.lungeX * 3;
+            rotation = -this.lungeX * 0.22;
+          } else {
+            const r = (p - CHARGE_RUSH_END) / (1 - CHARGE_RUSH_END);
+            squash = 0.95 + 0.05 * r;
+            rotation = -this.lungeX * 0.22 * (1 - r);
+          }
+        } else if (this.attackStyle === 'slam') {
+          if (p < SLAM_RAISE) {
+            // rise up on the spot
+            const r = p / SLAM_RAISE;
+            squash = 1 + 0.1 * r;
+            this.offsetY = 5 * r;
+          } else if (p < SLAM_HIT) {
+            // bring it down: fast
+            const s = (p - SLAM_RAISE) / (SLAM_HIT - SLAM_RAISE);
+            squash = 1.1 - 0.3 * s;
+            this.offsetY = 5 * (1 - s);
+          } else {
+            const r = (p - SLAM_HIT) / (1 - SLAM_HIT);
+            squash = 0.8 + 0.2 * r; // the shock of the landing, then it straightens
+          }
+        } else if (this.attackStyle === 'pounce') {
           if (p < POUNCE_CROUCH) {
             // crouch: sink and draw back a little
             const c = p / POUNCE_CROUCH;
@@ -240,6 +320,11 @@ export class DirectionalAnimator {
       }
     }
 
+    if (this.gaitOptions.flyer && this.pose !== 'die') {
+      this.offsetY += FLY_HOVER + Math.sin(this.flap * FLAP_HZ * Math.PI * 2) * FLAP_BOB;
+    } else if (this.gaitOptions.flyer) {
+      this.offsetY += FLY_HOVER * (1 - this.progress(DIE_LENGTH)); // it drops to the ground when it dies
+    }
     this.mesh.rotation.z = rotation;
     this.mesh.scale.set(this.baseScale * (1 + (1 - squash) * 0.5), this.baseScale * squash, 1);
     this.material.opacity = alpha * this.fade;

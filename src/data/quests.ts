@@ -25,7 +25,7 @@ export const QUESTS: Record<string, QuestDef> = {
     requires: ['q1_first_hunt'],
     objectives: [
       { type: 'reach', label: '前往源泉洞', map: 'pure_spring_cave' },
-      { type: 'kill', label: '擊敗洞中的菁英畸變體', count: 1, map: 'pure_spring_cave', elite: true },
+      { type: 'kill', label: '擊敗洞中的蝕靈鹿', count: 1, map: 'pure_spring_cave', boss: true },
       { type: 'interact', label: '調查洞底的碎片', target: 'spring_shard' },
     ],
     rewards: { xp: 90, items: [{ rarity: 'rare', count: 1 }] },

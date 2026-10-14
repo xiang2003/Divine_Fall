@@ -32,6 +32,9 @@ export class MonsterView {
   private readonly directional: DirectionalAnimator | null;
   private readonly shadow: THREE.Mesh;
   private readonly bar: HealthBar;
+  /** The pulsing core (see MonsterDef.glow), or null. */
+  private readonly glow: { mesh: THREE.Mesh; material: THREE.MeshBasicMaterial } | null = null;
+  private clock = 0;
   private readonly nameplate: HTMLDivElement | null = null;
   private readonly screen: Vec2 = { x: 0, y: 0 };
   private shownState: MonsterState | null = null;
@@ -44,7 +47,9 @@ export class MonsterView {
     nameplateLayer: HTMLElement | null,
     camera: CameraController,
   ) {
-    this.directional = monster.def.directional ? new DirectionalAnimator(assets, monster.def.spriteKey, monster.def.attackStyle ?? 'lunge') : null;
+    this.directional = monster.def.directional
+      ? new DirectionalAnimator(assets, monster.def.spriteKey, monster.def.attackStyle ?? 'lunge', { hop: monster.def.hop, flyer: monster.def.flyer })
+      : null;
     this.animator = this.directional ?? new SpriteAnimator(assets, monster.def.spriteKey, 'idle');
     this.animator.setScale(monster.scale);
     this.shadow = new THREE.Mesh(assets.sharedGeometry(SpriteKey.SHADOW), assets.material(SpriteKey.SHADOW));
@@ -52,6 +57,15 @@ export class MonsterView {
     this.bar = new HealthBar(effects, monster.isBoss ? 'boss' : monster.isElite ? 'elite' : 'normal');
     this.bar.visible = false;
     this.group.add(this.shadow, this.animator.mesh, this.bar.group);
+    if (monster.def.glow) {
+      const material = assets.material(SpriteKey.GLOW).clone();
+      material.blending = THREE.AdditiveBlending;
+      material.color.setHex(monster.def.glow.color);
+      const mesh = new THREE.Mesh(assets.sharedGeometry(SpriteKey.GLOW), material);
+      mesh.scale.setScalar(monster.def.glow.size * monster.scale);
+      this.group.add(mesh);
+      this.glow = { mesh, material };
+    }
 
     if (nameplateLayer && (monster.isElite || monster.isBoss)) {
       const el = document.createElement('div');
@@ -94,6 +108,7 @@ export class MonsterView {
     if (this.directional) {
       this.directional.setFacingWorld(m.facingDir.x, m.facingDir.y);
       this.directional.setHurtFlash(m.state === 'hurt');
+      if (m.def.hop) this.directional.setGait(m.hopPhase);
     }
     this.animator.update(dt);
 
@@ -111,6 +126,16 @@ export class MonsterView {
     const fade = dead ? Math.min(1, Math.max(0, (CORPSE_LIFETIME - m.stateTime) / CORPSE_FADE)) : 1;
     if (this.directional) this.directional.setFade(fade);
     else this.animator.mesh.scale.y = m.scale * fade;
+
+    if (this.glow && m.def.glow) {
+      this.clock += dt;
+      const g = m.def.glow;
+      this.glow.mesh.visible = !dead;
+      this.glow.mesh.position.x = this.animator.mesh.position.x;
+      this.glow.mesh.position.y = this.animator.mesh.position.y + g.height * m.scale * this.animator.mesh.scale.y;
+      this.glow.mesh.renderOrder = this.animator.mesh.renderOrder + 1;
+      this.glow.material.opacity = 0.6 + 0.4 * Math.sin(this.clock * g.hz * Math.PI * 2);
+    }
 
     this.bar.visible = !dead && m.hp < m.maxHp;
     if (this.bar.group.visible) {
@@ -131,6 +156,7 @@ export class MonsterView {
   }
 
   dispose(): void {
+    this.glow?.material.dispose();
     this.animator.dispose();
     this.bar.dispose();
     this.nameplate?.remove();
