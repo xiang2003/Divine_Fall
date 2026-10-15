@@ -3,14 +3,14 @@ import { SpriteKey } from './assetManifest';
 import type { AssetLoader } from './AssetLoader';
 import { Layer, sortKey } from './iso';
 
-/** Fog over a map: big soft pale clouds that drift slowly across the whole view, drawn over everything. */
+/** Fog over a map: big soft pale clouds that drift slowly across the whole view. They lie over the ground but under every object, character and monster, which stay crisp. */
 
 /** The clouds tile the world in a rectangle this big (scene pixels): a cloud that leaves one side of it comes back on the other. */
 const PERIOD_X = 1000;
 const PERIOD_Y = 640;
 const CLOUD_COUNT = 14;
 /** Opacity of one cloud at fog thickness 1. */
-const MAX_OPACITY = 0.42;
+const MAX_OPACITY = 0.6;
 const FOG_COLOR = 0xdce6ec;
 
 interface Cloud {
@@ -47,7 +47,7 @@ export class FogLayer {
       const mesh = new THREE.Mesh(assets.sharedGeometry(SpriteKey.CLOUD), material);
       const size = 2.4 + random() * 2;
       mesh.scale.set(size, size * 0.6, 1);
-      mesh.renderOrder = sortKey(Layer.FOREGROUND, 0, 0);
+      mesh.renderOrder = sortKey(Layer.GROUND_DECAL, 1000, 1000); // after every floor decal, before any object
       this.group.add(mesh);
       this.clouds.push({ mesh, x: (random() - 0.5) * PERIOD_X, y: (random() - 0.5) * PERIOD_Y, vx: 5 + random() * 9, vy: (random() - 0.5) * 4 });
     }

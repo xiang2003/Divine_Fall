@@ -48,6 +48,7 @@ BOB_SPLIT = 0.52
 #          ('width', n): the side view is n px long (animals, which are wider than tall)
 #   side   which way the side picture faces; the other side is its mirror
 #   colors / saturation / contrast (optional)  palette size and colour boost when the defaults wash a creature out (the viper's green)
+#   brightness (optional)  lifts a creature that came out too dark
 #   roll   True: the sheet also carries the dodge-roll frames (only the hero rolls, but all characters have them)
 # The dwarf boatwright and the small water-carrier are shorter; the hunter's bow tip rises above his head, so he is listed taller.
 SPRITES = {
@@ -67,9 +68,9 @@ SPRITES = {
     'stone_attendant': {'size': ('height', 70), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
     'mask_spirit': {'size': ('width', 34), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36},
     # the Mist Coast (chapter 2)
-    'cleft_boar': {'size': ('width', 48), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36},
-    'wreck_revenant': {'size': ('height', 58), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
-    'drowned_spirit': {'size': ('height', 54), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
+    'cleft_boar': {'size': ('width', 48), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'brightness': 1.12},
+    'wreck_revenant': {'size': ('height', 58), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.3, 'saturation': 1.25},
+    'drowned_spirit': {'size': ('height', 54), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 80, 'saturation': 1.3},
     'core_watcher': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 128},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall
@@ -119,13 +120,15 @@ def drop_ground_shadow(im: Image.Image) -> None:
                 px[x, y] = (r, g, b, 0)
 
 
-def shrink(figure: Image.Image, factor: float, saturation: float = SATURATION, contrast: float = CONTRAST) -> Image.Image:
+def shrink(figure: Image.Image, factor: float, saturation: float = SATURATION, contrast: float = CONTRAST, brightness: float = 1.0) -> Image.Image:
     """Area-averaged shrink (premultiplied, so the grey background never bleeds into the edge); colours are lifted to survive the palette."""
     size = (max(1, round(figure.width * factor)), max(1, round(figure.height * factor)))
     small = figure.convert('RGBa').resize(size, Image.BOX).convert('RGBA')
     rgb = small.convert('RGB')
     rgb = ImageEnhance.Color(rgb).enhance(saturation)
     rgb = ImageEnhance.Contrast(rgb).enhance(contrast)
+    if brightness != 1.0:
+        rgb = ImageEnhance.Brightness(rgb).enhance(brightness)
     out = rgb.convert('RGBA')
     out.putalpha(small.getchannel('A').point(lambda v: 255 if v >= ALPHA_CUTOFF else 0))
     return out
@@ -224,7 +227,7 @@ def build(name: str, preview: Path | None) -> None:
     cuts = {v: cut_out(SRC / f'{name}_{v}.webp') for v in ('front', side, 'back')}
     mode, px = spec['size']
     factor = px / SOURCE_HEIGHT if mode == 'height' else px / cuts[side].width
-    views = {v: shrink(img, factor, spec.get('saturation', SATURATION), spec.get('contrast', CONTRAST)) for v, img in cuts.items()}
+    views = {v: shrink(img, factor, spec.get('saturation', SATURATION), spec.get('contrast', CONTRAST), spec.get('brightness', 1.0)) for v, img in cuts.items()}
     palette = shared_palette(list(views.values()), spec.get('colors', PALETTE_COLORS))
     done = {v: outline(apply_palette(img, palette)) for v, img in views.items()}
     mirrored = done[side].transpose(Image.FLIP_LEFT_RIGHT)
