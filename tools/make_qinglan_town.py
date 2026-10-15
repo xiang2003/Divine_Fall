@@ -68,10 +68,10 @@ buildings = [{'style': s, 'x': x, 'y': y, 'w': w, 'h': h} for s, x, y, w, h in B
 
 # the dressing: (kind, x, y) in tile coordinates; none of it blocks
 DECOR = [
-    ('lantern', 6.5, 18.5), ('lantern', 6.5, 22.5), ('lantern', 52.5, 18.5), ('lantern', 52.5, 22.5),
+    ('lantern', 6.5, 18.5), ('lantern', 6.5, 22.5), ('lantern', 52.5, 22.5),
     ('lantern', 21.5, 18.5), ('lantern', 37.5, 22.5), ('lantern', 12.5, 15.5), ('lantern', 31.5, 8.5),
-    ('censer', 29.5, 19.5), ('banner', 21.5, 24.5), ('banner', 37.5, 15.5), ('banner', 41.5, 21.5),
-    ('lion', 42.5, 27.5), ('lion', 48.5, 23.5),
+    ('censer', 29.5, 19.5), ('banner', 21.5, 24.5), ('banner', 40.5, 16.5),
+    ('lion', 43.4, 30.2), ('lion', 49.4, 30.2),
     ('grave', 4.5, 30.5), ('grave', 6.5, 33.5), ('grave', 4.5, 35.5), ('grave', 53.5, 33.5), ('grave', 52.5, 35.5),
     ('bones', 20.5, 34.5), ('bones', 47.5, 33.5), ('bones', 5.5, 12.5),
 ]
@@ -80,14 +80,14 @@ NPCS = [
     ('innkeeper_zhoubo', 10, 13),
     ('herbalist_qinghe', 18, 13),
     ('blacksmith_tieshan', 35, 13),
-    ('patrol_linruotang', 43, 23),
-    ('wanderer_guchangfeng', 52, 17),
+    ('patrol_linruotang', 46, 29),   # in front of her office: anything nearer the camera than an NPC can hide them
+    ('wanderer_guchangfeng', 50, 17),
 ]
 for _, x, y in NPCS:
     assert grid[y][x] == '.', (x, y, grid[y][x])
 
 # sealed jars and urns
-CRATES = [(13, 14), (21, 13), (37, 14), (47, 28), (12, 26), (20, 30), (50, 12), (29, 28), (41, 18)]
+CRATES = [(13, 14), (21, 13), (37, 14), (12, 26), (20, 30), (50, 12), (29, 28), (41, 18)]
 for x, y in CRATES:
     if grid[y][x] == '.':
         grid[y][x] = 'c'
