@@ -6,7 +6,11 @@ import { makeCanvas } from './PlaceholderArt';
  * so edges stay clean on the 64x32 tile grid.
  */
 
-export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard';
+export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard' | TownStyle;
+
+/** Qinglan Town's buildings (generated pictures only, there is no procedural fallback). */
+type TownStyle = 'town_inn' | 'town_herbal' | 'town_smithy' | 'town_office' | 'town_house_a' | 'town_house_b' | 'town_gate' | 'town_stall' | 'town_board';
+const isTownStyle = (style: string): style is TownStyle => style.startsWith('town_');
 
 /** One building sprite: its style and footprint. The manifest registers one asset per entry. */
 export interface BuildingVariant {
@@ -31,6 +35,16 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
   { style: 'outpost', w: 4, h: 3 },
   { style: 'stall', w: 2, h: 2 },
   { style: 'noticeboard', w: 2, h: 2 },
+  // Qinglan Town in the xianxia look of chapter 2 (docs/design/chapter2-art-direction.md)
+  { style: 'town_inn', w: 4, h: 4 },
+  { style: 'town_herbal', w: 3, h: 3 },
+  { style: 'town_smithy', w: 3, h: 3 },
+  { style: 'town_office', w: 4, h: 4 },
+  { style: 'town_house_a', w: 3, h: 3 },
+  { style: 'town_house_b', w: 4, h: 3 },
+  { style: 'town_gate', w: 4, h: 2 },
+  { style: 'town_stall', w: 2, h: 2 },
+  { style: 'town_board', w: 2, h: 2 },
 ];
 
 /**
@@ -56,6 +70,16 @@ export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: 
   outpost: { url: 'assets/buildings/outpost.png', width: 380, height: 464, anchorY: 0.2 },
   stall: { url: 'assets/buildings/stall.png', width: 190, height: 252, anchorY: 0.2 },
   noticeboard: { url: 'assets/buildings/noticeboard.png', width: 190, height: 229, anchorY: 0.2 },
+  // Qinglan Town (generated, tools/prepare_props.py)
+  town_inn: { url: 'assets/buildings/town_inn.png', width: 470, height: 469, anchorY: 0.27 },
+  town_herbal: { url: 'assets/buildings/town_herbal.png', width: 340, height: 334, anchorY: 0.29 },
+  town_smithy: { url: 'assets/buildings/town_smithy.png', width: 340, height: 355, anchorY: 0.27 },
+  town_office: { url: 'assets/buildings/town_office.png', width: 500, height: 417, anchorY: 0.31 },
+  town_house_a: { url: 'assets/buildings/town_house_a.png', width: 330, height: 254, anchorY: 0.36 },
+  town_house_b: { url: 'assets/buildings/town_house_b.png', width: 400, height: 362, anchorY: 0.31 },
+  town_gate: { url: 'assets/buildings/town_gate.png', width: 380, height: 415, anchorY: 0.23 },
+  town_stall: { url: 'assets/buildings/town_stall.png', width: 210, height: 217, anchorY: 0.29 },
+  town_board: { url: 'assets/buildings/town_board.png', width: 190, height: 298, anchorY: 0.21 },
 };
 
 export function buildingKey(style: string, w: number, h: number): string {
@@ -84,7 +108,7 @@ interface Palette {
   trim: string;
 }
 
-const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard' | 'shed' | 'tent' | 'campfire'>, Palette> = {
+const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard' | TownStyle | 'shed' | 'tent' | 'campfire'>, Palette> = {
   home: { wallLeft: '#a8774b', wallRight: '#835a38', wallLine: '#5b3d25', roofLeft: '#d2ad56', roofRight: '#b08b3c', roofStroke: '#7d6026', door: '#4a2f1b', trim: '#5b3d25' },
   elder: { wallLeft: '#c3a57c', wallRight: '#9c8160', wallLine: '#6e583f', roofLeft: '#8fa874', roofRight: '#6f8858', roofStroke: '#46583a', door: '#4a3a28', trim: '#6e583f' },
   store: { wallLeft: '#8a6644', wallRight: '#6b4e33', wallLine: '#43301f', roofLeft: '#a85d42', roofRight: '#864830', roofStroke: '#53291a', door: '#35261a', trim: '#43301f' },
@@ -174,7 +198,7 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
     drawWell(ctx, pt, w, h);
     return canvas;
   }
-  if (style === 'ferry' || style === 'wreck' || style === 'sword' || style === 'outpost' || style === 'stall' || style === 'noticeboard') {
+  if (style === 'ferry' || style === 'wreck' || style === 'sword' || style === 'outpost' || style === 'stall' || style === 'noticeboard' || isTownStyle(style)) {
     drawFerry(ctx, pt, w, h);
     return canvas;
   }

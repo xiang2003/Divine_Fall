@@ -11,7 +11,7 @@ const PERIOD_Y = 640;
 const CLOUD_COUNT = 14;
 /** Opacity of one cloud at fog thickness 1. */
 const MAX_OPACITY = 0.6;
-const FOG_COLOR = 0xdce6ec;
+const FOG_COLOR = 0x7c8a9a; // a cold grey-blue, not white: the mist of chapter 2 is gloomy
 
 interface Cloud {
   mesh: THREE.Mesh;

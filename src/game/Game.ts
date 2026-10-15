@@ -413,6 +413,7 @@ export class Game {
       this.questHappened({ type: 'reach', map: map.id });
       this.refreshQuests();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
+      this.container.dataset.theme = map.theme; // the colour grade of the map is set in styles.css
       this.publish({ phase: 'ready', mapName: map.name, mapId: map.id, warnings: [...assets.errors] });
       this.publishVitals();
       this.lastTime = performance.now();
@@ -1251,6 +1252,7 @@ export class Game {
     this.syncEquipment();
     this.publishSkills();
     this.cameraCtl.snapTo(worldToSceneX(world.player.pos.x, world.player.pos.y), worldToSceneY(world.player.pos.x, world.player.pos.y));
+    this.container.dataset.theme = map.theme;
     this.publish({ mapName: map.name, mapId: map.id, debug: world.debug.visible });
     this.questHappened({ type: 'reach', map: map.id });
     this.refreshQuests();

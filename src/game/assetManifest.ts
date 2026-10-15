@@ -20,7 +20,7 @@ import {
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
 import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawCloud, drawDisc, drawGlow, drawRipple, drawRootSpike, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
-import { drawMossyWall } from './RuinsArt';
+import { drawCliffWall, drawMossyWall } from './RuinsArt';
 import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
 import type { MapTheme } from '../data/mapData';
@@ -133,6 +133,34 @@ export const TREE_KEYS = [0, 1, 2, 3, 4, 5, 6].map((i) => `tree.tree_${i}`);
 export const SAND_KEYS = [0, 1, 2, 3].map((i) => `terrain.sand_${i}`);
 export const CAVE_KEYS = [0, 1, 2].map((i) => `terrain.cave_${i}`);
 export const SEA_KEYS = [0, 1, 2, 3].map((i) => `terrain.sea_${i}`);
+/**
+ * The ground of chapter 2 (generated textures turned into tiles by tools/prepare_tiles.py): a floor set and a path set per theme.
+ * `full` tiles fill a floor or the middle of a path; `edge` patches are soft-edged and are laid over the floor along the sides of a path.
+ */
+export const TILE_SETS = {
+  flag: { full: 8, edge: 0 },
+  flagroad: { full: 8, edge: 6 },
+  soil: { full: 8, edge: 0 },
+  trail: { full: 8, edge: 6 },
+  rock: { full: 8, edge: 0 },
+  rockroad: { full: 8, edge: 6 },
+  ash: { full: 8, edge: 0 },
+  ashtrail: { full: 8, edge: 6 },
+} as const;
+export type TileSetName = keyof typeof TILE_SETS;
+/** Dead trees (forest, town, the wet woods of the coast), sword cairns and pillars (the pass), black sea rocks (the coast): generated pictures. */
+export const DEAD_TREE_KEYS = ['a', 'c', 'e', 'f', 'g'].map((n) => `terrain.tree_dead_${n}`);
+export const SPIRE_KEYS = ['a', 'b', 'c'].map((n) => `terrain.spire_${n}`);
+export const SEA_ROCK_KEYS = ['a', 'b'].map((n) => `terrain.rock_sea_${n}`);
+/** The solid props of Qinglan Town, in place of crates and barrels: sealed jars, burial urns, a coffin. */
+export const TOWN_PROP_KEYS = ['jar_a', 'jar_b', 'jar_c'].map((n) => `prop.${n}`);
+const tileKeys = (set: TileSetName, edge: boolean): string[] =>
+  Array.from({ length: edge ? TILE_SETS[set].edge : TILE_SETS[set].full }, (_, i) => `terrain.${set}_${edge ? 'edge_' : ''}${i}`);
+const tilePath = (set: TileSetName) => ({ full: tileKeys(set, false), edge: tileKeys(set, true) });
+export interface PathArt {
+  full: readonly string[];
+  edge: readonly string[];
+}
 /** Dirt path: full tiles for the middle of a path, soft-edged patches (drawn over grass) along its sides. */
 export const DIRT_KEYS = [0, 1, 2, 3].map((i) => `terrain.dirt_${i}`);
 export const DIRT_EDGE_KEYS = [0, 1, 2, 3, 4, 5].map((i) => `terrain.dirt_edge_${i}`);
@@ -160,7 +188,14 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   shard: { keys: ['decor.shard_a', 'decor.shard_b'], scale: 0.32, floats: true },
   core: { keys: ['decor.core'], scale: 0.5 },
   // the Mist Coast
-  fungus: { keys: ['decor.fungus_a', 'decor.fungus_b'], scale: 0.4 },
+  fungus: { keys: ['decor.fungus_c', 'decor.fungus_d'], scale: 0.4 },
+  // the dark xianxia dressing of chapter 2 (generated pictures, see docs/design/chapter2-art-direction.md)
+  lantern: { keys: ['decor.lantern'], scale: 0.4 },
+  censer: { keys: ['decor.censer'], scale: 0.3 },
+  banner: { keys: ['decor.banner'], scale: 0.4 },
+  bones: { keys: ['decor.bones'], scale: 0.4 },
+  grave: { keys: ['decor.grave'], scale: 0.45 },
+  lion: { keys: ['decor.lion'], scale: 0.5 },
   tablet: { keys: ['decor.tablet_a'], scale: 0.42 },
   altar: { keys: ['decor.altar_a'], scale: 0.45 },
   driftwood: { keys: ['decor.driftwood_a', 'decor.driftwood_b'], scale: 0.4 },
@@ -170,8 +205,10 @@ export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density
   stone: null,
   ruins: { kinds: ['vines', 'moss', 'vines'], density: 0.05 },
   core: { kinds: ['roots', 'shard', 'roots', 'vines', 'shard'], density: 0.06 },
-  mist: { kinds: ['driftwood', 'tuft', 'tuft', 'driftwood', 'shrub'], density: 0.03 },
-  mountain: { kinds: ['tuft', 'shrub', 'tuft'], density: 0.008 },
+  mist: { kinds: ['driftwood', 'bones', 'driftwood', 'fungus'], density: 0.022 },
+  mountain: { kinds: ['bones', 'bones', 'shard'], density: 0.006 },
+  sect: null,
+  blight: { kinds: ['fungus', 'bones', 'roots', 'fungus', 'vines'], density: 0.03 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
   cave: { kinds: ['moss', 'moss', 'vines'], density: 0.045 },
@@ -185,6 +222,8 @@ export const CRYSTAL_KEYS = [0, 1, 2].map((i) => `terrain.crystal_${i}`);
 /** The core's "T" tiles: giant carved pillars wrapped in roots (generated pictures). */
 export const CORE_PILLAR_KEYS = [0, 1].map((i) => `terrain.core_pillar_${i}`);
 export const MOSSY_WALL_KEYS = [0, 1, 2, 3].map((i) => `tile.wall_mossy_${i}`);
+/** The cliffs of the broken-sword pass: the plain wall block in dark slate, cracked and chipped. */
+export const CLIFF_WALL_KEYS = [0, 1, 2].map((i) => `tile.wall_cliff_${i}`);
 
 /** What a map theme is made of: floor tiles, what a "T" tile looks like, and its water. */
 export interface ThemeArt {
@@ -196,16 +235,32 @@ export interface ThemeArt {
   water: readonly string[];
   /** Wall block variants, chosen per tile; omitted means the plain wall. */
   walls?: readonly string[];
+  /** The tiles of a path ("," in the layout); omitted means the dirt path of chapter 1. */
+  path?: PathArt;
+  /** The solid props ("c" in the layout); omitted means crates and barrels. */
+  props?: readonly string[];
+  /** What the grass patches of this map (the `grass` mask of a map file) are made of; omitted means green grass and trees. */
+  wild?: { floor: readonly string[]; trees: readonly string[] };
 }
 
+const PICK8 = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 export const THEME_ART: Record<MapTheme, ThemeArt> = {
   stone: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS },
   ruins: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
   core: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: CORE_PILLAR_KEYS, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
   grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
   sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
-  mist: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
-  mountain: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: MURK_KEYS },
+  mist: {
+    floor: tileKeys('ash', false),
+    floorPick: PICK8,
+    obstacles: SEA_ROCK_KEYS,
+    water: SEA_KEYS,
+    path: tilePath('ashtrail'),
+    wild: { floor: tileKeys('soil', false), trees: DEAD_TREE_KEYS },
+  },
+  mountain: { floor: tileKeys('rock', false), floorPick: PICK8, obstacles: SPIRE_KEYS, water: MURK_KEYS, path: tilePath('rockroad'), walls: CLIFF_WALL_KEYS },
+  sect: { floor: tileKeys('flag', false), floorPick: PICK8, obstacles: DEAD_TREE_KEYS, water: SEA_KEYS, path: tilePath('flagroad'), props: TOWN_PROP_KEYS },
+  blight: { floor: tileKeys('soil', false), floorPick: PICK8, obstacles: DEAD_TREE_KEYS, water: SEA_KEYS, path: tilePath('trail') },
   // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
   cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: [PILLAR_KEYS[0]!, CRYSTAL_KEYS[0]!, PILLAR_KEYS[1]!, PILLAR_KEYS[2]!, CRYSTAL_KEYS[1]!, PILLAR_KEYS[0]!, PILLAR_KEYS[1]!, CRYSTAL_KEYS[2]!, PILLAR_KEYS[2]!], water: MURK_KEYS },
 };
@@ -318,10 +373,17 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   // third-party tiles (rubberduck, CC0; see ASSETS.md): 128 x 64 images shown at half size
   ...SAND_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawSandTile(i % 2), `assets/tiles/sand_${i}.png`)),
   ...CAVE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i % 2), `assets/tiles/cave_${i}.png`)),
+  ...(Object.keys(TILE_SETS) as TileSetName[]).flatMap((set) =>
+    [false, true].flatMap((edge) => tileKeys(set, edge).map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawCaveTile(i % 2), `assets/tiles/${set}_${edge ? 'edge_' : ''}${i}.png`))),
+  ),
   ...SEA_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('sea', i % 2), `assets/tiles/sea_${i}.png`)),
   ...DIRT_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_${i}.png`)),
   ...DIRT_EDGE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_edge_${i}.png`)),
   ...PROP_NAMES.map((name) => propSprite(`prop.${name}`, `assets/props/prop_${name}.png`, 1, 0.22)),
+  ...TOWN_PROP_KEYS.map((key) => propSprite(key, `assets/props/prop_${key.slice(5)}.png`, 0.36, 0.15)),
+  ...DEAD_TREE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.5, 0.1, enlarged(drawTreeBlock, 256, 256))),
+  ...SPIRE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.36, 0.1, enlarged(() => drawRock('pillar', 0), 64, 64))),
+  ...SEA_ROCK_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.5, 0.2, enlarged(() => drawRock('boulder', 0), 64, 64))),
   ...Object.values(DECOR_KINDS).flatMap((k) => k.keys.map((key) => propSprite(key, `assets/props/${key.replace('.', '_')}.png`, k.scale, 0.2))),
   ...MURK_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('murk', i))),
   // beach boulders: generated pictures (docs/art/props), shown at 0.45x; the drawn rock is the fallback
@@ -330,6 +392,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...CRYSTAL_KEYS.map((key, i) => propSprite(key, `assets/props/crystal_${i}.png`, 0.34, 0.2, enlarged(() => drawRock('pillar', i), 170, 220))),
   ...CORE_PILLAR_KEYS.map((key, i) => propSprite(key, `assets/props/core_pillar_${i}.png`, 0.42, 0.14, enlarged(() => drawRock('pillar', i), 170, 220))),
   ...MOSSY_WALL_KEYS.map((key, i): SpriteAssetDef => ({ key, frameWidth: 64, frameHeight: 64, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawMossyWall(i) })),
+  ...CLIFF_WALL_KEYS.map((key, i): SpriteAssetDef => ({ key, frameWidth: 64, frameHeight: 64, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawCliffWall(i) })),
   ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),
   ...TREE_KEYS.map((_, i) => treeSprite(i)),

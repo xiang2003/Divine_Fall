@@ -64,3 +64,43 @@ export function drawMossyWall(variant: number): HTMLCanvasElement {
   ctx.globalCompositeOperation = 'source-over';
   return c;
 }
+
+/**
+ * One 64 x 64 cliff block of the broken-sword pass: the plain wall block turned dark slate (multiplied with a cold grey-blue), with cracks
+ * running down the two faces, a few chipped light edges and rust stains. Drawn only where the block already has pixels.
+ */
+export function drawCliffWall(variant: number): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(64, 64);
+  ctx.drawImage(drawWallBlock(), 0, 0);
+  const r = rng(variant * 4421 + 7);
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = 'rgba(52, 60, 78, 0.78)';
+  ctx.fillRect(0, 0, 64, 64);
+  // cracks: a jagged line down a face
+  const crack = (x0: number, y0: number, length: number): void => {
+    ctx.fillStyle = '#14171f';
+    let x = x0;
+    for (let y = 0; y < length; y++) {
+      if (r() < 0.45) x += r() < 0.5 ? -1 : 1;
+      ctx.fillRect(Math.round(x), Math.round(y0 + y), 1, 1);
+    }
+  };
+  for (let i = 0; i < 3 + (variant % 2); i++) {
+    const left = r() < 0.5;
+    const t = 0.1 + r() * 0.8;
+    crack(left ? t * 31 : 32 + t * 31, (left ? 16 + t * 16 : 32 - t * 16) + 2, 6 + r() * 14);
+  }
+  // chips of lighter stone along the top edges, and rust running down from a few of them
+  for (let i = 0; i < 7; i++) {
+    const t = r();
+    ctx.fillStyle = '#7d8798';
+    ctx.fillRect(Math.round(t * 62), Math.round(16 + (t < 0.5 ? t * 32 : (1 - t) * 32)), 2, 1);
+  }
+  for (let i = 0; i < 2; i++) {
+    ctx.fillStyle = '#5a2f26';
+    const x = 8 + r() * 48;
+    ctx.fillRect(Math.round(x), 26 + Math.round(r() * 10), 1, 5 + Math.round(r() * 6));
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  return c;
+}

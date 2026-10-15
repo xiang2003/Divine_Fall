@@ -82,6 +82,34 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 第二章的暗色仙俠美術（2026-10-15，本機 AI 生成 + 程式處理）
+
+依使用者的意見，第二章的環境與建築改成暗色仙俠、帶黑暗奇幻的調性（方向見 [chapter2-art-direction.md](docs/design/chapter2-art-direction.md)）。
+做法與前面相同：本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA；提示詞與種子在 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)，
+用 [tools/gen_zimage.py](tools/gen_zimage.py) 出圖到 `docs/art/props/`；這一批用**純綠背景**去背（暗紅色的木頭和洋紅背景太像，會被挖洞），
+去背時把邊緣的綠色溢色去掉（[tools/prepare_props.py](tools/prepare_props.py)）。**沒有第三方素材。**
+
+| 專案內檔案 | 用途 |
+| --- | --- |
+| public/assets/buildings/town_inn、town_herbal、town_smithy、town_office、town_house_a、town_house_b.png | 青嵐鎮的客棧、藥鋪、鐵匠鋪、巡山司、兩種民宅（取代原本島上的木屋） |
+| public/assets/buildings/town_gate.png、town_stall.png、town_board.png | 牌坊、破布棚攤位、告示板（取代原本的條紋攤位與告示板） |
+| public/assets/props/prop_jar_a/b/c.png | 封罈、骨灰罈、棺木（青嵐鎮的「c」格，取代木箱與木桶） |
+| public/assets/props/decor_lantern、censer、banner、bones、grave、lion.png | 石燈、香爐、殘旗、白骨、墓碑、石獅（青嵐鎮的裝飾） |
+| public/assets/props/tree_dead_a/c/e/f/g.png | 枯樹（古林、青嵐鎮的外圍、海岸後面的濕林；取代綠色的樹） |
+| public/assets/props/spire_a/b/c.png | 劍塚與折斷的石柱（斷劍山道的障礙；取代沙地圈裡的岩石） |
+| public/assets/props/rock_sea_a/b.png | 黑色礁石（迷霧海岸的障礙） |
+| public/assets/props/decor_fungus_c/d.png | 長在骷髏與朽木上的蕈（古林的地面裝飾；**取代原本偏可愛的淡青色蕈 fungus_a/b，兩張已刪除**） |
+| public/assets/props/decor_driftwood_a/b.png | 朽木板與破船桅（迷霧海岸；取代原本偏亮的木頭堆） |
+| public/assets/tiles/flag_、flagroad_、soil_、trail_、rock_、rockroad_、ash_、ashtrail_ 開頭的檔案 | 第二章的地面：青石板與石板路、腐土與小徑、山岩與古道、灰礫灘與小徑（柔邊補丁是檔名有 `edge_` 的） |
+
+**地磚**：先生成八張俯視的無縫材質（`tex_*.webp`，存在 docs/art/props/），再用 [tools/prepare_tiles.py](tools/prepare_tiles.py) 轉 45 度、壓成 128×64 的菱形，
+每組從材質的不同位置、翻轉與轉向切 8 塊，並把亮度拉到材質平均、降低對比，鄰近的磚才不會像棋盤。
+**懸崖牆**（斷劍山道）是程式畫的（[RuinsArt.ts](src/game/RuinsArt.ts) 的 `drawCliffWall`）：原本的牆塊乘上冷灰藍，加上裂紋、崩邊與鏽痕。
+**整體調色**是 CSS（[styles.css](src/styles.css)）：冷色疊色、降低飽和與暗角。
+
+**已知的限制**：香爐的煙是偏亮的綠色；兩隻怪物（腐靈花妖、藤甲猿）還是原本偏可愛的畫法；青嵐鎮的地面是均勻的灰，變化不多；
+迷霧海岸的灰礫灘很平；NPC 的像素小人與 3D 渲染的場景畫風有落差；樹與礁石的種類只有 3 到 5 種，邊緣的樹牆看得出重複。
+
 ## 第二章後半：青藤古林、青嵐鎮、斷劍山道（2026-10-15，本機 AI 生成 + 程式繪製）
 
 做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)、
@@ -98,18 +126,17 @@ blacksmith_tieshan（鐵山）、wanderer_guchangfeng（顧長風）、patrol_li
 
 | 專案內檔案 | 用途 |
 | --- | --- |
-| public/assets/props/decor_fungus_a/b.png | 發光菌類（古林的地面裝飾） |
+| ~~decor_fungus_a/b.png~~ | 已被暗色版的 fungus_c/d 取代並刪除（見上一節） |
 | public/assets/props/decor_tablet_a.png | 古老石碑（古林中央空地，可查看） |
 | public/assets/props/decor_altar_a.png | 被侵蝕的祭壇（古林，任務「靈氣的痕跡」） |
 | public/assets/buildings/sword.png | 斷裂的巨劍（山道的戰場） |
 | public/assets/buildings/outpost.png | 廢棄的哨站（山道） |
-| public/assets/buildings/stall.png、noticeboard.png | 市集攤位、懸賞告示板（青嵐鎮） |
+| public/assets/buildings/stall.png、noticeboard.png | 市集攤位、懸賞告示板（**已不再使用**，青嵐鎮改用 town_stall、town_board；檔案還在，BuildingArt 仍登記著） |
 
-**青嵐鎮的房屋**用的是島上村子的木屋（第三方 CC0 圖）：客棧用村長家、藥鋪用雜貨店、鐵匠鋪與民宅用木屋、巡山司用船匠的屋子；**不是專屬的美術**，所以看起來和胎息村很像。
+**青嵐鎮的房屋**一開始用的是島上村子的木屋（第三方 CC0 圖），後來已換成專屬的暗色仙俠建築（見上一節）。
 **程式畫的**：根刺（Boss 召喚的）、毒霧。
 
-**已知的限制**：只有待機有畫格，其餘動作是程式演出；兩種狼和本島的野狼長得很像；青嵐鎮的建築沿用島上的木屋；斷劍山道的地面用的是洞窟的地磚（藍紫色），
-路用土路磚，兩種接起來有點雜；紫色陰影在哨站的圍籬裡還有一點殘留；NPC 的轉面是模型另外畫的，服裝的細節在不同面之間有出入。
+**已知的限制**：只有待機有畫格，其餘動作是程式演出；兩種狼和本島的野狼長得很像；紫色陰影在哨站的圍籬裡還有一點殘留；NPC 的轉面是模型另外畫的，服裝的細節在不同面之間有出入。
 
 ## 迷霧海岸的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
 

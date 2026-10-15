@@ -13,7 +13,7 @@ W, H = 58, 40
 grid = [[' '] * W for _ in range(H)]
 ground = [[' '] * W for _ in range(H)]
 
-# the town: a grass field with a ring of trees
+# the town: a flagstone yard with a ring of dead trees
 for y in range(2, H - 2):
     for x in range(2, W - 2):
         grid[y][x] = '.'
@@ -46,19 +46,18 @@ WEST_PORTAL = (2, ROAD_Y - 1)
 EAST_PORTAL = (W - 3, ROAD_Y - 1)
 
 BUILDINGS = [
-    ('elder', 8, 9, 4, 3),   # the inn
-    ('store', 17, 9, 3, 3),  # the herbalist's
-    ('home', 34, 9, 3, 3),   # the smithy
-    ('campfire', 38, 10, 2, 2),  # the forge fire beside it
-    ('boat', 44, 24, 4, 3),  # the patrol office
-    ('home', 8, 25, 3, 3),
-    ('home', 16, 28, 3, 3),
-    ('shed', 24, 30, 2, 2),
-    ('shed', 52, 10, 2, 2),
-    ('stall', 24, 16, 2, 2),  # market
-    ('stall', 33, 16, 2, 2),
-    ('stall', 28, 23, 2, 2),
-    ('noticeboard', 40, 22, 2, 2),
+    ('town_inn', 8, 8, 4, 4),     # the inn
+    ('town_herbal', 17, 9, 3, 3),  # the herbalist's
+    ('town_smithy', 34, 9, 3, 3),  # the smithy (the forge fire is part of the picture)
+    ('town_office', 44, 24, 4, 4),  # the patrol office
+    ('town_house_a', 8, 25, 3, 3),
+    ('town_house_b', 16, 28, 4, 3),
+    ('town_house_a', 51, 9, 3, 3),
+    ('town_gate', 28, 11, 4, 2),  # a memorial archway at the head of the lane north of the plaza
+    ('town_stall', 24, 16, 2, 2),  # market
+    ('town_stall', 33, 16, 2, 2),
+    ('town_stall', 28, 23, 2, 2),
+    ('town_board', 40, 22, 2, 2),
 ]
 for style, bx, by, bw, bh in BUILDINGS:
     for y in range(by, by + bh):
@@ -66,6 +65,16 @@ for style, bx, by, bw, bh in BUILDINGS:
             assert grid[y][x] == '.' and ground[y][x] == ' ' or style in ('stall',) or True
             grid[y][x] = '#'
 buildings = [{'style': s, 'x': x, 'y': y, 'w': w, 'h': h} for s, x, y, w, h in BUILDINGS]
+
+# the dressing: (kind, x, y) in tile coordinates; none of it blocks
+DECOR = [
+    ('lantern', 6.5, 18.5), ('lantern', 6.5, 22.5), ('lantern', 52.5, 18.5), ('lantern', 52.5, 22.5),
+    ('lantern', 21.5, 18.5), ('lantern', 37.5, 22.5), ('lantern', 12.5, 15.5), ('lantern', 31.5, 8.5),
+    ('censer', 29.5, 19.5), ('banner', 21.5, 24.5), ('banner', 37.5, 15.5), ('banner', 41.5, 21.5),
+    ('lion', 42.5, 27.5), ('lion', 48.5, 23.5),
+    ('grave', 4.5, 30.5), ('grave', 6.5, 33.5), ('grave', 4.5, 35.5), ('grave', 53.5, 33.5), ('grave', 52.5, 35.5),
+    ('bones', 20.5, 34.5), ('bones', 47.5, 33.5), ('bones', 5.5, 12.5),
+]
 
 NPCS = [
     ('innkeeper_zhoubo', 10, 13),
@@ -77,7 +86,7 @@ NPCS = [
 for _, x, y in NPCS:
     assert grid[y][x] == '.', (x, y, grid[y][x])
 
-# crates and barrels
+# sealed jars and urns
 CRATES = [(13, 14), (21, 13), (37, 14), (47, 28), (12, 26), (20, 30), (50, 12), (29, 28), (41, 18)]
 for x, y in CRATES:
     if grid[y][x] == '.':
@@ -98,13 +107,13 @@ layout = [''.join(r) for r in rows]
 data = {
     'id': 'qinglan_town',
     'name': '青嵐鎮',
-    'theme': 'grass',
+    'theme': 'sect',
     'legend': {
         '#': 'solid tile under a building',
-        'T': 'tree (blocks)',
-        'c': 'crate or barrel',
-        ',': 'dirt road',
-        '.': 'grass',
+        'T': 'dead tree (blocks)',
+        'c': 'sealed jar or burial urn (blocks)',
+        ',': 'paved road',
+        '.': 'flagstone',
         'P': 'arrival (a new game never starts here)',
     },
     'layout': layout,
@@ -114,6 +123,7 @@ data = {
         {'id': 'to_pass', 'x': EAST_PORTAL[0], 'y': EAST_PORTAL[1], 'w': 1, 'h': 3, 'to': {'map': 'broken_sword_pass', 'entrance': 'from_town'}},
     ],
     'buildings': buildings,
+    'decor': [{'kind': k, 'x': x, 'y': y} for k, x, y in DECOR],
     'npcs': [{'id': n, 'x': x, 'y': y} for n, x, y in NPCS],
 }
 out = Path(__file__).resolve().parent.parent / 'public' / 'maps' / 'qinglan_town.json'

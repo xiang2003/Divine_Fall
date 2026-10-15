@@ -201,7 +201,7 @@ layout = [''.join(row) for row in grid]
 data = {
     'id': 'canglan_forest',
     'name': '青藤古林',
-    'theme': 'grass',
+    'theme': 'blight',
     'fog': 0.18,
     'legend': {
         'T': 'ancient tree (blocks)',

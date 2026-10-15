@@ -86,10 +86,13 @@ export class MapView {
         const index = art.floorPick ? art.floorPick[tileHash(x, y) % art.floorPick.length]! : (x + y) % 2;
         if (map.ground[y * map.width + x] === 2 && !stone) {
           // grass on a map of another theme (the wet woods behind the beach)
-          add(GRASS_KEYS[tileHash(x, y) % GRASS_KEYS.length]!, x, y);
+          const wild = art.wild?.floor ?? GRASS_KEYS;
+          add(wild[tileHash(x, y) % wild.length]!, x, y);
           continue;
         }
         if (tile === TileType.FLOOR && map.ground[y * map.width + x] === 1 && !stone) {
+          const pathFull = art.path?.full ?? DIRT_KEYS;
+          const pathEdge = art.path?.edge ?? DIRT_EDGE_KEYS;
           // A dirt path: whole tiles in the middle; along its sides the grass stays and a soft-edged patch is laid over it.
           const dirtAt = (dx: number, dy: number) => {
             const nx = x + dx;
@@ -99,10 +102,10 @@ export class MapView {
           };
           const inside = dirtAt(1, 0) && dirtAt(-1, 0) && dirtAt(0, 1) && dirtAt(0, -1) && dirtAt(1, 1) && dirtAt(-1, -1) && dirtAt(1, -1) && dirtAt(-1, 1);
           if (inside) {
-            add(DIRT_KEYS[tileHash(x, y) % DIRT_KEYS.length]!, x, y);
+            add(pathFull[tileHash(x, y) % pathFull.length]!, x, y);
           } else {
             add(art.floor[index]!, x, y);
-            add(DIRT_EDGE_KEYS[tileHash(y, x) % DIRT_EDGE_KEYS.length]!, x, y);
+            add(pathEdge[tileHash(y, x) % pathEdge.length]!, x, y);
           }
           continue;
         }
@@ -119,7 +122,7 @@ export class MapView {
       mesh.instanceMatrix.needsUpdate = true;
       mesh.frustumCulled = false;
       // path edges are laid over the grass tile of the same cell
-      mesh.renderOrder = sortKey(Layer.GROUND, 0, 0) + (DIRT_EDGE_KEYS.includes(key) ? 1 : 0);
+      mesh.renderOrder = sortKey(Layer.GROUND, 0, 0) + (/_edge_\d+$/.test(key) ? 1 : 0);
       this.root.add(mesh);
     }
   }
@@ -144,7 +147,8 @@ export class MapView {
         if (covered.has(y * map.width + x)) continue; // drawn by its building sprite
         const obstacles = THEME_ART[map.theme].obstacles;
         const onGrass = map.ground[y * map.width + x] === 2;
-        const obstacleKey = onGrass ? TREE_KEYS[tileHash(x, y) % TREE_KEYS.length]! : obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
+        const wildTrees = THEME_ART[map.theme].wild?.trees ?? TREE_KEYS;
+        const obstacleKey = onGrass ? wildTrees[tileHash(x, y) % wildTrees.length]! : obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
         const wallKey = wallKeys[tileHash(y, x) % wallKeys.length]!;
         const wall =
           tile === TileType.TREE && obstacleKey
@@ -163,7 +167,8 @@ export class MapView {
       }
     }
     for (const prop of map.props) {
-      const propKey = PROP_KEYS[tileHash(prop.tileX, prop.tileY) % PROP_KEYS.length]!;
+      const propKeys = THEME_ART[map.theme].props ?? PROP_KEYS;
+      const propKey = propKeys[tileHash(prop.tileX, prop.tileY) % propKeys.length]!;
       const crate = new THREE.Mesh(assets.sharedGeometry(propKey), assets.material(propKey));
       placeAt(crate, Layer.OBJECT, prop.tileX + 0.5, prop.tileY + 0.5);
       crate.matrixAutoUpdate = false;

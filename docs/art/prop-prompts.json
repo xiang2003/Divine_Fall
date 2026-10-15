@@ -150,18 +150,20 @@
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A large wrecked wooden sailing ship stranded on its side, a broken hull with exposed ribs, a snapped mast with torn grey sails, rotting dark planks, barnacles and seaweed, tilted in the sand, the whole wreck fully visible."
   },
   "driftwood_a": {
-    "seed": 6412,
+    "seed": 6241,
     "steps": 8,
     "sampler": "res_multistep",
     "size": "1024x1024",
-    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small pile of bleached driftwood logs and a few splintered ship planks with some tangled seaweed, lying on the ground, the whole pile fully visible."
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. Pieces of rotten grey weathered ship timber and one broken curved rib beam, slimy dark seaweed, nails and rusted iron bands, a bleached bone, bleak, the whole pile fully visible.",
+    "background": "flat bright green (colour key auto)"
   },
   "driftwood_b": {
-    "seed": 6414,
+    "seed": 6242,
     "steps": 8,
     "sampler": "res_multistep",
     "size": "1024x1024",
-    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small pile of bleached driftwood logs and a few splintered ship planks with some tangled seaweed, lying on the ground, the whole pile fully visible."
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A broken ship mast and splintered planks, grey and black rotten wood with barnacles and a rusted chain, bleak, the whole thing fully visible.",
+    "background": "flat bright green (colour key auto)"
   },
   "anchor": {
     "seed": 6422,
@@ -169,20 +171,6 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A big rusty iron ship anchor half sunk upright in the sand with a length of rusty chain and some seaweed on it, the whole anchor fully visible."
-  },
-  "fungus_a": {
-    "seed": 4301,
-    "steps": 8,
-    "sampler": "res_multistep",
-    "size": "1024x1024",
-    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small cluster of large glowing bioluminescent mushrooms with pale cyan-green caps and soft glowing gills growing from a patch of dark moss, the whole cluster fully visible."
-  },
-  "fungus_b": {
-    "seed": 4303,
-    "steps": 8,
-    "sampler": "res_multistep",
-    "size": "1024x1024",
-    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small cluster of large glowing bioluminescent mushrooms with pale cyan-green caps and soft glowing gills growing from a patch of dark moss, the whole cluster fully visible."
   },
   "tablet_a": {
     "seed": 4302,
@@ -225,5 +213,309 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A wooden bounty notice board on two posts with a small tiled roof, covered in pinned paper notices and wanted posters, a hanging red lantern, the whole board fully visible."
+  },
+  "town_inn": {
+    "seed": 6101,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A two-storey ancient Chinese wooden inn, blackened weathered timber frame, wide sweeping upturned grey tile eaves with ceramic ridge beasts, a few cracked and missing roof tiles, faded tattered red paper lanterns, a torn cloth shop banner hanging from a pole, solid grey stone foundation, a faint cold teal glow in the windows, the whole building fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_herbal": {
+    "seed": 6102,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A small ancient Chinese herbal medicine hall, dark timber and grey tile roof with upturned eaves, bundles of dried herbs and roots and a big old medicine gourd hanging under the eaves, yellow paper talisman strips pasted on the closed door, stone steps, a stone mortar, a faint sickly green glow from inside, the whole building fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_smithy": {
+    "seed": 6103,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A rugged ancient Chinese blacksmith forge, open-fronted stone and blackened timber building with a heavy grey tile roof, a glowing orange furnace and an anvil visible inside, iron chains and broken blades hanging on the wall, a soot-stained chimney, a water trough, the whole building fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_office": {
+    "seed": 6104,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A fortified ancient Chinese mountain patrol hall, thick weathered grey stone walls with a dark tile roof and upturned eaves, an iron-bound gate, torn black and dull red banners, a rack of spears at the door, paper seal talismans, a stone guardian lion statue with a cracked face, the whole building fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_house_a": {
+    "seed": 6105,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A modest ancient Chinese village house, grey fieldstone and rammed earth walls, a low dark tile roof with upturned eaves patched with straw, closed wooden shutters, a strip of yellow talisman paper over the door, a cracked clay jar by the wall, poor and weathered, the whole house fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_house_b": {
+    "seed": 6106,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A modest ancient Chinese courtyard house, blackened timber and whitewash walls gone grey and stained, a dark tile roof with upturned eaves, a small round moon door, a dead bare branch over the wall, a hanging dim teal lantern, poor and weathered, the whole house fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_gate": {
+    "seed": 6107,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A weathered ancient Chinese stone paifang memorial archway with three openings, curved grey tile caps, carved dark stone pillars cracked and stained with moss, a tattered white mourning cloth hanging from the lintel, a dim cold teal lantern, the whole archway fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_stall": {
+    "seed": 6108,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A rickety ancient Chinese market stall, dark worn wood, a patched tattered black cloth awning with no stripes, hanging bundles of dried herbs, charms and a gourd, a dim lantern, a plain counter with a few cloth bundles and clay jars, the whole stall fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "town_board": {
+    "seed": 6109,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A bounty notice board made of black iron and dark wood with a small tile roof, covered in tattered paper notices and yellow talismans, one notice marked with a red handprint, an animal skull nailed on top, a dim hanging lantern, the whole board fully visible.",
+    "background": "flat bright green (colour key auto)"
+  },
+  "tex_flag": {
+    "seed": 7101,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Dark grey slate flagstone courtyard paving of an ancient Chinese mountain town, irregular square slabs with thin dark grout lines, worn and cracked, faint cold moss in the gaps, a few dark stains."
+  },
+  "tex_flagroad": {
+    "seed": 7102,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Worn pale grey stone road paving, long rectangular slabs laid in a staggered pattern, polished by footsteps, hairline cracks, a little dirt in the joints."
+  },
+  "tex_soil": {
+    "seed": 7113,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. The floor of a dead haunted forest: dark brown-black damp earth thickly covered with decayed fallen brown leaves, pine needles and small twigs, a few patches of dull grey-green lichen, absolutely no flowers, no berries, no bright colours."
+  },
+  "tex_trail": {
+    "seed": 7104,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. A trodden forest footpath of dark packed earth, pale grey-brown, scattered gravel and a few flat stones, worn by feet, a few dead leaves."
+  },
+  "tex_rock": {
+    "seed": 7105,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Bare dark cracked mountain rock ground, charcoal grey stone with fine fissures, loose gravel, grey ash and rust-coloured stains."
+  },
+  "tex_rockroad": {
+    "seed": 7106,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. An ancient carved stone mountain road of large worn blue-grey slabs with deep cracks and chipped edges, scratched by blades, dust in the joints."
+  },
+  "tex_ash": {
+    "seed": 7117,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Pale ash-grey wet shingle beach ground, a mixture of grey sand and flat grey pebbles, muted and bleak, uniform, no bright spots."
+  },
+  "tex_ashtrail": {
+    "seed": 7108,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Packed wet grey sand path with scattered pebbles and a few shell fragments, trampled by many feet."
+  },
+  "tree_dead_a": {
+    "seed": 6201,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall gnarled dead tree with black twisted bark and bare clawing branches, tattered yellow paper talisman strips and old rope hanging from the branches, roots gripping a flat stone, the whole tree fully visible."
+  },
+  "tree_dead_c": {
+    "seed": 6213,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A crooked dead tree with bare black twisted branches shaped like claws, a rusted iron bell and a faded red cloth hanging from one branch, thick bare roots, no leaves at all, the whole tree fully visible."
+  },
+  "spire_a": {
+    "seed": 6211,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A cairn of jagged dark grey slate rock slabs with several rusted broken swords and spears thrust into it, tattered black cloth tied to one blade, the whole cairn fully visible."
+  },
+  "spire_b": {
+    "seed": 6212,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall jagged spire of dark blue-grey rock with cracks, a snapped rusty sword blade stuck in a fissure, loose rubble at the base, the whole spire fully visible."
+  },
+  "spire_c": {
+    "seed": 6213,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A broken ancient stone pillar with carved cloud patterns, snapped off halfway, leaning, covered in scratches and a few rusted nails, rubble at the base, the whole pillar fully visible."
+  },
+  "rock_sea_a": {
+    "seed": 6221,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A cluster of black wet sea rocks with barnacles and dried seaweed, a few bleached bones tangled in it, cold and bleak, the whole cluster fully visible."
+  },
+  "rock_sea_b": {
+    "seed": 6222,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A jagged black reef rock with a rusty old ship chain and shell crusts, a bleached ribcage partly buried beside it, the whole thing fully visible."
+  },
+  "jar_a": {
+    "seed": 6301,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. Two large dark clay sealing jars with red wax seals and yellow paper talisman strips pasted across their lids, cracked, the whole thing fully visible."
+  },
+  "jar_b": {
+    "seed": 6302,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A stack of three dark grey burial urns tied with rope and sealed with paper talismans, one cracked, the whole stack fully visible."
+  },
+  "jar_c": {
+    "seed": 6303,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A rotten wooden coffin box standing against a small rough stone slab, rusted iron bands and a paper talisman on the lid, the whole thing fully visible."
+  },
+  "lantern_stone": {
+    "seed": 6311,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. An ancient Chinese stone lantern on a carved pedestal with a cold teal flame burning inside, worn and moss-stained, the whole lantern fully visible."
+  },
+  "censer": {
+    "seed": 6312,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A big bronze three-legged incense burner censer with dim red embers and thin smoke, green patina, a few burnt incense sticks, on a stone base, the whole censer fully visible."
+  },
+  "banner_torn": {
+    "seed": 6313,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall wooden pole with a torn black cloth banner bearing a faded red sword mark, tattered and hanging in strips, on a stone footing, the whole banner pole fully visible."
+  },
+  "bones": {
+    "seed": 6314,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A pile of bleached human bones and a cracked skull with a rusted broken sword beside it, a torn cloth scrap, the whole pile fully visible."
+  },
+  "grave": {
+    "seed": 6315,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A weathered stone grave marker slab with carved vertical inscription, leaning, a bowl of burnt incense and a withered white paper wreath, the whole grave fully visible."
+  },
+  "lion_stone": {
+    "seed": 6316,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A guardian stone lion statue on a plinth, face cracked and one eye hollow, covered in moss, the whole statue fully visible."
+  },
+  "fungus_c": {
+    "seed": 6321,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A cluster of pale sickly grey-green mushrooms growing from a rotting skull and a fallen log, a faint dim teal glow at their caps, creepy rather than cute, the whole cluster fully visible."
+  },
+  "fungus_d": {
+    "seed": 6322,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. Twisted dark purple-grey fungus stalks with ragged caps growing from a mound of dead leaves and bones, dripping faint dull green glow, unsettling, the whole cluster fully visible."
+  },
+  "tree_dead_e": {
+    "seed": 6231,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A dead tree wrapped from root to crown in thick dull dark-green vines and hanging dead creepers, bare black branches poking out, a cold teal spirit lantern hanging from one branch, no leaves, the whole tree fully visible."
+  },
+  "tree_dead_f": {
+    "seed": 6232,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A gnarled dead tree with a huge hollow knot in the trunk that looks like a silent screaming face, bare crooked branches, a few yellow talisman paper strips tied on, no leaves, the whole tree fully visible."
+  },
+  "tree_dead_g": {
+    "seed": 6233,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A crooked leaning dead tree with long strands of grey moss and dead vines hanging from its bare branches, a small pile of bones among its roots, no leaves, the whole tree fully visible."
   }
 }

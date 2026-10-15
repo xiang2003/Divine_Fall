@@ -1,6 +1,6 @@
 """Builds the generated map props (the village well, the beach boulders, the stranded ferry, the cave's crystals, moss and vines) from the pictures in docs/art/props.
 
-Usage:  python tools/prepare_props.py [--preview <dir>]
+Usage:  python tools/prepare_props.py [<name> ...] [--preview <dir>]   (no names: every prop)
 Needs Pillow. Developer tool only; the game never runs it.
 
 The pictures were made with Z-Image-Turbo (see docs/art/prop-prompts.json) in the same look as the third-party 3D-rendered cabins and
@@ -40,18 +40,49 @@ PROPS = {
     'roots_b': ('roots_b.webp', 'props/decor_roots_b.png', 220, 0.3),
     'core': ('core.webp', 'props/decor_core.png', 240, 0.15),
     # chapter 2: the forest (glowing mushrooms, the stele, the corrupted altar), the pass (the broken sword, the watch-post) and the town (stall, bounty board)
-    'fungus_a': ('fungus_a.webp', 'props/decor_fungus_a.png', 130, 0.3, 'auto'),
-    'fungus_b': ('fungus_b.webp', 'props/decor_fungus_b.png', 130, 0.3, 'auto'),
     'tablet_a': ('tablet_a.webp', 'props/decor_tablet_a.png', 120, 0.14, 'auto'),
     'altar_a': ('altar_a.webp', 'props/decor_altar_a.png', 200, 0.22, 'auto'),
     'sword': ('sword.webp', 'buildings/sword.png', 330, 0.2, 'auto'),
     'outpost': ('outpost.webp', 'buildings/outpost.png', 380, 0.2, 'auto'),
     'stall': ('stall.webp', 'buildings/stall.png', 190, 0.2, 'auto'),
     'noticeboard': ('noticeboard.webp', 'buildings/noticeboard.png', 190, 0.2, 'auto'),
+    # the xianxia look of chapter 2 (docs/art/chapter2-art-direction.md): the buildings of Qinglan Town
+    'town_inn': ('town_inn.webp', 'buildings/town_inn.png', 470, 0.2, 'auto'),
+    'town_herbal': ('town_herbal.webp', 'buildings/town_herbal.png', 340, 0.2, 'auto'),
+    'town_smithy': ('town_smithy.webp', 'buildings/town_smithy.png', 340, 0.2, 'auto'),
+    'town_office': ('town_office.webp', 'buildings/town_office.png', 500, 0.2, 'auto'),
+    'town_house_a': ('town_house_a.webp', 'buildings/town_house_a.png', 330, 0.2, 'auto'),
+    'town_house_b': ('town_house_b.webp', 'buildings/town_house_b.png', 400, 0.2, 'auto'),
+    'town_gate': ('town_gate.webp', 'buildings/town_gate.png', 380, 0.2, 'auto'),
+    'town_stall': ('town_stall.webp', 'buildings/town_stall.png', 210, 0.2, 'auto'),
+    'town_board': ('town_board.webp', 'buildings/town_board.png', 190, 0.2, 'auto'),
+    # obstacles and decor of the dark xianxia look: dead trees (forest, town), sword cairns and pillars (pass), sea rocks (coast)
+    'tree_dead_a': ('tree_dead_a.webp', 'props/tree_dead_a.png', 240, 0.1, 'auto'),
+    'tree_dead_c': ('tree_dead_c.webp', 'props/tree_dead_c.png', 240, 0.1, 'auto'),
+    'tree_dead_e': ('tree_dead_e.webp', 'props/tree_dead_e.png', 240, 0.1, 'auto'),
+    'tree_dead_f': ('tree_dead_f.webp', 'props/tree_dead_f.png', 240, 0.1, 'auto'),
+    'tree_dead_g': ('tree_dead_g.webp', 'props/tree_dead_g.png', 240, 0.1, 'auto'),
+    'spire_a': ('spire_a.webp', 'props/spire_a.png', 230, 0.12, 'auto'),
+    'spire_b': ('spire_b.webp', 'props/spire_b.png', 170, 0.1, 'auto'),
+    'spire_c': ('spire_c.webp', 'props/spire_c.png', 170, 0.1, 'auto'),
+    'rock_sea_a': ('rock_sea_a.webp', 'props/rock_sea_a.png', 210, 0.2, 'auto'),
+    'rock_sea_b': ('rock_sea_b.webp', 'props/rock_sea_b.png', 210, 0.2, 'auto'),
+    # the solid props of Qinglan Town (they stand on "c" tiles in place of crates and barrels)
+    'jar_a': ('jar_a.webp', 'props/prop_jar_a.png', 120, 0.15, 'auto'),
+    'jar_b': ('jar_b.webp', 'props/prop_jar_b.png', 130, 0.15, 'auto'),
+    'jar_c': ('jar_c.webp', 'props/prop_jar_c.png', 110, 0.15, 'auto'),
+    'lantern_stone': ('lantern_stone.webp', 'props/decor_lantern.png', 130, 0.1, 'auto'),
+    'censer': ('censer.webp', 'props/decor_censer.png', 170, 0.15, 'auto'),
+    'banner_torn': ('banner_torn.webp', 'props/decor_banner.png', 130, 0.08, 'auto'),
+    'bones': ('bones.webp', 'props/decor_bones.png', 170, 0.3, 'auto'),
+    'grave': ('grave.webp', 'props/decor_grave.png', 150, 0.15, 'auto'),
+    'lion_stone': ('lion_stone.webp', 'props/decor_lion.png', 140, 0.1, 'auto'),
+    'fungus_c': ('fungus_c.webp', 'props/decor_fungus_c.png', 170, 0.25, 'auto'),
+    'fungus_d': ('fungus_d.webp', 'props/decor_fungus_d.png', 170, 0.25, 'auto'),
     # the Mist Coast
     'wreck': ('wreck.webp', 'buildings/wreck.png', 520, 0.3, 'magenta', 60),  # small gaps between the sails and the rigging count as background
-    'driftwood_a': ('driftwood_a.webp', 'props/decor_driftwood_a.png', 130, 0.25),
-    'driftwood_b': ('driftwood_b.webp', 'props/decor_driftwood_b.png', 130, 0.25),
+    'driftwood_a': ('driftwood_a.webp', 'props/decor_driftwood_a.png', 140, 0.25, 'auto'),
+    'driftwood_b': ('driftwood_b.webp', 'props/decor_driftwood_b.png', 140, 0.25, 'auto'),
     'anchor': ('anchor.webp', 'props/decor_anchor.png', 140, 0.2),
     'moss_a': ('moss_a.webp', 'props/decor_moss_a.png', 230, 0.4),
     'moss_b': ('moss_b.webp', 'props/decor_moss_b.png', 230, 0.4),
@@ -62,7 +93,7 @@ PROPS = {
 KEY_FULL = 0.26  # "magentaness" (min(red, blue) - green, as a fraction of min(red, blue)) at or above this can be background
 KEY_NONE = 0.12  # at or below this an edge pixel is fully the object; in between the edge is soft
 POCKET_MIN_AREA = 700  # smaller patches of magenta-looking pixels inside the object are kept (they are paint or reflections)
-EDGE = 2  # how many pixels in from the background the soft edge reaches
+EDGE = 3  # how many pixels in from the background the soft edge reaches
 
 
 REF = {}  # the background colour of the picture being cut ('auto' mode), set by cut_out
@@ -167,6 +198,11 @@ def cut_out(path: Path, mode: str = 'magenta', pocket_min: int = POCKET_MIN_AREA
             alpha = 255
             if near[i]:
                 key = magenta(px, x, y, mode)
+                if mode == 'auto':
+                    # a green background: pull the green out of the soft edge (spill), as the magenta is pulled out below
+                    br, bg_, bb = REF['rgb']
+                    if bg_ > 1.3 * max(br, bb) and g > max(r, b):
+                        g = int(max(r, b) + (g - max(r, b)) * 0.2)
                 if key > 0:
                     alpha = 255 if key <= key_none else round(255 * (key_full - key) / (key_full - key_none))
                     if mode == 'auto':
@@ -204,7 +240,8 @@ def build(name: str, preview: Path | None) -> None:
 
 def main() -> None:
     preview = Path(sys.argv[sys.argv.index('--preview') + 1]) if '--preview' in sys.argv else None
-    for name in PROPS:
+    chosen = [a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith('--') and sys.argv[i - 1] != '--preview']
+    for name in chosen or PROPS:
         build(name, preview)
 
 

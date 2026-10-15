@@ -55,11 +55,11 @@ export interface PortalFile {
   blockedText?: string;
 }
 
-/** mountain: bare rock with boulders and cliff walls (the broken-sword pass). */
+/** mountain: bare rock with boulders and cliff walls (the broken-sword pass). sect: dark flagstone courtyards of a mountain town (Qinglan). blight: the dead, haunted forest floor (the green-vine forest). */
 /** mist: the chapter 2 landing coast (sand, rocks and driftwood, with grass and trees inland: "g" and "Y"). */
 /** stone: dungeon bricks; ruins: the same with moss and vines; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water, wall and "T" art. */
-export type MapTheme = 'stone' | 'ruins' | 'core' | 'grass' | 'sand' | 'mist' | 'mountain' | 'cave';
-export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'core', 'grass', 'sand', 'mist', 'mountain', 'cave'];
+export type MapTheme = 'stone' | 'ruins' | 'core' | 'grass' | 'sand' | 'mist' | 'mountain' | 'sect' | 'blight' | 'cave';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'core', 'grass', 'sand', 'mist', 'mountain', 'sect', 'blight', 'cave'];
 
 export const TileType = {
   VOID: 0,
