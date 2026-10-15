@@ -5,6 +5,7 @@ import {
   LEGENDARIES,
   getBaseItem,
   getLegendary,
+  scaleStat,
   type EquipSlot,
   type ItemInstance,
   type ItemMod,
@@ -62,22 +63,24 @@ const AFFIX_COUNT: Record<Exclude<Rarity, 'legendary'>, [number, number]> = {
   rare: [3, 4],
 };
 
+/** How many of the best bases that are not above the item level a drop chooses from (so a low base stops dropping once much better ones can). */
+const BASES_IN_REACH = 3;
+
 /**
- * Builds one item. `slot` forces the equipment slot (otherwise random). Fully determined by `rng`,
- * so a seeded generator reproduces the same loot.
+ * Builds one item of item level `ilvl`. `slot` forces the equipment slot (otherwise random). The base is one of the best few that a character of that
+ * level could wear, and the flat numbers of its affixes (life, damage, armor) are rolled in their range and then grown to the item level.
+ * Fully determined by `rng`, so a seeded generator reproduces the same loot.
  */
-export function generateItem(rarity: Rarity, rng: Rng, slot?: EquipSlot): ItemInstance {
+export function generateItem(rarity: Rarity, rng: Rng, slot?: EquipSlot, ilvl = 1): ItemInstance {
   if (rarity === 'legendary') {
     const pool = slot ? LEGENDARIES.filter((l) => getBaseItem(l.baseId).slot === slot) : LEGENDARIES;
-    if (pool.length > 0) return generateLegendary(pick(pool, rng).id, rng);
+    if (pool.length > 0) return generateLegendary(pick(pool, rng).id, rng, ilvl);
     rarity = 'rare'; // no legendary exists for this slot: fall back rather than fail
   }
 
   const chosenSlot = slot ?? pick(EQUIP_SLOTS, rng);
-  const base = pick(
-    BASE_ITEMS.filter((b) => b.slot === chosenSlot),
-    rng,
-  );
+  const reachable = BASE_ITEMS.filter((b) => b.slot === chosenSlot && b.level <= ilvl).sort((a, b) => b.level - a.level);
+  const base = pick(reachable.slice(0, BASES_IN_REACH), rng);
   const [lo, hi] = AFFIX_COUNT[rarity];
   const wanted = rollInt(lo, hi, rng);
 
@@ -88,14 +91,14 @@ export function generateItem(rarity: Rarity, rng: Rng, slot?: EquipSlot): ItemIn
     const affix = pickWeighted(available, (a) => a.weight, rng);
     available.splice(available.indexOf(affix), 1); // never roll the same affix twice
     picked.push(affix);
-    mods.push({ affixId: affix.id, value: rollInt(affix.min, affix.max, rng) });
+    mods.push({ affixId: affix.id, value: scaleStat(affix.stat, rollInt(affix.min, affix.max, rng), ilvl) });
   }
 
   let name = base.name;
   if (rarity === 'magic' && picked[0]) name = `${picked[0].name}${base.name}`;
   if (rarity === 'rare') name = `${pick(RARE_ADJECTIVES, rng)}${pick(RARE_NOUNS[chosenSlot], rng)}`;
 
-  return { uid: makeUid(rng), baseId: base.id, name, slot: chosenSlot, rarity, mods };
+  return { uid: makeUid(rng), baseId: base.id, name, slot: chosenSlot, rarity, mods, ilvl };
 }
 
 /** A specific base item with no affixes (e.g. the starter sword). */
@@ -104,7 +107,7 @@ export function createPlainItem(baseId: string, rng: Rng): ItemInstance {
   return { uid: makeUid(rng), baseId: base.id, name: base.name, slot: base.slot, rarity: 'normal', mods: [] };
 }
 
-export function generateLegendary(legendaryId: string, rng: Rng): ItemInstance {
+export function generateLegendary(legendaryId: string, rng: Rng, ilvl = 1): ItemInstance {
   const def = getLegendary(legendaryId);
   const base = getBaseItem(def.baseId);
   return {
@@ -113,25 +116,26 @@ export function generateLegendary(legendaryId: string, rng: Rng): ItemInstance {
     name: def.name,
     slot: base.slot,
     rarity: 'legendary',
-    mods: def.affixes.map((a) => ({ affixId: a.affixId, value: rollInt(a.min, a.max, rng) })),
+    mods: def.affixes.map((a) => ({ affixId: a.affixId, value: scaleStat(getAffix(a.affixId).stat, rollInt(a.min, a.max, rng), ilvl) })),
     legendaryId: def.id,
+    ilvl,
   };
 }
 
 /**
- * Rolls everything one kill drops from a loot table: `rolls` independent chances of an item,
+ * Rolls everything one kill drops from a loot table (items of item level `ilvl`, the level of the monster): `rolls` independent chances of an item,
  * then tops up with extra items if a guarantee (e.g. boss pity: at least one rare) was not met.
  */
-export function rollLoot(table: LootTable, rng: Rng): ItemInstance[] {
+export function rollLoot(table: LootTable, rng: Rng, ilvl = 1): ItemInstance[] {
   const items: ItemInstance[] = [];
   for (let i = 0; i < table.rolls; i++) {
-    if (rng() < table.dropChance) items.push(generateItem(rollRarity(table.rarityWeights, rng), rng));
+    if (rng() < table.dropChance) items.push(generateItem(rollRarity(table.rarityWeights, rng), rng, undefined, ilvl));
   }
   for (const g of table.guaranteed ?? []) {
     const have = items.filter((it) => rarityRank(it.rarity) >= rarityRank(g.minRarity)).length;
     for (let n = have; n < g.count; n++) {
       const allowed = raritiesAtLeast(g.minRarity);
-      items.push(generateItem(rollRarity(table.rarityWeights, rng, allowed), rng));
+      items.push(generateItem(rollRarity(table.rarityWeights, rng, allowed), rng, undefined, ilvl));
     }
   }
   return items;

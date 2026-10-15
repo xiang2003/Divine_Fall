@@ -1,7 +1,7 @@
 import { getAffix } from '../data/affixes';
 import { DAMAGE_TYPES, DAMAGE_TYPE_INFO, RESIST_TYPES } from '../data/damageTypes';
 import { STATUSES, type StatusId } from '../data/statuses';
-import { getBaseItem, getLegendary, SLOT_LABEL, type ItemInstance, type ItemMod, type StatKey } from '../data/items';
+import { getBaseItem, getLegendary, itemLevel, requiredLevel, SLOT_LABEL, type ItemInstance, type ItemMod, type StatKey } from '../data/items';
 import { LEGENDARY_EFFECT_TEXT } from '../data/legendaryEffects';
 import { RARITY_INFO } from '../data/rarity';
 import type { PlayerStats } from './stats';
@@ -53,6 +53,9 @@ export interface ItemDescription {
   color: string;
   slotLabel: string;
   baseName: string;
+  /** The item level, and the level a character needs to wear it. */
+  itemLevel: number;
+  requiredLevel: number;
   base: string[];
   affixes: string[];
   effect?: string;
@@ -68,6 +71,8 @@ export function describeItem(item: ItemInstance): ItemDescription {
     color: info.color,
     slotLabel: SLOT_LABEL[item.slot],
     baseName: getBaseItem(item.baseId).name,
+    itemLevel: itemLevel(item),
+    requiredLevel: requiredLevel(item),
     base: baseLines(item),
     affixes: item.mods.map(formatMod),
     effect: legendary ? LEGENDARY_EFFECT_TEXT[legendary.effect] : undefined,

@@ -28,6 +28,10 @@ export function ItemTooltip({ item, equipment, equipped, level, hint }: Props) {
         {d.rarityLabel} · {d.slotLabel}
         {d.name !== d.baseName && ` · ${d.baseName}`}
       </div>
+      <div className={`tooltip-level${level < d.requiredLevel ? ' unmet' : ''}`}>
+        物品等級 {d.itemLevel} · 需要等級 {d.requiredLevel}
+        {level < d.requiredLevel && '（等級不足）'}
+      </div>
       {d.base.map((l) => (
         <div key={l} className="tooltip-base">
           {l}

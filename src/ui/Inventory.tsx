@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { EquipSlot, ItemInstance } from '../data/items';
+import { requiredLevel, type EquipSlot, type ItemInstance } from '../data/items';
 import { GOLD_NAME } from '../data/economy';
 import { RARITY_INFO } from '../data/rarity';
 import type { InventoryView } from '../game/Game';
@@ -66,7 +66,7 @@ export function Inventory({ view, gold, onEquip, onUnequip, onDrop, onClose }: I
             <button
               key={i}
               type="button"
-              className={`cell ${item ? `r-${item.rarity}` : 'empty'}`}
+              className={`cell ${item ? `r-${item.rarity}` : 'empty'}${item && requiredLevel(item) > view.level ? ' unmet' : ''}`}
               style={item ? { borderColor: RARITY_INFO[item.rarity].color } : undefined}
               onClick={() => {
                 if (!item) return;

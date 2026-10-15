@@ -6,15 +6,15 @@ export interface PotionDef {
   description: string;
   /** Which gauge the potion refills. */
   restores: 'hp' | 'mana';
-  /** Points restored per use. */
-  amount: number;
+  /** The share of the maximum (of life or of mana) restored per use, so a potion stays worth drinking at every level. */
+  fraction: number;
   /** Charges the potion holds when full. Each use costs one. */
   maxCharges: number;
 }
 
 export const POTIONS: Record<PotionId, PotionDef> = {
-  health: { id: 'health', name: '生命藥水', description: '立刻恢復 50 點生命。', restores: 'hp', amount: 50, maxCharges: 3 },
-  mana: { id: 'mana', name: '魔力藥水', description: '立刻恢復 40 點魔力。', restores: 'mana', amount: 40, maxCharges: 3 },
+  health: { id: 'health', name: '生命藥水', description: '立刻恢復 50% 的最大生命。', restores: 'hp', fraction: 0.5, maxCharges: 3 },
+  mana: { id: 'mana', name: '魔力藥水', description: '立刻恢復 60% 的最大魔力。', restores: 'mana', fraction: 0.6, maxCharges: 3 },
 };
 
 /** What the belt holds in a new game: a health potion, a mana potion, and an empty third slot. */

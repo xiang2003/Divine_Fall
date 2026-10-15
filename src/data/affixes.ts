@@ -16,7 +16,7 @@ export interface AffixDef {
 }
 
 export const AFFIXES: readonly AffixDef[] = [
-  { id: 'flatDamage', name: '鋒利的', stat: 'damage', slots: ['weapon', 'ring', 'helmet', 'chest'], min: 2, max: 6, weight: 10, text: '攻擊力 +{value}' },
+  { id: 'flatDamage', name: '鋒利的', stat: 'damage', slots: ['weapon', 'ring', 'helmet', 'chest'], min: 3, max: 8, weight: 14, text: '攻擊力 +{value}' },
   { id: 'maxLife', name: '堅韌的', stat: 'maxHp', slots: ['helmet', 'chest', 'boots', 'ring'], min: 8, max: 25, weight: 10, text: '最大生命 +{value}' },
   { id: 'armor', name: '厚重的', stat: 'armor', slots: ['helmet', 'chest', 'boots'], min: 5, max: 18, weight: 10, text: '護甲 +{value}' },
   { id: 'attackSpeed', name: '迅捷的', stat: 'attackSpeedPct', slots: ['weapon', 'ring', 'boots'], min: 4, max: 12, weight: 7, text: '攻擊速度 +{value}%' },

@@ -7,7 +7,7 @@ import {
   POTION_ACTIONS,
   SKILL_INPUT_BUFFER,
 } from '../config/gameConfig';
-import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
+import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, requiredLevel, type EquipSlot, type ItemInstance } from '../data/items';
 import { GOLD_NAME, SHOPS } from '../data/economy';
 import { STATUSES } from '../data/statuses';
 import { LOOT_TABLES } from '../data/lootTables';
@@ -23,7 +23,7 @@ import { CollisionSystem } from '../systems/CollisionSystem';
 import { CombatSystem } from '../systems/CombatSystem';
 import { GoldSystem } from '../systems/GoldSystem';
 import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
-import { buyEquipment, rollGold, sellPrice } from '../systems/economy';
+import { buyEquipment, priceAtLevel, rollGold, sellPrice } from '../systems/economy';
 import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
@@ -564,10 +564,15 @@ export class Game {
 
   toggleInventory = (): void => this.setInventoryOpen(!this.inventoryOpen);
 
-  /** Equips the backpack item at `index` (swapping with what is worn in that slot). */
+  /** Equips the backpack item at `index` (swapping with what is worn in that slot), if the character has the level for it. */
   equipFromInventory = (index: number): void => {
     const w = this.world;
     if (!w || w.player.isDead) return;
+    const item = w.inventory.slots[index];
+    if (item && requiredLevel(item) > this.progression.level) {
+      this.notify(`需要等級 ${requiredLevel(item)} 才能裝備（你是等級 ${this.progression.level}）`);
+      return;
+    }
     w.inventory.equip(index);
   };
 
@@ -726,7 +731,7 @@ export class Game {
         // experience is cut when the monster is far above or below the player; loot and gold are not
         if (m.xpReward > 0) this.gainXp(Math.max(1, Math.round(m.xpReward * xpLevelMultiplier(this.progression.level, m.level))));
         player.potions.recharge(RECHARGE_PER_KILL * (m.isBoss ? RECHARGE_BOSS_MULT : m.isElite ? RECHARGE_ELITE_MULT : 1));
-        for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
+        for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng, m.level)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
         goldPiles.spawnNear(rollGold(m.lootTable, defaultRng, m.level), m.pos.x, m.pos.y);
@@ -912,8 +917,8 @@ export class Game {
     const w = this.world;
     if (!w) return;
     const { x, y } = w.player.pos;
-    for (const def of LEGENDARIES) w.groundLoot.spawnNear(generateLegendary(def.id, defaultRng), x, y);
-    for (let i = 0; i < 3; i++) w.groundLoot.spawnNear(generateItem('rare', defaultRng), x, y);
+    for (const def of LEGENDARIES) w.groundLoot.spawnNear(generateLegendary(def.id, defaultRng, this.progression.level), x, y);
+    for (let i = 0; i < 3; i++) w.groundLoot.spawnNear(generateItem('rare', defaultRng, undefined, this.progression.level), x, y);
     this.gold += 500;
     this.publish({ gold: this.gold });
     this.notify(`除錯：已掉落測試裝備，並給了 500 ${GOLD_NAME}`);
@@ -924,7 +929,7 @@ export class Game {
     const w = this.world;
     if (!w || w.player.isDead) return;
     for (const def of LEGENDARIES) {
-      const added = w.inventory.add(generateLegendary(def.id, defaultRng));
+      const added = w.inventory.add(generateLegendary(def.id, defaultRng, this.progression.level));
       if (added.ok) w.inventory.equip(added.index);
     }
     this.notify('除錯：已穿上全部傳奇');
@@ -1030,7 +1035,7 @@ export class Game {
     for (const f of def.rewards.flags ?? []) this.setFlag(f, true);
     for (const reward of def.rewards.items) {
       for (let i = 0; i < reward.count; i++) {
-        const item = generateItem(reward.rarity, defaultRng);
+        const item = generateItem(reward.rarity, defaultRng, undefined, this.progression.level);
         // A full backpack must never lose a reward: it drops at the player's feet instead.
         if (!w.inventory.add(item).ok) w.groundLoot.spawnNear(item, w.player.pos.x, w.player.pos.y);
       }
@@ -1176,6 +1181,11 @@ export class Game {
 
   // --- money and shops -----------------------------------------------------------------------
 
+  /** What the player pays for what the merchants sell: the level of the character and the opinion of the merchants (see systems/economy.ts). */
+  private shopPriceMultiplier(): number {
+    return priceAtLevel(1, this.progression.level) * this.reputation.priceMultiplier;
+  }
+
   /** Changes what a group thinks of the player, tells the player, and updates the page of the quest log. */
   private changeReputation(faction: FactionId, amount: number): void {
     const changed = this.reputation.add(faction, amount);
@@ -1195,7 +1205,7 @@ export class Game {
     const w = this.world;
     const d = this.dialogue;
     if (!w || !d?.shop || w.player.isDead) return;
-    const result = buyEquipment(SHOPS[d.shop.id]!, slot, this.gold, w.inventory.freeSlots, defaultRng, this.reputation.priceMultiplier);
+    const result = buyEquipment(SHOPS[d.shop.id]!, slot, this.gold, w.inventory.freeSlots, defaultRng, this.shopPriceMultiplier(), this.progression.level);
     if (!result.ok) {
       this.notify(result.reason === 'gold' ? `${GOLD_NAME}不夠。` : result.reason === 'full' ? '背包已滿。' : '這裡不賣那種東西。');
       return;
@@ -1276,7 +1286,7 @@ export class Game {
           choices: null,
           last: false,
           topics: null,
-          shop: { offers: shop.categories.map((c) => ({ slot: c.slot, label: SLOT_LABEL[c.slot], price: Math.max(1, Math.round(c.price * this.reputation.priceMultiplier)) })), last: d.shop.last },
+          shop: { offers: shop.categories.map((c) => ({ slot: c.slot, label: SLOT_LABEL[c.slot], price: Math.max(1, Math.round(priceAtLevel(c.price, this.progression.level) * this.reputation.priceMultiplier)) })), last: d.shop.last },
         },
       });
       return;

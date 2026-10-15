@@ -128,7 +128,8 @@ export class Player {
     if (full) return { result: 'full', def: held.def, restored: 0 };
     if (held.charges < 1) return { result: 'drained', def: held.def, restored: 0 };
     this.potions.take(index);
-    const restored = held.def.restores === 'hp' ? this.heal(held.def.amount) : this.restoreMana(held.def.amount);
+    const restored =
+      held.def.restores === 'hp' ? this.heal(Math.round(this.stats.maxHp * held.def.fraction)) : this.restoreMana(Math.round(this.maxMana * held.def.fraction));
     return { result: 'used', def: held.def, restored };
   }
 
