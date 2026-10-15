@@ -107,6 +107,24 @@ body,
   white-space: nowrap;
 }
 
+.debug-maps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  pointer-events: auto;
+}
+
+.debug-map {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.debug-map.current {
+  border-color: var(--frame-gold);
+  color: var(--gold);
+}
+
 .hud-top-right {
   top: 96px;
   left: 12px;

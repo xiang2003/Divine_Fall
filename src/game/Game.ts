@@ -12,9 +12,9 @@ import { LOOT_TABLES } from '../data/lootTables';
 import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
-import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId } from '../data/worldMaps';
+import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId, stepMap } from '../data/worldMaps';
 import { buildWorldGraph, type WorldGraphView } from '../systems/worldGraph';
-import { MapParseError, parseMap, type MapData } from '../data/mapData';
+import { DEFAULT_ENTRANCE, MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
@@ -143,6 +143,8 @@ export interface GameSnapshot {
   /** Non-fatal problems, e.g. an asset that fell back to its placeholder. */
   warnings: readonly string[];
   mapName: string;
+  /** Id of the map the player is on (the debug teleport list highlights it). */
+  mapId: string;
   fps: number;
   playerX: number;
   playerY: number;
@@ -206,6 +208,7 @@ const INITIAL: GameSnapshot = {
   error: null,
   warnings: [],
   mapName: '',
+  mapId: '',
   fps: 0,
   playerX: 0,
   playerY: 0,
@@ -404,7 +407,7 @@ export class Game {
       this.questHappened({ type: 'reach', map: map.id });
       this.refreshQuests();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
-      this.publish({ phase: 'ready', mapName: map.name, warnings: [...assets.errors] });
+      this.publish({ phase: 'ready', mapName: map.name, mapId: map.id, warnings: [...assets.errors] });
       this.publishVitals();
       this.lastTime = performance.now();
       this.rafId = requestAnimationFrame(this.frame);
@@ -785,6 +788,21 @@ export class Game {
     this.setFlag('ruins_open', open);
     this.setFlag('coast_open', open);
     this.notify(open ? '除錯：封石與海岸路已開啟' : '除錯：封石與海岸路已封閉');
+  }
+
+  /** Debug (F3 mode): moves the player to the start of any map at once, ignoring the doors' flags and the quests. */
+  debugTravel = (mapId: string): void => {
+    if (!isWorldMapId(mapId)) return;
+    if (mapId === this.mapId) {
+      this.notify('除錯：已經在這張地圖');
+      return;
+    }
+    if (this.travelTo(mapId, DEFAULT_ENTRANCE)) this.notify(`除錯：傳送到 ${mapId}`);
+  };
+
+  /** Debug (F3 mode + [ or ]): the previous / next map in the list. */
+  private debugStepMap(step: number): void {
+    this.debugTravel(stepMap(this.mapId, step));
   }
 
   /** Debug (F3 mode + F9): grants exactly the experience needed for the next level. */
@@ -1207,7 +1225,7 @@ export class Game {
     this.syncEquipment();
     this.publishSkills();
     this.cameraCtl.snapTo(worldToSceneX(world.player.pos.x, world.player.pos.y), worldToSceneY(world.player.pos.x, world.player.pos.y));
-    this.publish({ mapName: map.name, debug: world.debug.visible });
+    this.publish({ mapName: map.name, mapId: map.id, debug: world.debug.visible });
     this.questHappened({ type: 'reach', map: map.id });
     this.refreshQuests();
     this.publishVitals();
@@ -1347,6 +1365,8 @@ export class Game {
     if (debug.visible && input.wasPressed('debugTeleport')) this.debugTeleport();
     if (debug.visible && input.wasPressed('debugLevel')) this.debugLevelUp();
     if (debug.visible && input.wasPressed('debugFlag')) this.debugToggleRuinsFlag();
+    if (debug.visible && input.wasPressed('debugPrevMap')) this.debugStepMap(-1);
+    if (debug.visible && input.wasPressed('debugNextMap')) this.debugStepMap(1);
 
     const talking = this.dialogue !== null;
     if (input.wasPressed('inventory') && !talking) this.toggleInventory();

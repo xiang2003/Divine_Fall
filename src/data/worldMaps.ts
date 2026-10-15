@@ -26,6 +26,26 @@ export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: 
   pure_core: { x: 80, y: 17, kind: '遺跡' },
 };
 
+/** The names of the maps, for the debug teleport list (the maps themselves carry the same names). */
+export const WORLD_MAP_NAMES: Record<WorldMapId, string> = {
+  pure_village: '胎息村',
+  pure_forest: '臍帶林道',
+  pure_spring_cave: '源泉洞',
+  pure_ruins: '初胎遺跡',
+  pure_coast: '斷潮海岸',
+  pure_core: '初胎核心',
+};
+
+/** The maps in the order the debug keys step through them. */
+export const WORLD_MAP_IDS = Object.keys(WORLD_MAP_FILES) as WorldMapId[];
+
+/** The map `step` places after (or before, when negative) `current` in the list, wrapping around. An unknown current map counts as the first. */
+export function stepMap(current: string, step: number): WorldMapId {
+  const at = WORLD_MAP_IDS.indexOf(current as WorldMapId);
+  const n = WORLD_MAP_IDS.length;
+  return WORLD_MAP_IDS[(((at < 0 ? 0 : at) + step) % n + n) % n]!;
+}
+
 /** Coming back to a town refills the potions. */
 export function isTown(mapId: string): boolean {
   return isWorldMapId(mapId) && WORLD_MAP_LAYOUT[mapId].kind === '村落';

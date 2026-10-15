@@ -8,6 +8,7 @@ import { DialogueBox, type DialogueActions } from './DialogueBox';
 import { QuestLog, QuestTracker } from './QuestPanels';
 import { WorldMapPanel } from './WorldMapPanel';
 import { getNpc } from '../data/npcs';
+import { WORLD_MAP_IDS, WORLD_MAP_NAMES } from '../data/worldMaps';
 import { assetUrl } from '../game/AssetLoader';
 import { Minimap } from './Minimap';
 import { Orb, XpBar } from './Orb';
@@ -54,6 +55,7 @@ function Toast({ notice }: { notice: GameSnapshot['notice'] }) {
 export function HUD({
   snapshot,
   onRestart,
+  onDebugTravel,
   inventoryActions,
   dialogueActions,
   getMinimapView,
@@ -63,6 +65,7 @@ export function HUD({
 }: {
   snapshot: GameSnapshot;
   onRestart: () => void;
+  onDebugTravel: (mapId: string) => void;
   inventoryActions: InventoryActions;
   dialogueActions: DialogueActions;
   getMinimapView: () => MinimapView | null;
@@ -180,7 +183,14 @@ export function HUD({
           <br />
           位置 {snapshot.playerX.toFixed(2)}, {snapshot.playerY.toFixed(2)}
           <br />
-          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級 · F10 開關封石與海岸路
+          F4 掉落傳奇 · F6 穿上傳奇 · F7 重生怪物 · F8 傳送 · F9 升一級 · F10 開關封石與海岸路 · [ ] 上一張 / 下一張地圖
+          <div className="debug-maps">
+            {WORLD_MAP_IDS.map((id) => (
+              <button key={id} type="button" className={id === snapshot.mapId ? 'debug-map current' : 'debug-map'} onClick={() => onDebugTravel(id)}>
+                {WORLD_MAP_NAMES[id]}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

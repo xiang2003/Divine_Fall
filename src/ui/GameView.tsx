@@ -34,6 +34,7 @@ function HudBridge({ game }: { game: Game }) {
       snapshot={snapshot}
       getMinimapView={game.getMinimapView}
       onRestart={game.restart}
+      onDebugTravel={game.debugTravel}
       inventoryActions={{
         onEquip: game.equipFromInventory,
         onUnequip: game.unequip,

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseMap, type MapData } from '../src/data/mapData';
-import { WORLD_MAP_FILES, WORLD_MAP_LAYOUT } from '../src/data/worldMaps';
+import { WORLD_MAP_FILES, WORLD_MAP_IDS, WORLD_MAP_LAYOUT, WORLD_MAP_NAMES, stepMap } from '../src/data/worldMaps';
 import { buildWorldGraph } from '../src/systems/worldGraph';
 
 const load = (file: string): MapData => parseMap(JSON.parse(readFileSync(new URL(`../public/${file}`, import.meta.url), 'utf8')) as unknown);
@@ -84,5 +84,26 @@ describe('world graph', () => {
   it('a map missing from the layout still gets a node in the middle instead of crashing', () => {
     const g = buildWorldGraph(maps, {}, new Set(), new Set(), 'pure_village');
     expect(g.nodes.every((n) => n.x === 50 && n.y === 50)).toBe(true);
+  });
+});
+
+describe('debug teleport list', () => {
+  it('names every map, and the names match the maps', () => {
+    expect(Object.keys(WORLD_MAP_NAMES).sort()).toEqual([...WORLD_MAP_IDS].sort());
+    for (const map of maps) expect(WORLD_MAP_NAMES[map.id as keyof typeof WORLD_MAP_NAMES], map.id).toBe(map.name);
+  });
+
+  it('steps through the maps in a loop, in both directions', () => {
+    expect(stepMap(WORLD_MAP_IDS[0]!, 1)).toBe(WORLD_MAP_IDS[1]);
+    expect(stepMap(WORLD_MAP_IDS[0]!, -1)).toBe(WORLD_MAP_IDS[WORLD_MAP_IDS.length - 1]);
+    expect(stepMap(WORLD_MAP_IDS[WORLD_MAP_IDS.length - 1]!, 1)).toBe(WORLD_MAP_IDS[0]);
+    let at: string = WORLD_MAP_IDS[0]!;
+    const seen = new Set<string>();
+    for (let i = 0; i < WORLD_MAP_IDS.length; i++) {
+      seen.add(at);
+      at = stepMap(at, 1);
+    }
+    expect(seen.size).toBe(WORLD_MAP_IDS.length);
+    expect(stepMap('nowhere', 1)).toBe(WORLD_MAP_IDS[1]);
   });
 });
