@@ -24,7 +24,19 @@ export type StatKey =
   | 'attackSpeedPct'
   | 'critChancePct'
   | 'critDamagePct'
-  | 'moveSpeedPct';
+  | 'moveSpeedPct'
+  // "increased damage" of one type, and the resistance against one type (whole percentages; physical is defended by armor, so it has no resistance)
+  | 'physicalDamagePct'
+  | 'fireDamagePct'
+  | 'coldDamagePct'
+  | 'lightningDamagePct'
+  | 'corruptionDamagePct'
+  | 'divineDamagePct'
+  | 'fireResPct'
+  | 'coldResPct'
+  | 'lightningResPct'
+  | 'corruptionResPct'
+  | 'divineResPct';
 
 export type StatMods = Partial<Record<StatKey, number>>;
 

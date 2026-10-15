@@ -167,10 +167,10 @@ describe('CombatSystem: player swings', () => {
 
 describe('CombatSystem: damage to the player', () => {
   it('melee strikes connect only when the player is within reach, and armor applies', () => {
-    const { player, combat, events } = setup(0.99, 100);
+    const { player, combat, events } = setup(0.99, 40);
     const m = new Monster(MONSTERS.ghoul, { x: 3.1, y: 2.5 });
     combat.meleeStrike(m);
-    expect(events.taken).toEqual([Math.round(MONSTERS.ghoul.damage / 2)]); // 100 armor halves it
+    expect(events.taken).toEqual([Math.round(MONSTERS.ghoul.damage / 2)]); // 40 armor halves it
     expect(player.hp).toBe(100 - events.taken[0]!);
 
     m.pos.x = 7.5; // out of reach

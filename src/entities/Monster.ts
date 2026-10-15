@@ -6,6 +6,7 @@ import type { Vec2 } from '../game/iso';
 import { AttackTimer } from '../systems/AttackTimer';
 import { chooseBossAttack, phaseForHpRatio } from '../systems/bossAI';
 import type { CollisionSystem } from '../systems/CollisionSystem';
+import type { Defense } from '../systems/damage';
 import { computeMonsterStats, type MonsterStats } from '../systems/elite';
 import { defaultRng, type Rng } from '../systems/rng';
 
@@ -199,6 +200,11 @@ export class Monster {
     return this.stats.maxHp;
   }
   /** Base damage per hit (elite bonuses included, armor not yet applied). */
+  /** What the player's attacks are measured against: this monster's armor and resistances. */
+  get defense(): Defense {
+    return { armor: this.def.armor ?? 0, resist: this.def.resist };
+  }
+
   get damage(): number {
     return this.stats.damage * (this.berserk ? this.def.berserk!.damageMult : 1);
   }

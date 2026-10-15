@@ -1,4 +1,5 @@
 import { PLAYER_CONFIG } from '../config/gameConfig';
+import { DAMAGE_TYPES, RESIST_TYPES, type DamageType, type ResistType } from '../data/damageTypes';
 import { getAffix } from '../data/affixes';
 import {
   EQUIP_SLOTS,
@@ -21,7 +22,28 @@ export interface PlayerStats {
   critChance: number;
   critDamage: number;
   moveSpeed: number;
+  /** "Increased damage" of each type as fractions (0.2 = +20%), from gear. */
+  increased: Record<DamageType, number>;
+  /** Resistance against each non-physical type as fractions (0.3 = 30%, negative = takes extra), before the cap that damage.ts applies. */
+  resist: Record<ResistType, number>;
 }
+
+/** Which stat key holds the "increased damage" / the resistance of a type. */
+export const INCREASED_KEY: Record<DamageType, StatKey> = {
+  physical: 'physicalDamagePct',
+  fire: 'fireDamagePct',
+  cold: 'coldDamagePct',
+  lightning: 'lightningDamagePct',
+  corruption: 'corruptionDamagePct',
+  divine: 'divineDamagePct',
+};
+export const RESIST_KEY: Record<ResistType, StatKey> = {
+  fire: 'fireResPct',
+  cold: 'coldResPct',
+  lightning: 'lightningResPct',
+  corruption: 'corruptionResPct',
+  divine: 'divineResPct',
+};
 
 export type Equipment = Record<EquipSlot, ItemInstance | null>;
 
@@ -59,6 +81,17 @@ export function computeStats(equipment: Equipment, level = 1): PlayerStats {
     critChancePct: 0,
     critDamagePct: 0,
     moveSpeedPct: 0,
+    physicalDamagePct: 0,
+    fireDamagePct: 0,
+    coldDamagePct: 0,
+    lightningDamagePct: 0,
+    corruptionDamagePct: 0,
+    divineDamagePct: 0,
+    fireResPct: 0,
+    coldResPct: 0,
+    lightningResPct: 0,
+    corruptionResPct: 0,
+    divineResPct: 0,
   };
   for (const slot of EQUIP_SLOTS) {
     const item = equipment[slot];
@@ -76,6 +109,8 @@ export function computeStats(equipment: Equipment, level = 1): PlayerStats {
     critChance: Math.min(MAX_CRIT_CHANCE, base.critChance + sum.critChancePct / 100),
     critDamage: base.critDamage + sum.critDamagePct / 100,
     moveSpeed: base.moveSpeed * (1 + sum.moveSpeedPct / 100),
+    increased: Object.fromEntries(DAMAGE_TYPES.map((t) => [t, sum[INCREASED_KEY[t]] / 100])) as Record<DamageType, number>,
+    resist: Object.fromEntries(RESIST_TYPES.map((t) => [t, sum[RESIST_KEY[t]] / 100])) as Record<ResistType, number>,
   };
 }
 

@@ -307,6 +307,22 @@ body,
   color: #7be07b;
 }
 
+/* the colour of the kind of damage (docs/design/damage-types.md); physical keeps the colour of its kind */
+.damage-number.t-fire {
+  color: #ff8a3a;
+}
+.damage-number.t-cold {
+  color: #7fd4ff;
+}
+.damage-number.t-lightning {
+  color: #ffe14a;
+}
+.damage-number.t-corruption {
+  color: #b87be8;
+}
+.damage-number.t-divine {
+  color: #fff2b0;
+}
 .damage-number.gold {
   color: #ffd84a;
   font-size: 15px;

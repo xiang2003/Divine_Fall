@@ -23,6 +23,16 @@ export const AFFIXES: readonly AffixDef[] = [
   { id: 'critChance', name: '精準的', stat: 'critChancePct', slots: ['weapon', 'ring', 'helmet', 'chest'], min: 2, max: 6, weight: 6, text: '暴擊機率 +{value}%' },
   { id: 'critDamage', name: '兇狠的', stat: 'critDamagePct', slots: ['weapon', 'ring'], min: 10, max: 30, weight: 5, text: '暴擊傷害 +{value}%' },
   { id: 'moveSpeed', name: '輕盈的', stat: 'moveSpeedPct', slots: ['boots', 'ring'], min: 6, max: 15, weight: 6, text: '移動速度 +{value}%' },
+  // Increased damage of a type, only for the types the character can deal so far (physical attacks, the divine bolt, lightning). Fire, cold and
+  // corruption damage get their affixes when something in the game gives the player a way to deal them.
+  { id: 'physicalDamage', name: '蠻橫的', stat: 'physicalDamagePct', slots: ['weapon', 'ring', 'chest'], min: 6, max: 16, weight: 6, text: '增加物理傷害 {value}%' },
+  { id: 'lightningDamage', name: '雷鳴的', stat: 'lightningDamagePct', slots: ['weapon', 'ring'], min: 6, max: 16, weight: 4, text: '增加雷電傷害 {value}%' },
+  { id: 'divineDamage', name: '聖輝的', stat: 'divineDamagePct', slots: ['weapon', 'ring'], min: 6, max: 16, weight: 5, text: '增加神聖傷害 {value}%' },
+  // Resistances against the kinds of damage that monsters deal (there is nothing that burns yet, so no fire resistance affix).
+  { id: 'coldRes', name: '禦寒的', stat: 'coldResPct', slots: ['helmet', 'chest', 'boots', 'ring'], min: 5, max: 14, weight: 6, text: '冰霜抗性 +{value}%' },
+  { id: 'lightningRes', name: '絕緣的', stat: 'lightningResPct', slots: ['helmet', 'chest', 'boots', 'ring'], min: 5, max: 14, weight: 6, text: '雷電抗性 +{value}%' },
+  { id: 'corruptionRes', name: '淨穢的', stat: 'corruptionResPct', slots: ['helmet', 'chest', 'boots', 'ring'], min: 5, max: 14, weight: 6, text: '腐化抗性 +{value}%' },
+  { id: 'divineRes', name: '護佑的', stat: 'divineResPct', slots: ['helmet', 'chest', 'boots', 'ring'], min: 5, max: 14, weight: 5, text: '神聖抗性 +{value}%' },
 ];
 
 const BY_ID = new Map(AFFIXES.map((a) => [a.id, a]));

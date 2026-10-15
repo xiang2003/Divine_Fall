@@ -1,4 +1,5 @@
 import { SpriteKey } from '../game/assetManifest';
+import type { DamageType, ResistType } from './damageTypes';
 import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
@@ -146,8 +147,14 @@ export interface MonsterDef {
   spriteKey: string;
   behavior: MonsterBehavior;
   maxHp: number;
-  /** Damage per hit / projectile, before the player's armor. */
+  /** Damage per hit / projectile, before the player's armor or resistance. */
   damage: number;
+  /** The kind of damage its hits and shots deal (default physical). */
+  damageType?: DamageType;
+  /** Armor against the player's physical damage (default 0): reduces it like the player's armor does (see systems/damage.ts). */
+  armor?: number;
+  /** Resistances against the other kinds of damage as fractions (0.5 = takes half; -0.5 = takes half again as much). */
+  resist?: Partial<Record<ResistType, number>>;
   /** World units per second. */
   moveSpeed: number;
   /** Starts chasing when the player is this close (centre distance) and in line of sight. */
@@ -255,6 +262,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 28,
     damage: 7,
+    damageType: 'corruption',
+    resist: { corruption: 0.3 },
     moveSpeed: 2.0,
     detectRange: 9,
     attackRange: 6,
@@ -340,6 +349,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 26,
     damage: 5,
+    damageType: 'cold',
+    resist: { cold: 0.5, lightning: -0.25 },
     moveSpeed: 1.7,
     detectRange: 8,
     attackRange: 5.5,
@@ -366,6 +377,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 12,
     damage: 4,
+    damageType: 'divine',
+    resist: { divine: 0.3 },
     moveSpeed: 4.4,
     detectRange: 9,
     attackRange: 6,
@@ -392,6 +405,8 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 560,
     damage: 14,
+    damageType: 'corruption',
+    resist: { corruption: 0.5 },
     moveSpeed: 2.7,
     detectRange: 11,
     attackRange: 0.8,
@@ -423,6 +438,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 100,
     damage: 15,
+    armor: 15,
     moveSpeed: 1.4,
     detectRange: 7,
     attackRange: 0.5,
@@ -444,6 +460,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 34,
     damage: 8,
+    damageType: 'corruption',
+    resist: { divine: -0.25 },
     moveSpeed: 2.6,
     detectRange: 9,
     attackRange: 7,
@@ -470,6 +488,7 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 1,
     damage: 5,
+    damageType: 'corruption',
     moveSpeed: 2.8,
     detectRange: 12,
     attackRange: 7,
@@ -497,6 +516,9 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 900,
     damage: 18,
+    damageType: 'divine',
+    armor: 15,
+    resist: { divine: 0.4, corruption: -0.25 },
     moveSpeed: 2.3,
     detectRange: 12,
     attackRange: 1.3,
@@ -551,6 +573,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 70,
     damage: 11,
+    armor: 6,
     moveSpeed: 2.6,
     detectRange: 8,
     attackRange: 0.4,
@@ -572,6 +595,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 30,
     damage: 8,
+    damageType: 'cold',
+    resist: { cold: 0.5, lightning: -0.3 },
     moveSpeed: 2.6,
     detectRange: 9,
     attackRange: 7,
@@ -596,6 +621,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 85,
     damage: 12,
+    resist: { corruption: 0.5 },
     moveSpeed: 1.5,
     detectRange: 6,
     attackRange: 0.45,
@@ -664,6 +690,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 150,
     damage: 14,
+    armor: 10,
     moveSpeed: 1.9,
     detectRange: 7,
     attackRange: 1.8,
@@ -685,6 +712,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 60,
     damage: 5,
+    damageType: 'corruption',
+    resist: { corruption: 0.6, divine: -0.25 },
     moveSpeed: 1.1,
     detectRange: 9,
     attackRange: 7,
@@ -707,6 +736,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 1100,
     damage: 20,
+    armor: 15,
     moveSpeed: 2.2,
     detectRange: 12,
     attackRange: 1.6,
@@ -760,6 +790,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 90,
     damage: 11,
+    armor: 10,
     moveSpeed: 2.8,
     detectRange: 8,
     attackRange: 0.5,
@@ -782,6 +813,8 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 70,
     damage: 10,
+    damageType: 'corruption',
+    resist: { corruption: 0.3, divine: -0.2 },
     moveSpeed: 2.2,
     detectRange: 10,
     attackRange: 7.5,
@@ -806,6 +839,8 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 1300,
     damage: 22,
+    armor: 40,
+    resist: { lightning: -0.3 },
     moveSpeed: 1.9,
     detectRange: 12,
     attackRange: 1.8,
@@ -838,6 +873,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 140,
     damage: 12,
+    armor: 25,
     moveSpeed: 1.3,
     detectRange: 6,
     attackRange: 1.7,
@@ -876,6 +912,7 @@ export const MONSTERS = {
     behavior: 'ranged',
     maxHp: 28,
     damage: 7,
+    damageType: 'cold',
     moveSpeed: 2.0,
     detectRange: 9,
     attackRange: 6,
@@ -914,6 +951,7 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 520,
     damage: 14,
+    armor: 20,
     moveSpeed: 2.5,
     detectRange: 11,
     attackRange: 0.7,
@@ -943,6 +981,9 @@ export const MONSTERS = {
     behavior: 'melee',
     maxHp: 520,
     damage: 14,
+    damageType: 'divine',
+    armor: 15,
+    resist: { divine: 0.4 },
     moveSpeed: 2.5,
     detectRange: 11,
     attackRange: 0.7,

@@ -1,4 +1,5 @@
 import type { InputAction } from '../config/gameConfig';
+import type { DamageType } from './damageTypes';
 
 export type SkillKind = 'spin' | 'bolt' | 'slam';
 
@@ -19,6 +20,8 @@ export interface SkillDef {
   hitFraction: number;
   /** Multiplier of the player's attack damage. */
   damageMult: number;
+  /** The kind of damage it deals (default physical). */
+  damageType?: DamageType;
   /** spin / slam: radius of the area in world units. */
   radius?: number;
   /** slam: farthest distance from the player the target point may be; bolt: how far a bolt flies. */
@@ -59,6 +62,7 @@ export const SKILLS: readonly SkillDef[] = [
     castTime: 0.35,
     hitFraction: 0.5,
     damageMult: 1.3,
+    damageType: 'divine',
     speed: 12,
     range: 10,
     count: 1,

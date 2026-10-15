@@ -5,16 +5,17 @@ import { applyArmor, armorMultiplier, inAttackArc, normalizeInto, rollDamage } f
 import { mulberry32 } from '../src/systems/rng';
 
 describe('armor', () => {
-  it('reduces damage with diminishing returns', () => {
+  it('reduces damage with diminishing returns: armor / (armor + 5 x the baseline damage of 8), at most 75%', () => {
     expect(armorMultiplier(0)).toBe(1);
-    expect(armorMultiplier(100)).toBeCloseTo(0.5, 9);
-    expect(armorMultiplier(300)).toBeCloseTo(0.25, 9);
+    expect(armorMultiplier(40)).toBeCloseTo(0.5, 9);
+    expect(armorMultiplier(120)).toBeCloseTo(0.25, 9); // the cap
+    expect(armorMultiplier(10_000)).toBeCloseTo(0.25, 9);
     expect(armorMultiplier(-50)).toBe(1); // negative armor does not amplify damage
   });
 
   it('rounds and never lets a hit do less than 1', () => {
-    expect(applyArmor(10, 100)).toBe(5);
-    expect(applyArmor(8, 5)).toBe(8); // 7.62 -> 8
+    expect(applyArmor(10, 40)).toBe(5);
+    expect(applyArmor(8, 5)).toBe(7); // 5 armor takes 11%: 7.1
     expect(applyArmor(1, 10_000)).toBe(1);
   });
 });

@@ -9,7 +9,9 @@ import { Layer, placeAt, type Vec2 } from '../game/iso';
 import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
 import { Buffs, DodgeController, PoisonEffect, SlowEffect } from '../systems/buffs';
-import { applyArmor, normalizeInto } from '../systems/combatMath';
+import type { DamageType } from '../data/damageTypes';
+import { normalizeInto } from '../systems/combatMath';
+import { defenseMultiplier, resolveHit, type Defense } from '../systems/damage';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
 import { PotionBelt } from '../systems/potions';
@@ -197,10 +199,18 @@ export class Player {
     return true;
   }
 
-  /** Applies a hit (armor is applied here). Returns the damage actually taken and whether it was fatal. */
-  takeDamage(rawDamage: number): { amount: number; died: boolean } {
+  /** What the player's gear defends with: armor against physical damage, a resistance against each other kind. */
+  get defense(): Defense {
+    return { armor: this.stats.armor, resist: this.stats.resist };
+  }
+
+  /**
+   * Applies a hit of `type` (the player's armor or the resistance for that type is applied here, see systems/damage.ts).
+   * Returns the damage actually taken and whether it was fatal.
+   */
+  takeDamage(rawDamage: number, type: DamageType = 'physical'): { amount: number; died: boolean } {
     if (this.isDead || this.dodge.invulnerable) return { amount: 0, died: false };
-    const amount = applyArmor(rawDamage, this.stats.armor);
+    const amount = resolveHit({ damage: { [type]: rawDamage } }, {}, this.defense).total;
     this.hp = Math.max(0, this.hp - amount);
     this.sinceDamaged = 0;
     this.hurtTimer = HURT_FLASH;
@@ -246,8 +256,10 @@ export class Player {
    */
   tickPoison(dt: number): { amount: number; died: boolean } | null {
     if (this.isDead) return null;
-    const amount = this.poison.tick(dt);
+    let amount = this.poison.tick(dt);
     if (amount === 0) return null;
+    // poison is corruption damage over time: the corruption resistance works on it (armor does not)
+    amount = Math.max(1, Math.round(amount * defenseMultiplier('corruption', this.defense)));
     this.hp = Math.max(0, this.hp - amount);
     this.sinceDamaged = 0; // no regeneration while it burns
     const died = this.hp <= 0;

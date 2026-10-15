@@ -46,10 +46,10 @@ export function EquipmentSlots({ equipment, onUnequip, onHover, onLeave }: Slots
 export function StatList({ stats }: { stats: Readonly<PlayerStats> }) {
   return (
     <div className="stat-list">
-      {STAT_ROWS.map((r) => (
+      {STAT_ROWS.filter((r) => !r.extra || r.get(stats as PlayerStats) !== 0).map((r) => (
         <div key={r.key} className="stat-row">
           <span>{r.label}</span>
-          <span>{r.format(stats[r.key])}</span>
+          <span>{r.format(r.get(stats as PlayerStats))}</span>
         </div>
       ))}
     </div>

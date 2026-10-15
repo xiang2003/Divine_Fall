@@ -216,6 +216,8 @@ const EMPTY_INVENTORY: InventoryView = {
     critChance: 0,
     critDamage: 0,
     moveSpeed: 0,
+    increased: { physical: 0, fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
+    resist: { fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
   },
   level: 1,
 };
@@ -673,9 +675,9 @@ export class Game {
     let pillars: PillarSystem;
     let pools: PoolSystem;
     const combat = new CombatSystem(player, () => monsters.all, projectiles, skillBolts, collision, defaultRng, {
-      damageDealt: (x, y, amount, crit) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt'),
-      damageTaken: (x, y, amount) => {
-        numbers.spawn(x, y, `-${amount}`, 'taken');
+      damageDealt: (x, y, amount, crit, type) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt', type),
+      damageTaken: (x, y, amount, type) => {
+        numbers.spawn(x, y, `-${amount}`, 'taken', type);
         this.hitSeq++;
         this.publishVitals();
       },

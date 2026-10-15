@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { DamageType } from '../data/damageTypes';
 import { Bolt, type BoltTarget } from '../entities/Bolt';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
@@ -30,10 +31,10 @@ export class SkillProjectileSystem {
     }
   }
 
-  fire(x: number, y: number, dirX: number, dirY: number, speed: number, range: number, damageMult: number): boolean {
+  fire(x: number, y: number, dirX: number, dirY: number, speed: number, range: number, damageMult: number, damageType: DamageType = 'physical'): boolean {
     const slot = this.slots.find((s) => !s.bolt.active);
     if (!slot) return false;
-    slot.bolt.launch(x, y, dirX, dirY, speed, range / speed, damageMult);
+    slot.bolt.launch(x, y, dirX, dirY, speed, range / speed, damageMult, damageType);
     slot.mesh.visible = true;
     this.place(slot);
     return true;

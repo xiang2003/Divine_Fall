@@ -137,7 +137,11 @@ describe('Inventory: equip / unequip / drop', () => {
 describe('stats from equipment', () => {
   it('no equipment gives the base stats', () => {
     const s = computeStats(emptyEquipment());
-    expect(s).toEqual({ ...PLAYER_CONFIG.baseStats });
+    expect(s).toEqual({
+      ...PLAYER_CONFIG.baseStats,
+      increased: { physical: 0, fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
+      resist: { fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
+    });
   });
 
   it('wearing items changes the stats, taking them off reverts exactly', () => {

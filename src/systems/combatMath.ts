@@ -1,13 +1,17 @@
+import { armorReduction } from './damage';
 import type { Rng } from './rng';
 
-/** Fraction of damage that gets through `armor`: 100 / (100 + armor). Negative armor is treated as 0. */
-export function armorMultiplier(armor: number): number {
-  return 100 / (100 + Math.max(0, armor));
+/**
+ * Fraction of a physical hit that gets through `armor`: 1 - armor / (armor + 5 x the attacker's baseline damage), at most 75% absorbed
+ * (see damage.ts). Negative armor is treated as 0. `referenceDamage` defaults to the baseline of a level-1 attacker.
+ */
+export function armorMultiplier(armor: number, referenceDamage?: number): number {
+  return 1 - armorReduction(armor, referenceDamage);
 }
 
-/** Damage after armor, rounded, never below 1 so every hit matters. */
-export function applyArmor(damage: number, armor: number): number {
-  return Math.max(1, Math.round(damage * armorMultiplier(armor)));
+/** Physical damage after armor, rounded, never below 1 so every hit matters. */
+export function applyArmor(damage: number, armor: number, referenceDamage?: number): number {
+  return Math.max(1, Math.round(damage * armorMultiplier(armor, referenceDamage)));
 }
 
 export interface DamageRoll {
