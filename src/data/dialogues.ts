@@ -1,4 +1,5 @@
 import type { DialogueGraph } from '../systems/dialogue';
+import { DIALOGUES_PART2 } from './dialoguesPart2';
 
 /**
  * Chapter 1 conversations (see docs/design/chapter1-pure-source-island.md, section 4).
@@ -622,15 +623,6 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
       b: { text: '劍柄上刻著古老的符文，周圍散落著無數小兵器。這裡曾經是一座戰場，而且打得很慘。', end: true },
     },
   },
-  pass_end_look: {
-    id: 'pass_end_look',
-    start: 'a',
-    nodes: {
-      a: { text: '山道的盡頭，雲霧散開了一點。遠處的山脊像一道一道刀痕，一直延伸到看不見的地方。', next: 'b' },
-      b: { text: '這片大陸比你想像的大得多。（後面的路還沒有開通。）', end: true },
-    },
-  },
-
   // ==== 互動物件 ===========================================================================================
   shard_find: {
     id: 'shard_find',
@@ -669,6 +661,9 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
     },
   },
 };
+
+// the second part of the continent story (docs/design/chapter2-part2-forgers-trial.md)
+Object.assign(DIALOGUES, DIALOGUES_PART2);
 
 export function getDialogue(id: string): DialogueGraph {
   const graph = DIALOGUES[id];

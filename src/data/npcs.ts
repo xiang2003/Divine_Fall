@@ -128,6 +128,8 @@ Object.assign(NPCS, {
       intro: { graph: 'zhou_intro', metFlag: 'met_zhou' },
       greetings: ['客官，住店還是吃飯？', '鎮上有什麼事，十有八九我先聽到。', '熱湯剛出鍋，趁熱喝。'],
       topics: [
+        { kind: 'story', label: '山道盡頭的傳聞', graph: 'zhou_record_ask', if: { quest: 'q9_ruin_record', state: ['active', 'ready'] } },
+        { kind: 'story', label: '關於你的名聲', graph: 'zhou_record_cold', if: { flag: 'record_hidden' } },
         { kind: 'turnin', label: '回報老路', graph: 'zhou_q7_turnin', if: { quest: 'q7_warden_bounty', state: 'ready' } },
         { kind: 'active', label: '古林的老路', graph: 'zhou_q7_active', if: { quest: 'q7_warden_bounty', state: 'active' } },
         { kind: 'quest', label: '客棧的傳聞', graph: 'zhou_q7_offer', if: { quest: 'q7_warden_bounty', state: 'available' } },
@@ -162,6 +164,8 @@ Object.assign(NPCS, {
       greetings: ['……要打什麼？', '好鐵不怕看。', '爐子不等人。'],
       topics: [
         { kind: 'shop', label: '買賣裝備', shop: 'blacksmith' },
+        { kind: 'story', label: '聯盟的託付', graph: 'tieshan_record_ask', if: { quest: 'q9_ruin_record', state: ['active', 'ready'] } },
+        { kind: 'story', label: '配方的頭一頁', graph: 'tieshan_record_thanks', if: { flag: 'record_guild' } },
         { kind: 'story', label: '你掌心的印', graph: 'tieshan_relic', if: { all: [{ flag: 'has_relic' }, { notFlag: 'tieshan_saw_relic' }] } },
         { kind: 'talk', label: '閒聊', graph: 'tieshan_repeat' },
       ],
@@ -179,6 +183,8 @@ Object.assign(NPCS, {
       intro: { graph: 'gu_intro', metFlag: 'met_gu' },
       greetings: ['……風向變了。', '你走過的地方，靈氣都有反應。', '我只是個閒人。'],
       topics: [
+        { kind: 'turnin', label: '殘缺的記錄', graph: 'gu_q9_turnin', if: { quest: 'q9_ruin_record', state: 'ready' } },
+        { kind: 'story', label: '地圖上的三個記號', graph: 'gu_three_places', if: { quest: 'q9_ruin_record', state: 'completed' } },
         { kind: 'turnin', label: '回報祭壇', graph: 'gu_q6_turnin', if: { quest: 'q6_altar_trace', state: 'ready' } },
         { kind: 'active', label: '古林的祭壇', graph: 'gu_q6_active', if: { quest: 'q6_altar_trace', state: 'active' } },
         { kind: 'quest', label: '靈氣的痕跡', graph: 'gu_q6_offer', if: { quest: 'q6_altar_trace', state: 'available' } },
@@ -199,6 +205,8 @@ Object.assign(NPCS, {
       intro: { graph: 'lin_intro', metFlag: 'met_lin' },
       greetings: ['領懸賞？登記，簽字，去做。', '我沒空聊天。', '山裡的東西越來越兇。'],
       topics: [
+        { kind: 'story', label: '關於遺跡的記錄', graph: 'lin_record_ask', if: { quest: 'q9_ruin_record', state: ['active', 'ready'] } },
+        { kind: 'story', label: '登記的記錄', graph: 'lin_record_thanks', if: { flag: 'record_patrol' } },
         { kind: 'turnin', label: '回報狼群', graph: 'lin_q5_turnin', if: { quest: 'q5_wolf_bounty', state: 'ready' } },
         { kind: 'turnin', label: '回報巨像', graph: 'lin_q8_turnin', if: { quest: 'q8_colossus_bounty', state: 'ready' } },
         { kind: 'active', label: '古林的狼群', graph: 'lin_q5_active', if: { quest: 'q5_wolf_bounty', state: 'active' } },

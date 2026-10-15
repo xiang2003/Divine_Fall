@@ -154,7 +154,7 @@ export function HUD({
       {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} gold={snapshot.gold} {...inventoryActions} />}
       {!snapshot.inventoryOpen && <QuestTracker quests={snapshot.quests} npcName={npcName} />}
       {snapshot.worldMapOpen && <WorldMapPanel graph={snapshot.worldMap} onClose={onCloseWorldMap} />}
-      {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
+      {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} reputation={snapshot.reputation} onClose={onCloseQuestLog} />}
       {snapshot.chapterEnd && (
         <div className="chapter-end" onContextMenu={(e) => e.preventDefault()}>
           <h2>第一章　純源島</h2>

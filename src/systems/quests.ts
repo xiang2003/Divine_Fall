@@ -33,8 +33,8 @@ export interface QuestDef {
   title: string;
   /** One line shown in the quest log. */
   summary: string;
-  /** NPC who offers the quest. */
-  giver: string;
+  /** NPC who offers the quest, or null when nobody does: an event of the story starts it (`startQuest` in a dialogue) and `turnIn` takes it in. */
+  giver: string | null;
   /** NPC who takes the quest in; defaults to the giver. */
   turnIn?: string;
   /** Quests that must be completed before this one is offered. */
@@ -209,7 +209,7 @@ export class QuestLog {
       title: def.title,
       summary: def.summary,
       state: rec.state,
-      turnInNpc: def.turnIn ?? def.giver,
+      turnInNpc: (def.turnIn ?? def.giver)!,
       rewards: describeRewards(def.rewards),
       objectives: def.objectives.map((o, i) => ({
         label: o.label,
@@ -276,7 +276,7 @@ export function validateQuests(
     const where = `quest ${q.id}`;
     if (key !== q.id) problems.push(`${where}: keyed as "${key}"`);
     if (q.objectives.length === 0) problems.push(`${where}: no objectives`);
-    if (!known.npcs.has(q.giver)) problems.push(`${where}: unknown giver "${q.giver}"`);
+    if (q.giver === null ? !q.turnIn : !known.npcs.has(q.giver)) problems.push(`${where}: unknown giver "${q.giver}"`);
     if (q.turnIn && !known.npcs.has(q.turnIn)) problems.push(`${where}: unknown turn-in NPC "${q.turnIn}"`);
     for (const r of q.requires) {
       if (!defs[r]) problems.push(`${where}: requires unknown quest "${r}"`);

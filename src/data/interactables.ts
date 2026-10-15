@@ -81,8 +81,8 @@ export const INTERACTABLES: Record<string, InteractableDef> = {
     prompt: '眺望',
     spriteKey: null,
     requiresFlag: 'broken_sword_pass_boss_defeated',
-    reportOnUse: false,
-    dialogue: [{ graph: 'pass_end_look' }],
+    reportOnUse: true,
+    dialogue: [{ if: { flag: 'part2_started' }, graph: 'pass_end_again' }, { graph: 'pass_end_look' }],
   },
   mist_trace: {
     id: 'mist_trace',

@@ -39,6 +39,8 @@ import type { MinimapView } from '../ui/minimapDraw';
 import { NPC_CLICK_RADIUS, NPC_TALK_RANGE, NpcSystem, npcBounds, npcPresent, type Npc } from '../systems/NpcSystem';
 import { findPortalAt, portalBlockedReason, resolveEntrance } from '../systems/portals';
 import { Progression } from '../systems/progression';
+import { Reputation, type ReputationView } from '../systems/reputation';
+import { FACTIONS, type FactionId } from '../data/reputation';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { TrapSystem } from '../systems/TrapSystem';
@@ -188,6 +190,8 @@ export interface GameSnapshot {
   inventory: InventoryView;
   /** How much 墜金 (the money) the player carries. */
   gold: number;
+  /** What each group on the continent thinks of the player (see data/reputation.ts). */
+  reputation: readonly ReputationView[];
   /** Timed buffs from legendary effects, for the HUD badges. */
   buffs: { haste: boolean; frenzy: boolean; poison: boolean; slow: boolean };
   skills: readonly SkillView[];
@@ -257,6 +261,7 @@ const INITIAL: GameSnapshot = {
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
   gold: 0,
+  reputation: new Reputation().views(),
   buffs: { haste: false, frenzy: false, poison: false, slow: false },
   skills: [],
   boss: null,
@@ -347,6 +352,8 @@ export class Game {
   private readonly progression = new Progression();
   /** The money (墜金); like the level, it stays with the character across maps and restarts. */
   private gold = 0;
+  /** What each group thinks of the player; stays with the character like the level. */
+  private readonly reputation = new Reputation();
   private bossDefeated = false;
   /** The boss currently winding up a blast (so its warning can be removed if it is interrupted). */
   private telegraphOwner: Monster | null = null;
@@ -1001,7 +1008,7 @@ export class Game {
       } else if (e.type === 'objectiveDone') {
         text = `${def.title}：${def.objectives[e.objective]!.label} ✓`;
       } else if (e.type === 'ready') {
-        text = `任務可交付：${def.title}（回報${getNpc(def.turnIn ?? def.giver).name}）`;
+        text = `任務可交付：${def.title}（回報${getNpc((def.turnIn ?? def.giver)!).name}）`;
       }
     }
     if (text) this.notify(text);
@@ -1122,6 +1129,8 @@ export class Game {
     return {
       hasFlag: (name) => this.flags.has(name),
       setFlag: (name, on) => this.setFlag(name, on),
+      reputation: (faction) => this.reputation.get(faction),
+      addReputation: (faction, amount) => this.changeReputation(faction, amount),
       level: this.progression.level,
       mapId: this.mapId,
       questState: (id) => this.quests.state(id),
@@ -1167,6 +1176,13 @@ export class Game {
 
   // --- money and shops -----------------------------------------------------------------------
 
+  /** Changes what a group thinks of the player, tells the player, and updates the page of the quest log. */
+  private changeReputation(faction: FactionId, amount: number): void {
+    const changed = this.reputation.add(faction, amount);
+    if (changed !== 0) this.notify(`${FACTIONS[faction].name} ${changed > 0 ? '+' : ''}${changed}`);
+    this.publish({ reputation: this.reputation.views() });
+  }
+
   /** A heap of 墜金 reached the player. */
   private collectGold(amount: number, at: Vec2): void {
     this.gold += amount;
@@ -1179,7 +1195,7 @@ export class Game {
     const w = this.world;
     const d = this.dialogue;
     if (!w || !d?.shop || w.player.isDead) return;
-    const result = buyEquipment(SHOPS[d.shop.id]!, slot, this.gold, w.inventory.freeSlots, defaultRng);
+    const result = buyEquipment(SHOPS[d.shop.id]!, slot, this.gold, w.inventory.freeSlots, defaultRng, this.reputation.priceMultiplier);
     if (!result.ok) {
       this.notify(result.reason === 'gold' ? `${GOLD_NAME}不夠。` : result.reason === 'full' ? '背包已滿。' : '這裡不賣那種東西。');
       return;
@@ -1260,7 +1276,7 @@ export class Game {
           choices: null,
           last: false,
           topics: null,
-          shop: { offers: shop.categories.map((c) => ({ slot: c.slot, label: SLOT_LABEL[c.slot], price: c.price })), last: d.shop.last },
+          shop: { offers: shop.categories.map((c) => ({ slot: c.slot, label: SLOT_LABEL[c.slot], price: Math.max(1, Math.round(c.price * this.reputation.priceMultiplier)) })), last: d.shop.last },
         },
       });
       return;

@@ -1135,6 +1135,27 @@ body,
   color: var(--muted);
 }
 
+.reputation {
+  margin: 4px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 13px;
+}
+
+.reputation-row {
+  display: flex;
+  justify-content: space-between;
+  line-height: 1.7;
+}
+
+.reputation-rank.good {
+  color: #8fd48f;
+}
+
+.reputation-rank.bad {
+  color: #ff7a6a;
+}
+
 .quest-done {
   margin-top: 8px;
   padding-top: 6px;

@@ -1,3 +1,4 @@
+import type { FactionId } from '../data/reputation';
 import type { QuestState } from './quests';
 
 /**
@@ -17,6 +18,8 @@ export type Condition =
   | { map: string }
   /** A quest is in one of these states. */
   | { quest: string; state: QuestState | readonly QuestState[] }
+  /** The standing with a group (see data/reputation.ts) is at least / at most this. */
+  | { rep: FactionId; atLeast?: number; atMost?: number }
   | { all: readonly Condition[] };
 
 export interface DialogueChoice {
@@ -43,6 +46,8 @@ export interface DialogueNode {
   completeQuest?: string;
   /** Ends the chapter: the game shows the chapter-complete screen. */
   endChapter?: boolean;
+  /** Changes the standing with groups when the node is shown (points; negative takes off). */
+  reputation?: Partial<Record<FactionId, number>>;
   choices?: readonly DialogueChoice[];
   next?: string;
   end?: boolean;
@@ -72,9 +77,12 @@ export interface DialogueContext {
   completeQuest(id: string): void;
   reportInteract(target: string): void;
   endChapter(): void;
+  /** The standing with a group; without it everything counts as 0. */
+  reputation?(faction: FactionId): number;
+  addReputation?(faction: FactionId, amount: number): void;
 }
 
-type ConditionContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'>;
+type ConditionContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'> & Partial<Pick<DialogueContext, 'reputation'>>;
 
 export function evalCondition(cond: Condition | undefined, ctx: ConditionContext): boolean {
   if (!cond) return true;
@@ -82,6 +90,10 @@ export function evalCondition(cond: Condition | undefined, ctx: ConditionContext
   if ('notFlag' in cond) return !ctx.hasFlag(cond.notFlag);
   if ('minLevel' in cond) return ctx.level >= cond.minLevel;
   if ('map' in cond) return ctx.mapId === cond.map;
+  if ('rep' in cond) {
+    const value = ctx.reputation?.(cond.rep) ?? 0;
+    return (cond.atLeast === undefined || value >= cond.atLeast) && (cond.atMost === undefined || value <= cond.atMost);
+  }
   if ('quest' in cond) {
     const states: readonly QuestState[] = Array.isArray(cond.state) ? cond.state : [cond.state as QuestState];
     return states.includes(ctx.questState(cond.quest));
@@ -172,6 +184,7 @@ export class DialogueRunner {
     if (node.interact) this.ctx.reportInteract(node.interact);
     if (node.completeQuest) this.ctx.completeQuest(node.completeQuest);
     if (node.endChapter) this.ctx.endChapter();
+    for (const [faction, amount] of Object.entries(node.reputation ?? {}) as [FactionId, number][]) this.ctx.addReputation?.(faction, amount);
     const visible = (node.choices ?? []).filter((c) => evalCondition(c.if, this.ctx));
     // A node whose choices are all gated off falls back to its `next` / `end` so the player is never stuck.
     this.offered = visible.length > 0 ? visible : null;

@@ -1,3 +1,4 @@
+import type { ReputationView } from '../systems/reputation';
 import type { QuestView } from '../systems/quests';
 
 const STATE_LABEL: Record<QuestView['state'], string> = {
@@ -53,10 +54,12 @@ export function QuestTracker({ quests, npcName }: { quests: readonly QuestView[]
 export function QuestLog({
   quests,
   npcName,
+  reputation,
   onClose,
 }: {
   quests: readonly QuestView[];
   npcName: (id: string) => string;
+  reputation: readonly ReputationView[];
   onClose: () => void;
 }) {
   const current = quests.filter((q) => q.state !== 'completed');
@@ -70,6 +73,19 @@ export function QuestLog({
         </button>
       </div>
       {quests.length === 0 && <p className="muted">還沒有接任務。和村裡的人聊聊吧。</p>}
+      {reputation.some((r) => r.value !== 0) && (
+        <div className="reputation">
+          <div className="muted">聲望（各方怎麼看你）</div>
+          {reputation.map((r) => (
+            <div key={r.id} className="reputation-row" title={r.effect}>
+              <span>{r.name}</span>
+              <span className={`reputation-rank ${r.value > 0 ? 'good' : r.value < 0 ? 'bad' : ''}`}>
+                {r.rank}（{r.value > 0 ? '+' : ''}{r.value}）
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {current.map((q) => (
         <div key={q.id} className="quest-entry">
           <div className="quest-title">

@@ -107,6 +107,23 @@ Object.assign(QUESTS, {
   },
 } satisfies Record<string, QuestDef>);
 
+/**
+ * The second part of the continent story (docs/design/chapter2-part2-forgers-trial.md). The player finds the record at the end of the pass, so the quest
+ * is not offered by anyone: the dialogue at the pass starts it, and the wanderer takes it in.
+ */
+Object.assign(QUESTS, {
+  q9_ruin_record: {
+    id: 'q9_ruin_record',
+    title: '殘缺的記錄',
+    summary: '山道盡頭的石壁給了你一份殘缺的記錄，和一張只標著三個記號的地圖。鎮上已經有人在打聽它了。',
+    giver: null,
+    turnIn: 'wanderer_guchangfeng',
+    requires: [],
+    objectives: [{ type: 'talk', label: '把記錄帶給顧長風', npc: 'wanderer_guchangfeng' }],
+    rewards: { xp: worth(24, 4), items: [{ rarity: 'rare', count: 1 }], flags: ['part2_open'] },
+  },
+} satisfies Record<string, QuestDef>);
+
 export function getQuest(id: string): QuestDef {
   const q = QUESTS[id];
   if (!q) throw new Error(`Unknown quest "${id}"`);

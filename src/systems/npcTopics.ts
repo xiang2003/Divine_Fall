@@ -37,7 +37,7 @@ export interface NpcConversation {
 /** The mark shown in front of a menu entry (empty for entries that need no attention). */
 export const TOPIC_MARK: Record<TopicKind, string> = { quest: '！', turnin: '？', active: '…', story: '', talk: '', shop: '◆' };
 
-type TopicContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'>;
+type TopicContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'> & Partial<Pick<DialogueContext, 'reputation'>>;
 
 /** The topics on offer right now, in order. */
 export function visibleTopics(conversation: NpcConversation, ctx: TopicContext): NpcTopic[] {

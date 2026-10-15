@@ -26,14 +26,16 @@ export function sellPrice(item: ItemInstance): number {
 export type BuyResult = { ok: true; item: ItemInstance; price: number } | { ok: false; reason: 'unknown' | 'gold' | 'full' };
 
 /**
- * Buys one piece of equipment from a category: the price is fixed, the rarity (and so the item) is drawn at random.
+ * Buys one piece of equipment from a category: the price is fixed (the category's, times the multiplier the merchants' opinion of the player gives),
+ * the rarity (and so the item) is drawn at random.
  * Nothing is drawn, and nothing is charged, if the player cannot pay or has no room for it.
  */
-export function buyEquipment(shop: ShopDef, slot: EquipSlot, gold: number, freeSlots: number, rng: Rng): BuyResult {
+export function buyEquipment(shop: ShopDef, slot: EquipSlot, gold: number, freeSlots: number, rng: Rng, priceMultiplier = 1): BuyResult {
   const category = shop.categories.find((c) => c.slot === slot);
   if (!category) return { ok: false, reason: 'unknown' };
-  if (gold < category.price) return { ok: false, reason: 'gold' };
+  const price = Math.max(1, Math.round(category.price * priceMultiplier));
+  if (gold < price) return { ok: false, reason: 'gold' };
   if (freeSlots < 1) return { ok: false, reason: 'full' };
   const rarity = rollRarity(shop.rarityWeights, rng);
-  return { ok: true, item: generateItem(rarity, rng, slot), price: category.price };
+  return { ok: true, item: generateItem(rarity, rng, slot), price };
 }

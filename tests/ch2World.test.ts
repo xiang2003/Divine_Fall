@@ -117,7 +117,7 @@ describe('chapter 2 quests and conversations', () => {
     for (const id of ['q5_wolf_bounty', 'q6_altar_trace', 'q7_warden_bounty', 'q8_colossus_bounty']) {
       const q = QUESTS[id]!;
       expect(q, id).toBeDefined();
-      const giver = NPCS[q.giver]!;
+      const giver = NPCS[q.giver!]!;
       expect(giver, `${id}: giver`).toBeDefined();
       const offers = giver.conversation.topics.filter((t) => t.kind === 'quest' && JSON.stringify(t.if).includes(`"${id}"`));
       expect(offers.length, `${id} is offered by ${q.giver}`).toBe(1);
