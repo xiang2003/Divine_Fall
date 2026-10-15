@@ -15,6 +15,7 @@ import type { DamageType } from '../data/damageTypes';
 import { inAttackArc } from './combatMath';
 import { resolveHit, type HitResult, type Offense } from './damage';
 import { applyTriggers, type StatusTrigger } from './status';
+import { monsterDamageMultiplier } from '../data/progression';
 import type { StatusId } from '../data/statuses';
 import { gearTriggers } from './stats';
 import type { CollisionSystem } from './CollisionSystem';
@@ -63,6 +64,9 @@ const MUZZLE_OFFSET = 0.4;
  * Implements MonsterHooks so monsters can call back without knowing about the player or the rules.
  */
 export class CombatSystem implements MonsterHooks {
+  /** The level of the area: what traps hit with, and the level armor is measured against for things that are not a monster. */
+  areaLevel = 1;
+
   constructor(
     private readonly player: Player,
     private readonly monsters: () => readonly Monster[],
@@ -128,7 +132,7 @@ export class CombatSystem implements MonsterHooks {
   /** The first pillar comes up right where the player stands; the others around it, on floor that is free. */
   dropPool(monster: Monster, x: number, y: number): void {
     const pool = monster.def.pool;
-    if (pool) this.events.pool?.(x, y, pool.radius, pool.delay, pool.duration, pool.dps);
+    if (pool) this.events.pool?.(x, y, pool.radius, pool.delay, pool.duration, pool.dps * monsterDamageMultiplier(monster.level));
   }
 
   summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number, style: GroundStrikeStyle = 'pillar'): void {
@@ -335,15 +339,21 @@ export class CombatSystem implements MonsterHooks {
     this.hurtPlayer(rawDamage, null, null, type);
   }
 
+  /** The damage of a trap of this area: its base number grows with the level of the area like the damage of a monster. */
+  trapDamage(base: number): number {
+    return Math.round(base * monsterDamageMultiplier(this.areaLevel));
+  }
+
   private hurtPlayer(rawDamage: number, source: Monster | null = null, effects: ShotEffects | null = null, type: DamageType = source?.def.damageType ?? 'physical'): void {
-    const result = this.player.takeDamage(rawDamage, type);
+    const result = this.player.takeDamage(rawDamage, type, source?.level ?? this.areaLevel);
     if (result.amount === 0) return; // dodged (invulnerable) or already dead
     this.events.damageTaken(this.player.pos.x, this.player.pos.y, result.amount, type);
     if (result.died) {
       this.events.playerDied();
       return;
     }
-    const poison = effects?.poison ?? source?.def.poison;
+    // a monster's venom grows with its level like its blows; the venom of a trap's arrow was scaled when the arrow was shot
+    const poison = effects?.poison ?? (source?.def.poison ? { ...source.def.poison, dps: source.def.poison.dps * monsterDamageMultiplier(source.level) } : undefined);
     const slow = effects?.slow ?? source?.def.slow;
     if (poison) this.player.applyPoison(poison.dps, poison.duration);
     if (slow) this.player.applySlow(slow.factor, slow.duration);

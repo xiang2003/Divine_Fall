@@ -13,7 +13,7 @@ import { STATUSES } from '../data/statuses';
 import { LOOT_TABLES } from '../data/lootTables';
 import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
-import { MAX_LEVEL } from '../data/progression';
+import { MAX_LEVEL, monsterDamageMultiplier, xpLevelMultiplier } from '../data/progression';
 import { CHAPTER2_START_MAP, START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId, stepMap } from '../data/worldMaps';
 import { buildWorldGraph, type WorldGraphView } from '../systems/worldGraph';
 import { DEFAULT_ENTRANCE, MapParseError, parseMap, type MapData } from '../data/mapData';
@@ -159,6 +159,8 @@ export interface GameSnapshot {
   /** Non-fatal problems, e.g. an asset that fell back to its placeholder. */
   warnings: readonly string[];
   mapName: string;
+  /** The recommended level of the area, or null in a place without monsters (a town). */
+  mapLevel: number | null;
   /** Id of the map the player is on (the debug teleport list highlights it). */
   mapId: string;
   fps: number;
@@ -232,6 +234,7 @@ const INITIAL: GameSnapshot = {
   error: null,
   warnings: [],
   mapName: '',
+  mapLevel: null,
   mapId: '',
   fps: 0,
   playerX: 0,
@@ -443,7 +446,7 @@ export class Game {
       this.refreshQuests();
       this.cameraCtl.snapTo(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y));
       this.container.dataset.theme = map.theme; // the colour grade of the map is set in styles.css
-      this.publish({ phase: 'ready', mapName: map.name, mapId: map.id, warnings: [...assets.errors] });
+      this.publish({ phase: 'ready', mapName: map.name, mapLevel: map.level, mapId: map.id, warnings: [...assets.errors] });
       this.publishVitals();
       this.lastTime = performance.now();
       this.rafId = requestAnimationFrame(this.frame);
@@ -465,7 +468,7 @@ export class Game {
     const w = this.world;
     if (!w) return;
     w.player.respawn(w.map.spawns.player);
-    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population);
+    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population, w.map.level ?? 1);
     w.telegraphFx.hide();
     w.novaFx.hide();
     this.telegraphOwner = null;
@@ -713,12 +716,13 @@ export class Game {
         this.kills++;
         if (m.isBoss) this.setFlag(`${this.mapId}_boss_defeated`, true);
         this.questHappened({ type: 'kill', monster: m.def.id, map: this.mapId, elite: m.isElite, boss: m.isBoss });
-        this.gainXp(m.xpReward);
+        // experience is cut when the monster is far above or below the player; loot and gold are not
+        if (m.xpReward > 0) this.gainXp(Math.max(1, Math.round(m.xpReward * xpLevelMultiplier(this.progression.level, m.level))));
         player.potions.recharge(RECHARGE_PER_KILL * (m.isBoss ? RECHARGE_BOSS_MULT : m.isElite ? RECHARGE_ELITE_MULT : 1));
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
-        goldPiles.spawnNear(rollGold(m.lootTable, defaultRng), m.pos.x, m.pos.y);
+        goldPiles.spawnNear(rollGold(m.lootTable, defaultRng, m.level), m.pos.x, m.pos.y);
         if (m.isBoss) {
           this.bossDefeated = true;
           this.notify(`擊敗了${m.def.name}！`);
@@ -730,12 +734,14 @@ export class Game {
       playerDied: () => this.publishVitals(),
     });
     monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
-    monsters.spawnAll(map.spawns, defaultRng, map.population);
+    combat.areaLevel = map.level ?? 1;
+    monsters.spawnAll(map.spawns, defaultRng, map.population, map.level ?? 1);
     pillars = new PillarSystem(assets, (damage) => combat.trapHit(damage));
     pools = new PoolSystem(assets, (dps, seconds) => player.applyPoison(dps, seconds));
     const traps = new TrapSystem(map.traps, assets, collision, {
-      stab: (damage) => combat.trapHit(damage),
-      shoot: (x, y, dx, dy) => projectiles.fire(x, y, dx, dy, ARROW_SPEED, ARROW_DAMAGE, null, { poison: ARROW_POISON }),
+      stab: (damage) => combat.trapHit(combat.trapDamage(damage)),
+      shoot: (x, y, dx, dy) =>
+        projectiles.fire(x, y, dx, dy, ARROW_SPEED, combat.trapDamage(ARROW_DAMAGE), null, { poison: { ...ARROW_POISON, dps: ARROW_POISON.dps * monsterDamageMultiplier(map.level ?? 1) } }),
     });
     const torches = new TorchSystem(map.torches, assets);
     const fog = map.fog > 0 ? new FogLayer(assets, map.fog) : null;
@@ -922,7 +928,7 @@ export class Game {
     const w = this.world;
     if (!w || w.player.isDead) return;
     w.player.hp = w.player.stats.maxHp;
-    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population);
+    w.monsters.spawnAll(w.map.spawns, defaultRng, w.map.population, w.map.level ?? 1);
     w.projectiles.clear();
     w.telegraphFx.hide();
     this.telegraphOwner = null;
@@ -1368,7 +1374,7 @@ export class Game {
     this.publishSkills();
     this.cameraCtl.snapTo(worldToSceneX(world.player.pos.x, world.player.pos.y), worldToSceneY(world.player.pos.x, world.player.pos.y));
     this.container.dataset.theme = map.theme;
-    this.publish({ mapName: map.name, mapId: map.id, debug: world.debug.visible });
+    this.publish({ mapName: map.name, mapLevel: map.level, mapId: map.id, debug: world.debug.visible });
     this.questHappened({ type: 'reach', map: map.id });
     this.refreshQuests();
     this.publishVitals();

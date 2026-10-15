@@ -33,6 +33,8 @@ export interface DungeonMapFile {
   grass?: string[];
   /** How thick the fog drifting over the map is (0 to 1; omitted: none). */
   fog?: number;
+  /** The recommended level of the area (1 to 100): the monsters in it are of this level. Omitted for towns and other safe places. */
+  level?: number;
   /** Wall torches: the wall tile (x, y) and the side `dir` its flame looks out on (`e` or `s`: the sides the camera sees). */
   torches?: { x: number; y: number; dir: string }[];
 }
@@ -200,6 +202,8 @@ export interface MapData {
   decor: DecorPlacement[];
   /** Fog thickness, 0 for none. */
   fog: number;
+  /** The recommended level of the area, or null for a place without monsters (see MapFile.level). */
+  level: number | null;
   traps: TrapPlacement[];
   torches: TorchPlacement[];
 }
@@ -458,11 +462,13 @@ export function parseMap(raw: unknown): MapData {
     }
   }
 
+  const level = file.level ?? null;
+  if (level !== null && (!Number.isInteger(level) || level < 1 || level > 100)) throw new MapParseError('Map "level" must be a whole number from 1 to 100');
   const fog = file.fog ?? 0;
   if (typeof fog !== 'number' || fog < 0 || fog > 1) throw new MapParseError('Map "fog" must be a number from 0 to 1');
 
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor, fog, traps, torches };
+  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor, fog, level, traps, torches };
 }

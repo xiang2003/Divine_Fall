@@ -144,6 +144,7 @@ data = {
     'id': 'broken_sword_pass',
     'name': '斷劍山道',
     'theme': 'mountain',
+    'level': 20,  # the recommended level of the area (docs/design/level-system.md)
     'fog': 0.3,
     'legend': {
         '#': 'cliff (blocks); also under the watch-post and the broken sword',

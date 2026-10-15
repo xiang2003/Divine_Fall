@@ -151,6 +151,7 @@ data = {
     'id': 'canglan_coast',
     'name': '迷霧海岸',
     'theme': 'mist',
+    'level': 13,  # the recommended level of the area (docs/design/level-system.md)
     'fog': 0.85,
     'legend': {
         '#': 'solid tile under a building (the wreck)',

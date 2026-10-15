@@ -101,6 +101,11 @@ export function HUD({
       <div className="hud-location">
         <div className="hud-location-name">{snapshot.mapName}</div>
         <div className="hud-location-sub">
+          {snapshot.mapLevel !== null && (
+            <span className={`hud-area-level ${snapshot.mapLevel - snapshot.level >= 5 ? 'hard' : snapshot.level - snapshot.mapLevel >= 5 ? 'easy' : ''}`}>
+              推薦等級 Lv {snapshot.mapLevel} ·{' '}
+            </span>
+          )}
           擊殺 {snapshot.kills} · 剩餘 {snapshot.monstersAlive} / {snapshot.monstersTotal}
         </div>
       </div>

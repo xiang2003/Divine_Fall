@@ -105,6 +105,7 @@ data = {
     'id': 'pure_core',
     'name': '初胎核心',
     'theme': 'core',
+    'level': 10,  # the recommended level of the area (docs/design/level-system.md)
     'legend': {
         '#': 'wall (blocks movement)',
         '.': 'floor',

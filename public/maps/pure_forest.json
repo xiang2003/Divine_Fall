@@ -2,6 +2,7 @@
  "id": "pure_forest",
  "name": "臍帶林道",
  "theme": "grass",
+ "level": 2,
  "legend": {
   "P": "new-game start / arrival from the village",
   "m": "normal monster spawn",

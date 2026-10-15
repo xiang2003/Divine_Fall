@@ -1,4 +1,8 @@
 import type { QuestDef } from '../systems/quests';
+import { xpPerKill } from './progression';
+
+/** A quest pays in experience worth `kills` ordinary monsters of the level the quest is meant for (so the pay follows the experience curve). */
+const worth = (level: number, kills: number): number => xpPerKill(level) * kills;
 
 /**
  * Chapter 1 quests (docs/design/chapter1-pure-source-island.md, section 5).
@@ -15,7 +19,7 @@ export const QUESTS: Record<string, QuestDef> = {
     objectives: [
       { type: 'kill', label: '擊殺臍帶林道裡的野獸', count: 5, map: 'pure_forest' },
     ],
-    rewards: { xp: 40, items: [{ rarity: 'magic', count: 1 }] },
+    rewards: { xp: worth(2, 2), items: [{ rarity: 'magic', count: 1 }] },
   },
   q2_muddy_water: {
     id: 'q2_muddy_water',
@@ -28,7 +32,7 @@ export const QUESTS: Record<string, QuestDef> = {
       { type: 'kill', label: '擊敗洞中的蝕靈鹿', count: 1, map: 'pure_spring_cave', boss: true },
       { type: 'interact', label: '調查洞底的碎片', target: 'spring_shard' },
     ],
-    rewards: { xp: 90, items: [{ rarity: 'rare', count: 1 }] },
+    rewards: { xp: worth(3, 3), items: [{ rarity: 'rare', count: 1 }] },
   },
   q3_resonance: {
     id: 'q3_resonance',
@@ -42,7 +46,7 @@ export const QUESTS: Record<string, QuestDef> = {
       { type: 'kill', label: '擊敗遺跡守衛的仿影', count: 1, map: 'pure_ruins', boss: true },
       { type: 'interact', label: '取得初胎之印', target: 'ruins_relic' },
     ],
-    rewards: { xp: 180, items: [{ rarity: 'rare', count: 1 }] },
+    rewards: { xp: worth(7, 4), items: [{ rarity: 'rare', count: 1 }] },
   },
   q4_stranded_boat: {
     id: 'q4_stranded_boat',
@@ -56,7 +60,7 @@ export const QUESTS: Record<string, QuestDef> = {
       { type: 'talk', label: '與老舵交談', npc: 'boatwright_laodu' },
       { type: 'interact', label: '登上渡船', target: 'ferry_board' },
     ],
-    rewards: { xp: 150, items: [] },
+    rewards: { xp: worth(8, 3), items: [] },
   },
 };
 
@@ -72,7 +76,7 @@ Object.assign(QUESTS, {
     giver: 'patrol_linruotang',
     requires: [],
     objectives: [{ type: 'kill', label: '擊殺青藤古林的青牙狼', count: 5, monster: 'green_fang_wolf', map: 'canglan_forest' }],
-    rewards: { xp: 220, items: [{ rarity: 'magic', count: 2 }] },
+    rewards: { xp: worth(16, 6), items: [{ rarity: 'magic', count: 2 }] },
   },
   q6_altar_trace: {
     id: 'q6_altar_trace',
@@ -81,7 +85,7 @@ Object.assign(QUESTS, {
     giver: 'wanderer_guchangfeng',
     requires: [],
     objectives: [{ type: 'interact', label: '調查青藤古林的祭壇', target: 'forest_altar' }],
-    rewards: { xp: 260, items: [{ rarity: 'rare', count: 1 }] },
+    rewards: { xp: worth(16, 4), items: [{ rarity: 'rare', count: 1 }] },
   },
   q7_warden_bounty: {
     id: 'q7_warden_bounty',
@@ -90,7 +94,7 @@ Object.assign(QUESTS, {
     giver: 'innkeeper_zhoubo',
     requires: [],
     objectives: [{ type: 'kill', label: '擊敗古木巡守者', count: 1, map: 'canglan_forest', boss: true }],
-    rewards: { xp: 600, items: [{ rarity: 'rare', count: 1 }] },
+    rewards: { xp: worth(19, 8), items: [{ rarity: 'rare', count: 1 }] },
   },
   q8_colossus_bounty: {
     id: 'q8_colossus_bounty',
@@ -99,7 +103,7 @@ Object.assign(QUESTS, {
     giver: 'patrol_linruotang',
     requires: ['q5_wolf_bounty'],
     objectives: [{ type: 'kill', label: '擊敗斷劍巨像', count: 1, map: 'broken_sword_pass', boss: true }],
-    rewards: { xp: 800, items: [{ rarity: 'rare', count: 2 }] },
+    rewards: { xp: worth(23, 10), items: [{ rarity: 'rare', count: 2 }] },
   },
 } satisfies Record<string, QuestDef>);
 

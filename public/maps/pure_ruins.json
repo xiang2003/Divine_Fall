@@ -2,6 +2,7 @@
  "id": "pure_ruins",
  "name": "初胎遺跡",
  "theme": "ruins",
+ "level": 7,
  "legend": {
   "#": "wall (blocks movement)",
   ".": "floor",

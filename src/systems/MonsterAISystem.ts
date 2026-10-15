@@ -46,10 +46,10 @@ export class MonsterAISystem {
    * Removes everything and spawns the whole map population: normal monsters, elites (with freshly rolled
    * affixes) and the boss. `rng` drives affix rolls and boss attack choices.
    */
-  spawnAll(spawns: MapSpawns, rng: Rng, population: Population | null = null): void {
+  spawnAll(spawns: MapSpawns, rng: Rng, population: Population | null = null, areaLevel = 1): void {
     this.clear();
-    const plan = planSpawns(spawns, rng, population);
-    for (const entry of plan) this.spawn(new Monster(entry.def, entry.pos, { affixes: entry.affixes, rng }));
+    const plan = planSpawns(spawns, rng, population, areaLevel);
+    for (const entry of plan) this.spawn(new Monster(entry.def, entry.pos, { affixes: entry.affixes, rng, level: entry.level }));
     this.spawnedTotal = plan.length;
   }
 
@@ -60,7 +60,7 @@ export class MonsterAISystem {
     const start = rng() * Math.PI * 2;
     for (let i = 0; i < count; i++) {
       const angle = start + (i / count) * Math.PI * 2;
-      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng, summoned: true });
+      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng, summoned: true, level: owner.level });
       this.collision.pushOut(monster.pos, def.radius);
       this.spawn(monster);
       if (!def.phantom) this.spawnedTotal++; // real reinforcements are part of the count of monsters on the map

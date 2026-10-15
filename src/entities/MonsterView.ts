@@ -103,7 +103,7 @@ export class MonsterView {
       el.className = `nameplate ${monster.isBoss ? 'boss' : 'elite'}`;
       const title = document.createElement('div');
       title.className = 'nameplate-title';
-      title.textContent = monster.isBoss ? monster.def.name : `菁英 · ${monster.def.name}`;
+      title.textContent = `${monster.isBoss ? monster.def.name : `菁英 · ${monster.def.name}`}  Lv ${monster.level}`;
       el.appendChild(title);
       if (monster.affixes.length > 0) {
         const affixes = document.createElement('div');

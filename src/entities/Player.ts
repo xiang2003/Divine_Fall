@@ -12,7 +12,7 @@ import { Buffs, DodgeController } from '../systems/buffs';
 import { StatusSet } from '../systems/status';
 import type { DamageType } from '../data/damageTypes';
 import { normalizeInto } from '../systems/combatMath';
-import { resolveHit, type Defense } from '../systems/damage';
+import { baselineDamage, resolveHit, type Defense } from '../systems/damage';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
 import { PotionBelt } from '../systems/potions';
@@ -206,12 +206,13 @@ export class Player {
   }
 
   /**
-   * Applies a hit of `type` (the player's armor or the resistance for that type is applied here, see systems/damage.ts).
+   * Applies a hit of `type` (the player's armor or the resistance for that type is applied here, see systems/damage.ts); armor is measured
+   * against the baseline damage of `attackerLevel`, so the same armor holds less against a higher level.
    * Returns the damage actually taken and whether it was fatal.
    */
-  takeDamage(rawDamage: number, type: DamageType = 'physical'): { amount: number; died: boolean } {
+  takeDamage(rawDamage: number, type: DamageType = 'physical', attackerLevel = 1): { amount: number; died: boolean } {
     if (this.isDead || this.dodge.invulnerable) return { amount: 0, died: false };
-    const amount = resolveHit({ damage: { [type]: rawDamage } }, {}, this.defense).total;
+    const amount = resolveHit({ damage: { [type]: rawDamage }, referenceDamage: baselineDamage(attackerLevel) }, {}, this.defense).total;
     this.hp = Math.max(0, this.hp - amount);
     this.sinceDamaged = 0;
     this.hurtTimer = HURT_FLASH;

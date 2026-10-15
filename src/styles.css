@@ -726,6 +726,16 @@ body,
   color: #d98cff;
 }
 
+.hud-area-level {
+  color: #e8d9a8;
+}
+.hud-area-level.hard {
+  color: #ff7a6a; /* five or more levels above the character */
+}
+.hud-area-level.easy {
+  color: #8fd48f;
+}
+
 .nameplate-status {
   display: flex;
   justify-content: center;

@@ -176,7 +176,7 @@ export interface MonsterDef {
   keepDistance?: number;
   /** Ranged / boss fan: projectile speed in world units per second. */
   projectileSpeed?: number;
-  /** Experience granted on death (consumed by the progression system in Phase 5). */
+  /** Its weight for experience: 10 is one ordinary monster of its level (a boss: 60). The experience itself comes from its level, see data/progression.ts. */
   xp: number;
   /** Which loot table this monster rolls on death. */
   lootTable: LootTableId;
@@ -419,7 +419,7 @@ export const MONSTERS = {
     attackCooldown: 1.8,
     attackDuration: 0.9,
     radius: 0.5,
-    xp: 220,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 96,
     isBoss: true,
@@ -535,7 +535,7 @@ export const MONSTERS = {
     attackCooldown: 2,
     attackDuration: 1.1,
     radius: 0.7,
-    xp: 400,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 124,
     isBoss: true,
@@ -758,7 +758,7 @@ export const MONSTERS = {
     attackCooldown: 2,
     attackDuration: 1.2,
     radius: 0.75,
-    xp: 600,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 130,
     isBoss: true,
@@ -863,7 +863,7 @@ export const MONSTERS = {
     attackCooldown: 2.2,
     attackDuration: 1.3,
     radius: 0.8,
-    xp: 700,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 140,
     isBoss: true,
@@ -978,7 +978,7 @@ export const MONSTERS = {
     attackDuration: 0.9,
     radius: 0.55,
     projectileSpeed: 5.5,
-    xp: 200,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 100,
     isBoss: true,
@@ -1010,7 +1010,7 @@ export const MONSTERS = {
     attackDuration: 0.9,
     radius: 0.55,
     projectileSpeed: 5.5,
-    xp: 200,
+    xp: 60, // a boss is worth about 6 ordinary monsters of its level (it is the end of a map, not the bulk of it)
     lootTable: 'boss',
     barHeight: 100,
     isBoss: true,

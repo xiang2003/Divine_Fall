@@ -1,5 +1,5 @@
 import type { EliteAffixId } from '../data/eliteAffixes';
-import { ELITE_XP_MULT } from '../data/progression';
+import { ELITE_XP_MULT, XP_WEIGHT_REFERENCE, xpPerKill } from '../data/progression';
 import type { LootTableId } from '../data/lootTables';
 import type { BossAttackKind, ComboDef, GroundStrikeStyle, MonsterDef, SlamDef } from '../data/monsters';
 import type { Vec2 } from '../game/iso';
@@ -101,6 +101,8 @@ export interface MonsterOptions {
   affixes?: readonly EliteAffixId[];
   /** Random source for boss attack choice (inject a seeded one in tests). */
   rng?: Rng;
+  /** The level of the monster (default 1): its life and damage grow with it, and so does the experience and the gold it gives. */
+  level?: number;
 }
 
 /**
@@ -113,8 +115,10 @@ export class Monster {
   readonly pos: Vec2;
   readonly home: Vec2;
   readonly affixes: readonly EliteAffixId[];
-  /** Effective stats (base definition plus elite bonuses). */
+  /** Effective stats (base definition plus the level and the elite bonuses). */
   readonly stats: MonsterStats;
+  /** Its level: the area's, plus a bonus for an elite or a boss (see data/progression.ts). */
+  readonly level: number;
   /** Everything that is on this monster: burning, slow, freeze, shock... (see systems/status.ts). */
   readonly status: StatusSet;
   hp: number;
@@ -166,7 +170,8 @@ export class Monster {
     this.home = { x: spawn.x, y: spawn.y };
     this.affixes = options.affixes ?? [];
     this.rng = options.rng ?? defaultRng;
-    this.stats = computeMonsterStats(def, this.affixes);
+    this.level = Math.max(1, Math.floor(options.level ?? 1));
+    this.stats = computeMonsterStats(def, this.affixes, this.level);
     this.status = new StatusSet({
       controlResist: def.controlResist ?? (def.isBoss ? BOSS_CONTROL_RESIST : 0),
       immune: def.immune,
@@ -227,7 +232,8 @@ export class Monster {
   }
   /** Experience granted when this monster dies. */
   get xpReward(): number {
-    return this.isElite ? Math.round(this.def.xp * ELITE_XP_MULT) : this.def.xp;
+    const weight = this.def.xp / XP_WEIGHT_REFERENCE; // how many "ordinary monsters" it is worth
+    return Math.round(xpPerKill(this.level) * weight * (this.isElite ? ELITE_XP_MULT : 1));
   }
   get lootTable(): LootTableId {
     return this.isElite ? 'elite' : this.def.lootTable;

@@ -280,6 +280,7 @@ data = {
     'id': 'pure_ruins',
     'name': '初胎遺跡',
     'theme': 'ruins',
+    'level': 7,  # the recommended level of the area (docs/design/level-system.md)
     'legend': {
         '#': 'wall (blocks movement)',
         '.': 'floor',

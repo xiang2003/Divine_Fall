@@ -202,6 +202,7 @@ data = {
     'id': 'canglan_forest',
     'name': '青藤古林',
     'theme': 'blight',
+    'level': 16,  # the recommended level of the area (docs/design/level-system.md)
     'fog': 0.18,
     'legend': {
         'T': 'ancient tree (blocks)',

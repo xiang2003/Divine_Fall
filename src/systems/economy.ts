@@ -1,14 +1,16 @@
 import { GOLD_DROPS, ITEM_VALUE, SELL_RATE, type ShopDef } from '../data/economy';
+import { goldMultiplier } from '../data/progression';
 import type { EquipSlot, ItemInstance } from '../data/items';
 import type { LootTableId } from '../data/lootTables';
 import { generateItem, rollRarity } from './LootSystem';
 import type { Rng } from './rng';
 
-/** How much gold a kill leaves behind (0 for nothing). */
-export function rollGold(table: LootTableId, rng: Rng): number {
+/** How much gold a kill leaves behind (0 for nothing): the amount of its table, grown with the level of the monster. */
+export function rollGold(table: LootTableId, rng: Rng, level = 1): number {
   const drop = GOLD_DROPS[table];
   if (rng() >= drop.chance) return 0;
-  return drop.min + Math.min(drop.max - drop.min, Math.floor(rng() * (drop.max - drop.min + 1)));
+  const base = drop.min + Math.min(drop.max - drop.min, Math.floor(rng() * (drop.max - drop.min + 1)));
+  return Math.max(1, Math.round(base * goldMultiplier(level)));
 }
 
 /** What the item is worth (what a merchant would sell it for). */

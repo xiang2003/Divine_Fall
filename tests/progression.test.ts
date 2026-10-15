@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYER_CONFIG } from '../src/config/gameConfig';
-import { ELITE_XP_MULT, LEVEL_BONUS, MAX_LEVEL, xpToNextLevel } from '../src/data/progression';
+import { ELITE_XP_MULT, LEVEL_BONUS, MAX_LEVEL, xpPerKill, xpToNextLevel } from '../src/data/progression';
 import { MONSTERS } from '../src/data/monsters';
 import { Monster } from '../src/entities/Monster';
 import { Progression, levelBonus } from '../src/systems/progression';
@@ -94,19 +94,19 @@ describe('level stat bonuses', () => {
 });
 
 describe('monster experience rewards', () => {
-  it('a normal monster gives its definition value and an elite gives more', () => {
-    const normal = new Monster(MONSTERS.ghoul, { x: 5, y: 5 });
-    expect(normal.xpReward).toBe(MONSTERS.ghoul.xp);
+  it('a normal monster gives the experience of its level and an elite gives more', () => {
+    const normal = new Monster(MONSTERS.ghoul, { x: 5, y: 5 }); // weight 10: one ordinary monster
+    expect(normal.xpReward).toBe(xpPerKill(1));
     const elite = new Monster(MONSTERS.ghoul, { x: 5, y: 5 }, { affixes: ['empowered'] });
-    expect(elite.xpReward).toBe(Math.round(MONSTERS.ghoul.xp * ELITE_XP_MULT));
+    expect(elite.xpReward).toBe(Math.round(xpPerKill(1) * ELITE_XP_MULT));
   });
 
   it('clearing the whole dungeon is worth several levels but not the cap', () => {
     // 9 normal + 2 elite + 1 boss, using the cheapest/most expensive normal as bounds.
-    const min = 9 * MONSTERS.hound.xp + 2 * MONSTERS.ghoul.xp * ELITE_XP_MULT + MONSTERS.archon.xp;
+    const min = 9 * new Monster(MONSTERS.hound, { x: 5, y: 5 }).xpReward + 2 * xpPerKill(1) * ELITE_XP_MULT + new Monster(MONSTERS.archon, { x: 5, y: 5 }).xpReward;
     const p = new Progression();
     p.addXp(min);
-    expect(p.level).toBeGreaterThan(2);
+    expect(p.level).toBeGreaterThanOrEqual(2); // about 21 ordinary monsters' worth: two levels at 9 kills a level
     expect(p.level).toBeLessThan(MAX_LEVEL);
   });
 });

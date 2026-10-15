@@ -2,6 +2,7 @@
  "id": "pure_core",
  "name": "初胎核心",
  "theme": "core",
+ "level": 10,
  "legend": {
   "#": "wall (blocks movement)",
   ".": "floor",

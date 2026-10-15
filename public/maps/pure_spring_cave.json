@@ -2,6 +2,7 @@
  "id": "pure_spring_cave",
  "name": "源泉洞",
  "theme": "cave",
+ "level": 4,
  "legend": {
   "P": "arrival from the forest",
   "m": "normal monster spawn",

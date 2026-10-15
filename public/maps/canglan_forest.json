@@ -2,6 +2,7 @@
  "id": "canglan_forest",
  "name": "青藤古林",
  "theme": "blight",
+ "level": 16,
  "fog": 0.18,
  "legend": {
   "T": "ancient tree (blocks)",

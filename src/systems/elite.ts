@@ -6,6 +6,7 @@ import {
   type EliteAffixId,
 } from '../data/eliteAffixes';
 import type { MonsterDef } from '../data/monsters';
+import { monsterDamageMultiplier, monsterHpMultiplier } from '../data/progression';
 import type { Rng } from './rng';
 
 /** A monster's effective numbers after elite bonuses and affixes. Boss phases are applied on top by Monster. */
@@ -24,13 +25,13 @@ export interface MonsterStats {
 }
 
 /**
- * Applies elite bonuses to a base definition. An empty affix list means a normal monster and returns the
- * definition's own numbers unchanged.
+ * Applies the level and the elite bonuses to a base definition. The numbers of a definition are those of level 1; a monster of a higher level has
+ * more life and hits harder (see data/progression.ts). A level-1 monster without affixes gets the definition's own numbers unchanged.
  */
-export function computeMonsterStats(def: MonsterDef, affixes: readonly EliteAffixId[]): MonsterStats {
+export function computeMonsterStats(def: MonsterDef, affixes: readonly EliteAffixId[], level = 1): MonsterStats {
   const stats: MonsterStats = {
-    maxHp: def.maxHp,
-    damage: def.damage,
+    maxHp: Math.round(def.maxHp * monsterHpMultiplier(level)),
+    damage: Math.round(def.damage * monsterDamageMultiplier(level)),
     moveSpeed: def.moveSpeed,
     attackCooldown: def.attackCooldown,
     attackDuration: def.attackDuration,
