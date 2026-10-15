@@ -1,11 +1,12 @@
 import { SpriteKey } from '../game/assetManifest';
 import type { DamageType, ResistType } from './damageTypes';
+import type { StatusTrigger } from '../systems/status';
 import type { StatusId } from './statuses';
 import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
 
-export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge' | 'pillars';
+export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge' | 'pillars' | 'guard';
 
 /** What a ground strike looks like: a stone pillar, a root spike, or only a blast. */
 export type GroundStrikeStyle = 'pillar' | 'root' | 'burst';
@@ -36,6 +37,16 @@ export interface BossAttackDef {
   pillars?: number;
   /** pillars: what comes up out of the floor (default: stone pillars). */
   strike?: GroundStrikeStyle;
+  /** guard: the share of damage taken off while it holds the stance (default 0.8). `radius` and `damageMult` are those of the counter blow. */
+  reduction?: number;
+}
+
+/** A monster that calls help while it fights: `count` of `into` every `every` seconds, never more than `max` of its own alive at once. */
+export interface SummonDef {
+  into: string;
+  count: number;
+  every: number;
+  max: number;
 }
 
 /** How a monster with directional art acts out its attack (see DirectionalAnimator). */
@@ -160,6 +171,10 @@ export interface MonsterDef {
   controlResist?: number;
   /** Effects it can never have (a stone golem does not bleed, an ice spirit does not freeze). */
   immune?: readonly StatusId[];
+  /** What its blows put on the player (a hound's bite marks the target, see systems/status.ts). */
+  applies?: readonly StatusTrigger[];
+  /** It calls help while it fights (see SummonDef). */
+  summons?: SummonDef;
   /** World units per second. */
   moveSpeed: number;
   /** Starts chasing when the player is this close (centre distance) and in line of sight. */

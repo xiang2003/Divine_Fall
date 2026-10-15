@@ -15,6 +15,7 @@ export type StatusId =
   | 'slow'
   | 'freeze'
   | 'shock'
+  | 'mark'
   | 'armorBreak'
   | 'vulnerability'
   | 'weaken'
@@ -70,6 +71,7 @@ export const STATUSES: Record<StatusId, StatusDef> = {
   slow: { id: 'slow', name: '緩速', category: 'control', implemented: true, color: '#7fd4ff', duration: 3, maxDuration: 6, maxStacks: 1, dispellable: true, magnitude: 0.6, magnitudeLimit: 0.3, controlled: true },
   freeze: { id: 'freeze', name: '凍結', category: 'control', implemented: true, color: '#bfeaff', duration: 1.5, maxDuration: 3, maxStacks: 1, dispellable: false, immunityAfter: 3, controlled: true },
   shock: { id: 'shock', name: '感電', category: 'debuff', implemented: true, color: '#ffe14a', duration: 4, maxDuration: 8, maxStacks: 1, dispellable: true, magnitude: 0.2, magnitudeLimit: 0.5 },
+  mark: { id: 'mark', name: '標記', category: 'debuff', implemented: true, color: '#ff9a7a', duration: 5, maxDuration: 8, maxStacks: 1, dispellable: true, magnitude: 0.15, magnitudeLimit: 0.3 },
   armorBreak: { id: 'armorBreak', name: '破甲', category: 'debuff', implemented: true, color: '#c8b08a', duration: 5, maxDuration: 10, maxStacks: 1, dispellable: true, magnitude: 0.3, magnitudeLimit: 0.7 },
   vulnerability: { id: 'vulnerability', name: '脆弱', category: 'debuff', implemented: false, color: '#c070c0', duration: 0, maxDuration: 0, maxStacks: 1, dispellable: true },
   weaken: { id: 'weaken', name: '虛弱', category: 'debuff', implemented: true, color: '#a08ad8', duration: 5, maxDuration: 10, maxStacks: 1, dispellable: true, magnitude: 0.25, magnitudeLimit: 0.5 },

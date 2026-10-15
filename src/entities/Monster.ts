@@ -56,6 +56,8 @@ interface AttackSpec {
   strike?: GroundStrikeStyle;
   /** melee / pounce: more blows after the first. */
   combo?: ComboDef;
+  /** guard: the share of damage taken off while the stance is held. */
+  reduction?: number;
 }
 
 /** Fraction of the attack animation at which the blow lands. */
@@ -103,6 +105,8 @@ export interface MonsterOptions {
   rng?: Rng;
   /** The level of the monster (default 1): its life and damage grow with it, and so does the experience and the gold it gives. */
   level?: number;
+  /** The monster that called this one into the fight (it counts toward that monster's limit of helpers). */
+  summoner?: Monster;
 }
 
 /**
@@ -119,6 +123,14 @@ export class Monster {
   readonly stats: MonsterStats;
   /** Its level: the area's, plus a bonus for an elite or a boss (see data/progression.ts). */
   readonly level: number;
+  /** Who called it into the fight, if anyone did. */
+  readonly summoner: Monster | null;
+  /** What the last hit really took off after a guard (so the number that shows is the number that was taken). */
+  lastDamageTaken = 0;
+  /** Seconds since it last called for help, and what happened while it held a guard. */
+  private summonClock = 0;
+  private guardHit = false;
+  private counterShown = false;
   /** Everything that is on this monster: burning, slow, freeze, shock... (see systems/status.ts). */
   readonly status: StatusSet;
   hp: number;
@@ -171,6 +183,8 @@ export class Monster {
     this.affixes = options.affixes ?? [];
     this.rng = options.rng ?? defaultRng;
     this.level = Math.max(1, Math.floor(options.level ?? 1));
+    this.summoner = options.summoner ?? null;
+    if (def.summons) this.summonClock = def.summons.every * 0.5; // the first call comes after half the time
     this.stats = computeMonsterStats(def, this.affixes, this.level);
     this.status = new StatusSet({
       controlResist: def.controlResist ?? (def.isBoss ? BOSS_CONTROL_RESIST : 0),
@@ -222,6 +236,11 @@ export class Monster {
   /** What the player's attacks are measured against right now: the monster's armor and resistances, with armor break and shock on it. */
   get defense(): Defense {
     return this.status.defend(this.baseDefense);
+  }
+
+  /** True while it holds a guard stance: it takes a fraction of the damage, and answers a hit with a counter blow when the stance ends. */
+  get guarding(): boolean {
+    return this.state === 'attack' && this.currentAttack?.kind === 'guard';
   }
 
   get damage(): number {
@@ -284,6 +303,11 @@ export class Monster {
   /** Applies already-final damage. Returns true if this hit killed the monster. */
   takeDamage(amount: number): boolean {
     if (this.state === 'dead' || this.hidden) return false;
+    if (this.guarding) {
+      amount = Math.max(1, Math.round(amount * (1 - (this.currentAttack?.reduction ?? 0.8))));
+      this.guardHit = true;
+    }
+    this.lastDamageTaken = amount;
     this.hp = Math.max(0, this.hp - amount);
     if (this.hp === 0) {
       this.enter('dead');
@@ -298,6 +322,7 @@ export class Monster {
     if (this.def.phaseThresholds) {
       this.phase = Math.max(this.phase, phaseForHpRatio(this.hp / this.maxHp, this.def.phaseThresholds));
     }
+    if (this.guarding) return false; // a guard is not staggered
     if (this.isBoss) {
       // Super armor: a boss is never staggered; it just turns on whoever hurts it.
       if (this.state === 'idle') this.enter('chase');
@@ -320,6 +345,7 @@ export class Monster {
     if (this.state === 'dead') return;
     this.sinceHurt += dt;
     this.age += dt;
+    if (this.def.summons && this.engaged) this.summonClock += dt; // the time between two calls runs while it fights, whatever it is doing
     if (!this.status.canAct) {
       // frozen: whatever it was doing stops where it is, and it stays that way until it thaws
       if (this.state === 'attack') {
@@ -427,6 +453,12 @@ export class Monster {
 
     const reach = this.reachTo(target);
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
+
+    const summons = this.def.summons;
+    if (summons && sees && this.summonClock >= summons.every) {
+      this.summonClock = 0;
+      hooks.split(this, summons.into, summons.count); // the game keeps the number of helpers under the limit
+    }
 
     if (this.def.bossAttacks) {
       this.chaseAsBoss(dt, target, collision, hooks, { reach, dist, sees });
@@ -556,6 +588,7 @@ export class Monster {
             spread: choice.spread ?? 0,
             rush: choice.rush,
             strike: choice.strike,
+            reduction: choice.reduction,
           },
           target,
           hooks,
@@ -586,6 +619,8 @@ export class Monster {
     this.attack.start(spec.duration, Math.max(this.attackCooldown, spec.duration), spec.hitFraction);
     this.enter('attack');
     this.currentAttack = spec;
+    this.guardHit = false;
+    this.counterShown = false;
     if (spec.kind === 'nova') hooks.telegraph(this, spec.radius, spec.duration * spec.hitFraction);
     if (spec.kind === 'pillars') hooks.summonPillars(this, spec.count, spec.radius, spec.duration * spec.hitFraction, spec.damageMult, spec.strike);
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
@@ -593,6 +628,14 @@ export class Monster {
 
   private updateAttack(dt: number, target: MonsterTarget, collision: CollisionSystem, hooks: MonsterHooks): void {
     const spec = this.currentAttack;
+    if (spec?.kind === 'guard') {
+      this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y); // it stands and watches
+      if (this.guardHit && !this.counterShown) {
+        // it was hit: the counter blow is coming, so show its reach
+        this.counterShown = true;
+        hooks.telegraph(this, spec.radius, Math.max(0.25, spec.duration * spec.hitFraction - this.stateTime));
+      }
+    }
     if (spec?.kind === 'pounce') this.leap(spec, dt, target, collision);
     if (spec?.kind === 'charge') this.rush(spec, dt, target, collision, hooks);
     const { hit, finished } = this.attack.update(dt);
@@ -666,6 +709,10 @@ export class Monster {
   private strike(spec: AttackSpec, target: MonsterTarget, hooks: MonsterHooks): void {
     if (spec.kind === 'nova') {
       hooks.novaStrike(this, spec.radius, spec.damageMult); // a blast does not need a living target to go off
+      return;
+    }
+    if (spec.kind === 'guard') {
+      if (this.guardHit) hooks.novaStrike(this, spec.radius, spec.damageMult); // the counter: only if something hit the guard
       return;
     }
     if (target.isDead) return;

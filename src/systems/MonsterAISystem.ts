@@ -8,6 +8,7 @@ import type { CameraController } from '../game/CameraController';
 import type { EffectAssets } from '../game/effects';
 import type { CollisionSystem } from './CollisionSystem';
 import type { Rng } from './rng';
+import { helpersAllowed } from './summons';
 import { planSpawns } from './spawnPlan';
 
 /** Owns every live monster and its view: spawning, per-tick AI, crowd separation and corpse cleanup. */
@@ -57,10 +58,12 @@ export class MonsterAISystem {
   spawnMinions(owner: Monster, defId: string, count: number, rng: Rng): void {
     const def = (MONSTERS as Record<string, MonsterDef>)[defId];
     if (!def) throw new Error(`Unknown monster "${defId}"`);
+    const alive = this.monsters.filter((m) => m.summoner === owner && m.def.id === defId && m.state !== 'dead').length;
+    count = helpersAllowed(owner.def.summons, defId, count, alive);
     const start = rng() * Math.PI * 2;
     for (let i = 0; i < count; i++) {
       const angle = start + (i / count) * Math.PI * 2;
-      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng, summoned: true, level: owner.level });
+      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng, summoned: true, level: owner.level, summoner: owner });
       this.collision.pushOut(monster.pos, def.radius);
       this.spawn(monster);
       if (!def.phantom) this.spawnedTotal++; // real reinforcements are part of the count of monsters on the map

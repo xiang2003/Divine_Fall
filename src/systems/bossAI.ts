@@ -29,6 +29,8 @@ const CHARGE_MAX_REACH = 9;
 const PILLARS_MAX_DIST = 11;
 /** A nova is worth using when the player is within its blast radius plus a little margin. */
 const NOVA_MARGIN = 0.8;
+/** A guard is raised against a player who is near enough to hit. */
+const GUARD_MAX_DIST = 7;
 
 export function isAttackAvailable(attack: BossAttackDef, phase: number, ctx: BossContext): boolean {
   if (phase < attack.minPhase) return false;
@@ -43,6 +45,8 @@ export function isAttackAvailable(attack: BossAttackDef, phase: number, ctx: Bos
       return ctx.sees && ctx.reach >= CHARGE_MIN_REACH && ctx.reach <= CHARGE_MAX_REACH;
     case 'pillars':
       return ctx.sees && ctx.dist <= PILLARS_MAX_DIST;
+    case 'guard':
+      return ctx.sees && ctx.dist <= GUARD_MAX_DIST;
   }
 }
 

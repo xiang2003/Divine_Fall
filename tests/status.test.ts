@@ -13,7 +13,7 @@ function run(set: StatusSet, seconds: number, defense = { armor: 0 } as Paramete
 
 describe('the list of effects', () => {
   it('has every effect of the design, each in one of the three kinds, and the first phase is implemented', () => {
-    expect(STATUS_IDS).toHaveLength(16);
+    expect(STATUS_IDS).toHaveLength(17);
     for (const id of STATUS_IDS) {
       expect(['damage', 'control', 'debuff']).toContain(STATUSES[id].category);
       expect(STATUSES[id].id).toBe(id);

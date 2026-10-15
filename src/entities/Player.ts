@@ -203,7 +203,8 @@ export class Player {
 
   /** What the player's gear defends with: armor against physical damage, a resistance against each other kind. */
   get defense(): Defense {
-    return { armor: this.stats.armor, resist: this.stats.resist };
+    // what is on the player counts: a mark makes it take more, armor break takes armor away
+    return this.status.defend({ armor: this.stats.armor, resist: this.stats.resist });
   }
 
   /**

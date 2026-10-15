@@ -225,7 +225,9 @@ export class CombatSystem implements MonsterHooks {
   /** What the player's attacks bring: increased damage by type and the crit numbers. */
   private offense(): Offense {
     const { stats } = this.player;
-    return { increased: stats.increased, critChance: stats.critChance, critMultiplier: stats.critDamage };
+    // a weakened player (some monsters weaken what they hit) deals less
+    const weakened = this.player.status?.damageDealtMultiplier ?? 1;
+    return { increased: stats.increased, more: weakened === 1 ? undefined : [weakened], critChance: stats.critChance, critMultiplier: stats.critDamage };
   }
 
   /**
@@ -276,7 +278,8 @@ export class CombatSystem implements MonsterHooks {
   /** Applies final damage to a monster, reports it, and handles the kill. */
   private damageMonster(m: Monster, amount: number, crit: boolean, type: DamageType = 'physical'): boolean {
     const killed = m.takeDamage(amount);
-    this.events.damageDealt(m.pos.x, m.pos.y, amount, crit, type);
+    // a monster that holds a guard takes less than was dealt: show what it really took
+    this.events.damageDealt(m.pos.x, m.pos.y, m.guarding ? m.lastDamageTaken : amount, crit, type);
     if (killed) this.registerKill(m);
     return killed;
   }
@@ -358,6 +361,12 @@ export class CombatSystem implements MonsterHooks {
     if (poison) this.player.applyPoison(poison.dps, poison.duration);
     if (slow) this.player.applySlow(slow.factor, slow.duration);
     if (!source) return;
+    // what the monster puts on whoever it hits (a hound's bite marks the target)
+    const applies = source.def.applies;
+    if (applies && applies.length > 0 && this.player.status) {
+      const put = applyTriggers(this.player.status, applies, { raw: rawDamage, crit: false }, this.rng);
+      if (put.length > 0) this.events.statusApplied?.(this.player.pos.x, this.player.pos.y, put);
+    }
     if (source.stats.lifestealRatio > 0) source.heal(Math.round(result.amount * source.stats.lifestealRatio));
     if (source.stats.lightningRatio > 0) {
       this.events.lightningArc(source.pos.x, source.pos.y, this.player.pos.x, this.player.pos.y);

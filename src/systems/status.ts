@@ -194,10 +194,11 @@ export class StatusSet {
     return weaken ? 1 - weaken.magnitude : 1;
   }
 
-  /** What it takes, as a multiplier: shock adds a share. */
+  /** What it takes, as a multiplier: shock and a mark each add a share (they multiply: a shocked and marked target takes both). */
   get damageTakenMultiplier(): number {
     const shock = this.running.get('shock');
-    return shock ? 1 + shock.magnitude : 1;
+    const mark = this.running.get('mark');
+    return (shock ? 1 + shock.magnitude : 1) * (mark ? 1 + mark.magnitude : 1);
   }
 
   /** What is left of its armor: armor break takes a share off. */
