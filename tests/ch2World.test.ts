@@ -123,8 +123,8 @@ describe('chapter 2 quests and conversations', () => {
       expect(offers.length, `${id} is offered by ${q.giver}`).toBe(1);
       const turnIn = giver.conversation.topics.filter((t) => t.kind === 'turnin' && JSON.stringify(t.if).includes(`"${id}"`));
       expect(turnIn.length, `${id} is turned in to ${q.giver}`).toBe(1);
-      expect(DIALOGUES[offers[0]!.graph]!.nodes && Object.values(DIALOGUES[offers[0]!.graph]!.nodes).some((n) => n.startQuest === id)).toBe(true);
-      expect(Object.values(DIALOGUES[turnIn[0]!.graph]!.nodes).some((n) => n.completeQuest === id)).toBe(true);
+      expect(Object.values(DIALOGUES[offers[0]!.graph!]!.nodes).some((n) => n.startQuest === id)).toBe(true);
+      expect(Object.values(DIALOGUES[turnIn[0]!.graph!]!.nodes).some((n) => n.completeQuest === id)).toBe(true);
     }
   });
 
@@ -151,7 +151,10 @@ describe('chapter 2 quests and conversations', () => {
     for (const it of Object.values(INTERACTABLES)) for (const rule of it.dialogue) expect(DIALOGUES, it.id).toHaveProperty(rule.graph);
     for (const npc of Object.values(NPCS)) {
       expect(DIALOGUES, `${npc.id} intro`).toHaveProperty(npc.conversation.intro.graph);
-      for (const t of npc.conversation.topics) expect(DIALOGUES, `${npc.id}: ${t.label}`).toHaveProperty(t.graph);
+      for (const t of npc.conversation.topics) {
+        if (t.kind === 'shop') continue; // a shop opens the merchant's stock, not a conversation
+        expect(DIALOGUES, `${npc.id}: ${t.label}`).toHaveProperty(t.graph!);
+      }
     }
   });
 });

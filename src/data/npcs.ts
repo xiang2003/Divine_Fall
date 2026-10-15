@@ -161,6 +161,7 @@ Object.assign(NPCS, {
       intro: { graph: 'tieshan_intro', metFlag: 'met_tieshan' },
       greetings: ['……要打什麼？', '好鐵不怕看。', '爐子不等人。'],
       topics: [
+        { kind: 'shop', label: '買賣裝備', shop: 'blacksmith' },
         { kind: 'story', label: '你掌心的印', graph: 'tieshan_relic', if: { all: [{ flag: 'has_relic' }, { notFlag: 'tieshan_saw_relic' }] } },
         { kind: 'talk', label: '閒聊', graph: 'tieshan_repeat' },
       ],

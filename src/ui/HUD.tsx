@@ -145,8 +145,8 @@ export function HUD({
           <span>拾取戰利品（點擊名稱或按 F）</span>
         </div>
       )}
-      {!snapshot.inventoryOpen && <EquipmentSummary equipment={snapshot.inventory.equipment} />}
-      {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} {...inventoryActions} />}
+      {!snapshot.inventoryOpen && <EquipmentSummary equipment={snapshot.inventory.equipment} gold={snapshot.gold} />}
+      {snapshot.inventoryOpen && <Inventory view={snapshot.inventory} gold={snapshot.gold} {...inventoryActions} />}
       {!snapshot.inventoryOpen && <QuestTracker quests={snapshot.quests} npcName={npcName} />}
       {snapshot.worldMapOpen && <WorldMapPanel graph={snapshot.worldMap} onClose={onCloseWorldMap} />}
       {snapshot.questLogOpen && <QuestLog quests={snapshot.quests} npcName={npcName} onClose={onCloseQuestLog} />}
@@ -166,7 +166,7 @@ export function HUD({
           </div>
         </div>
       )}
-      {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} {...dialogueActions} />}
+      {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} gold={snapshot.gold} inventory={snapshot.inventory} {...dialogueActions} />}
       <Toast notice={snapshot.notice} />
       {snapshot.playerDead && (
         <div className="death-screen">

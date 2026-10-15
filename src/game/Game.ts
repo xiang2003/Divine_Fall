@@ -8,6 +8,7 @@ import {
   SKILL_INPUT_BUFFER,
 } from '../config/gameConfig';
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
+import { GOLD_NAME, SHOPS } from '../data/economy';
 import { LOOT_TABLES } from '../data/lootTables';
 import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
@@ -19,7 +20,9 @@ import type { Monster } from '../entities/Monster';
 import { Player } from '../entities/Player';
 import { CollisionSystem } from '../systems/CollisionSystem';
 import { CombatSystem } from '../systems/CombatSystem';
+import { GoldSystem } from '../systems/GoldSystem';
 import { GroundLootSystem, type LootDrop } from '../systems/GroundLootSystem';
+import { buyEquipment, rollGold, sellPrice } from '../systems/economy';
 import { Inventory } from '../systems/InventorySystem';
 import { createPlainItem, generateItem, generateLegendary, rollLoot } from '../systems/LootSystem';
 import { MonsterAISystem } from '../systems/MonsterAISystem';
@@ -120,6 +123,14 @@ export interface TopicView {
   mark: string;
 }
 
+/** What a merchant offers while their shop is open. */
+export interface ShopView {
+  /** What can be bought: the category, and what it costs (the rarity of what comes out is drawn at random). */
+  offers: readonly { slot: EquipSlot; label: string; price: number }[];
+  /** The piece bought last, shown until the shop closes. */
+  last: ItemInstance | null;
+}
+
 /** The conversation on screen. */
 export interface DialogueSnapshot {
   npcName: string;
@@ -135,6 +146,8 @@ export interface DialogueSnapshot {
   last: boolean;
   /** The NPC's topic menu while it is showing (then `text` is the greeting and there are no choices), otherwise null. */
   topics: readonly TopicView[] | null;
+  /** The shop, while it is open (then there is no text, no choices and no menu), otherwise null. */
+  shop: ShopView | null;
 }
 
 /** Immutable snapshot published to the React HUD (replaced, never mutated). */
@@ -170,6 +183,8 @@ export interface GameSnapshot {
   xpToNext: number;
   inventoryOpen: boolean;
   inventory: InventoryView;
+  /** How much 墜金 (the money) the player carries. */
+  gold: number;
   /** Timed buffs from legendary effects, for the HUD badges. */
   buffs: { haste: boolean; frenzy: boolean; poison: boolean; slow: boolean };
   skills: readonly SkillView[];
@@ -231,6 +246,7 @@ const INITIAL: GameSnapshot = {
   xpToNext: 0,
   inventoryOpen: false,
   inventory: EMPTY_INVENTORY,
+  gold: 0,
   buffs: { haste: false, frenzy: false, poison: false, slow: false },
   skills: [],
   boss: null,
@@ -271,6 +287,8 @@ interface World {
   skillBolts: SkillProjectileSystem;
   combat: CombatSystem;
   groundLoot: GroundLootSystem;
+  /** Heaps of 墜金 on the floor. */
+  goldPiles: GoldSystem;
   effects: EffectAssets;
   slash: SlashEffect;
   spinFx: SlashEffect;
@@ -317,6 +335,8 @@ export class Game {
   private portalNoticeTimer = 0;
   /** Level and experience; kept across restarts like the inventory. */
   private readonly progression = new Progression();
+  /** The money (墜金); like the level, it stays with the character across maps and restarts. */
+  private gold = 0;
   private bossDefeated = false;
   /** The boss currently winding up a blast (so its warning can be removed if it is interrupted). */
   private telegraphOwner: Monster | null = null;
@@ -335,6 +355,8 @@ export class Game {
     npc: NpcDef | null;
     name: string;
     pos: Vec2;
+    /** The NPC's shop while it is open (the menu and the conversation are then hidden), and the piece bought last. */
+    shop: { id: string; last: ItemInstance | null } | null;
   } | null = null;
   /** How many times the player has talked to each NPC this session (picks the greeting line). */
   private readonly talkVisits = new Map<string, number>();
@@ -453,6 +475,7 @@ export class Game {
     this.publishSkills();
     w.lightning.clear();
     w.groundLoot.clear();
+    w.goldPiles.clear();
     this.pickupTarget = null;
     this.endDialogue();
     this.kills = 0;
@@ -557,6 +580,7 @@ export class Game {
     w.projectiles.dispose();
     w.skillBolts.dispose();
     w.groundLoot.dispose();
+    w.goldPiles.dispose();
     w.slash.dispose();
     w.spinFx.dispose();
     w.slamFx.dispose();
@@ -576,6 +600,7 @@ export class Game {
     if (keepPlayer) {
       this.scene.scene.remove(
         w.groundLoot.group,
+        w.goldPiles.group,
         w.npcs.group,
         w.interactables.group,
         w.traps.group,
@@ -640,6 +665,7 @@ export class Game {
     const groundLoot = new GroundLootSystem(assets, this.container, collision, defaultRng, (drop) =>
       this.requestPickup(drop),
     );
+    const goldPiles = new GoldSystem(assets, collision, defaultRng);
 
     // Combat and the monster system reference each other (combat reads the monster list,
     // monsters call combat hooks), so the list is passed lazily.
@@ -684,6 +710,7 @@ export class Game {
         for (const item of rollLoot(LOOT_TABLES[m.lootTable], defaultRng)) {
           groundLoot.spawnNear(item, m.pos.x, m.pos.y);
         }
+        goldPiles.spawnNear(rollGold(m.lootTable, defaultRng), m.pos.x, m.pos.y);
         if (m.isBoss) {
           this.bossDefeated = true;
           this.notify(`擊敗了${m.def.name}！`);
@@ -720,6 +747,7 @@ export class Game {
 
     this.scene.scene.add(
       groundLoot.group,
+      goldPiles.group,
       npcs.group,
       interactables.group,
       traps.group,
@@ -749,6 +777,7 @@ export class Game {
       skillBolts,
       combat,
       groundLoot,
+      goldPiles,
       effects,
       slash,
       spinFx,
@@ -864,7 +893,9 @@ export class Game {
     const { x, y } = w.player.pos;
     for (const def of LEGENDARIES) w.groundLoot.spawnNear(generateLegendary(def.id, defaultRng), x, y);
     for (let i = 0; i < 3; i++) w.groundLoot.spawnNear(generateItem('rare', defaultRng), x, y);
-    this.notify('除錯：已掉落測試裝備');
+    this.gold += 500;
+    this.publish({ gold: this.gold });
+    this.notify(`除錯：已掉落測試裝備，並給了 500 ${GOLD_NAME}`);
   }
 
   /** Debug (F3 mode + F6): puts all four legendaries straight onto the character. */
@@ -1021,7 +1052,7 @@ export class Game {
     const conversation = npc.def.conversation;
     // The first meeting plays the intro by itself; after that the topic menu opens.
     const intro = needsIntro(conversation, ctx) ? new DialogueRunner(getDialogue(conversation.intro.graph), ctx, npc.def.name) : null;
-    this.dialogue = { runner: intro, npc: npc.def, name: npc.def.name, pos: npc.pos };
+    this.dialogue = { runner: intro, npc: npc.def, name: npc.def.name, pos: npc.pos, shop: null };
     this.publishDialogue();
   }
 
@@ -1050,6 +1081,7 @@ export class Game {
       npc: null,
       name: it.def.name,
       pos: it.pos,
+      shop: null,
     };
     this.publishDialogue();
   }
@@ -1107,11 +1139,70 @@ export class Game {
     const ctx = this.currentDialogueContext();
     const topic = visibleTopics(d.npc.conversation, ctx)[index];
     if (!topic) return;
+    if (topic.kind === 'shop' && topic.shop && SHOPS[topic.shop]) {
+      d.shop = { id: topic.shop, last: null };
+      this.publishDialogue();
+      return;
+    }
+    if (!topic.graph) return;
     d.runner = new DialogueRunner(getDialogue(topic.graph), ctx, d.npc.name);
     this.afterDialogueStep();
   };
 
   closeDialogue = (): void => this.endDialogue();
+
+  // --- money and shops -----------------------------------------------------------------------
+
+  /** A heap of 墜金 reached the player. */
+  private collectGold(amount: number, at: Vec2): void {
+    this.gold += amount;
+    this.world?.numbers.spawn(at.x, at.y, `+${amount} ${GOLD_NAME}`, 'gold');
+    this.publish({ gold: this.gold });
+  }
+
+  /** Buys one piece of equipment of the chosen category from the open shop: the price is fixed, the rarity is drawn at random. */
+  buyEquipment = (slot: EquipSlot): void => {
+    const w = this.world;
+    const d = this.dialogue;
+    if (!w || !d?.shop || w.player.isDead) return;
+    const result = buyEquipment(SHOPS[d.shop.id]!, slot, this.gold, w.inventory.freeSlots, defaultRng);
+    if (!result.ok) {
+      this.notify(result.reason === 'gold' ? `${GOLD_NAME}不夠。` : result.reason === 'full' ? '背包已滿。' : '這裡不賣那種東西。');
+      return;
+    }
+    const added = w.inventory.add(result.item);
+    if (!added.ok) {
+      this.notify('背包已滿。');
+      return;
+    }
+    this.gold -= result.price;
+    d.shop.last = result.item;
+    this.publish({ gold: this.gold });
+    this.publishDialogue();
+  };
+
+  /** Sells the backpack item at `index` to the open shop for a fraction of what it is worth. */
+  sellItem = (index: number): void => {
+    const w = this.world;
+    const d = this.dialogue;
+    if (!w || !d?.shop || w.player.isDead) return;
+    const item = w.inventory.slots[index];
+    if (!item) return;
+    const price = sellPrice(item);
+    w.inventory.take(index);
+    this.gold += price;
+    this.notify(`賣出：${item.name}（+${price} ${GOLD_NAME}）`);
+    this.publish({ gold: this.gold });
+    this.publishDialogue();
+  };
+
+  /** Back from the shop to the NPC's menu. */
+  leaveShop = (): void => {
+    const d = this.dialogue;
+    if (!d?.shop) return;
+    d.shop = null;
+    this.publishDialogue();
+  };
 
   private afterDialogueStep(): void {
     const d = this.dialogue;
@@ -1145,6 +1236,21 @@ export class Game {
     }
     const npc = d.npc;
     const base = { npcName: d.name, title: npc?.title ?? null, portrait: npc?.portrait ?? null };
+    if (d.shop && npc) {
+      const shop = SHOPS[d.shop.id]!;
+      this.publish({
+        dialogue: {
+          ...base,
+          speaker: npc.name,
+          text: '',
+          choices: null,
+          last: false,
+          topics: null,
+          shop: { offers: shop.categories.map((c) => ({ slot: c.slot, label: SLOT_LABEL[c.slot], price: c.price })), last: d.shop.last },
+        },
+      });
+      return;
+    }
     if (!d.runner) {
       // the topic menu
       if (!npc) {
@@ -1160,6 +1266,7 @@ export class Game {
           choices: null,
           last: false,
           topics: topics.map((t: NpcTopic) => ({ label: t.label, kind: t.kind, mark: TOPIC_MARK[t.kind] })),
+          shop: null,
         },
       });
       return;
@@ -1169,7 +1276,7 @@ export class Game {
       this.afterDialogueStep();
       return;
     }
-    this.publish({ dialogue: { ...base, ...view, topics: null } });
+    this.publish({ dialogue: { ...base, ...view, topics: null, shop: null } });
   }
 
   // --- changing maps ---------------------------------------------------------------------------
@@ -1373,7 +1480,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, npcs, interactables, traps, torches, pillars, pools, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, interactables, traps, torches, pillars, pools, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, goldPiles, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -1537,6 +1644,7 @@ export class Game {
     }
     lightning.update(dt);
     groundLoot.update(dt, this.cameraCtl);
+    goldPiles.update(dt, player.pos, !player.isDead, (amount, at) => this.collectGold(amount, at));
     numbers.update(dt, this.cameraCtl);
     debug.setPlayerCircle(player.pos.x, player.pos.y, player.radius);
 

@@ -517,5 +517,29 @@
     "size": "1024x1024",
     "background": "flat bright green (colour key auto)",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A crooked leaning dead tree with long strands of grey moss and dead vines hanging from its bare branches, a small pile of bones among its roots, no leaves, the whole tree fully visible."
+  },
+  "gold_small": {
+    "seed": 6421,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A short pile of about eight old tarnished gold coins with square holes (ancient Chinese cash coins) heaped together, one small gold ingot on top, nothing under them: no table, no tray, no plate, no base, no ground, the whole pile fully visible."
+  },
+  "gold_mid": {
+    "seed": 6412,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A loose heap of about fifteen old tarnished gold coins with square holes (ancient Chinese cash coins) and two small gold ingots piled up, a faint cold teal glow between the coins, nothing under them: no table, no tray, no base, no platform, no ground, just the heap, the whole heap fully visible."
+  },
+  "gold_big": {
+    "seed": 6403,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A big heap of old tarnished gold coins with square holes (ancient Chinese cash coins), several gold ingots shaped like boats, a broken jade ring, a faint cold teal glow, glittering, the whole heap fully visible."
   }
 }

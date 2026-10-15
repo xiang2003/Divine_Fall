@@ -307,6 +307,11 @@ body,
   color: #7be07b;
 }
 
+.damage-number.gold {
+  color: #ffd84a;
+  font-size: 15px;
+  text-shadow: 0 1px 3px #000, 0 0 6px rgba(255, 216, 74, 0.55);
+}
 .damage-number.levelup {
   color: var(--gold);
   font-size: 30px;
@@ -362,9 +367,16 @@ body,
   line-height: 1.5;
 }
 
+.summary-gold {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--panel-border);
+  color: #ffd84a;
+}
+
 .summary-slot {
   color: var(--muted);
-  width: 2.2em;
+  width: 2.6em;
 }
 
 .inventory {
@@ -384,7 +396,14 @@ body,
   margin-bottom: 8px;
 }
 
+.inventory-gold {
+  margin-left: auto;
+  color: #ffd84a;
+  font-size: 13px;
+}
+
 .inventory-header .close {
+  margin-left: 0;
   margin-left: auto;
   background: none;
   border: none;
@@ -807,6 +826,11 @@ body,
   padding-bottom: max(210px, 32vh); /* raised toward the middle of the screen */
   pointer-events: none;
   z-index: 20;
+}
+
+/* the merchant's window is tall: lower it so it stays clear of the minimap */
+.dialogue-layer.with-shop {
+  padding-bottom: 150px;
 }
 
 .dialogue-portrait {
@@ -1542,4 +1566,129 @@ button:hover {
   border-radius: 50%;
   background: #07060b;
   box-shadow: inset 0 0 0 2px var(--frame-dark);
+}
+
+/* --- the merchant's window (replaces the conversation text while a shop is open) ---------------- */
+
+.shop {
+  flex: 0 1 700px;
+}
+
+.shop-gold {
+  margin-left: auto;
+  color: #ffd84a;
+  font-size: 14px;
+}
+
+.shop-body {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.shop-buy {
+  flex: 0 0 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shop-sell {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shop-heading {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.shop-offer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text);
+  background: rgba(30, 26, 40, 0.85);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.shop-offer img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+}
+
+.shop-offer:hover:not(:disabled) {
+  background: rgba(60, 50, 40, 0.95);
+  border-color: var(--gold);
+}
+
+.shop-offer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shop-offer-label {
+  flex: 1;
+}
+
+.shop-price {
+  color: #ffd84a;
+  font-weight: 700;
+}
+
+.shop-price.short {
+  color: #ff7a6a;
+}
+
+.shop-last {
+  margin-top: 4px;
+  min-height: 40px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.shop-last-name {
+  font-weight: 700;
+  cursor: default;
+}
+
+.shop-warn {
+  font-size: 12px;
+  color: #ff7a6a;
+}
+
+.shop-grid .cell {
+  cursor: pointer;
+}
+
+.cell-price {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #ffd84a;
+  text-shadow: 0 1px 2px #000;
+}
+
+.cell-price.asking {
+  color: #ff7a6a;
+  font-weight: 700;
+}
+
+.cell.asking {
+  background: #3a1a1a;
+}
+
+.shop-note {
+  margin-top: 6px;
+  font-size: 11px;
 }

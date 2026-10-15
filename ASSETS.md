@@ -82,6 +82,11 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 墜金的圖（2026-10-15，本機 AI 生成）
+
+怪物掉的金幣堆，三種大小：public/assets/props/gold_small.png、gold_mid.png、gold_big.png（古錢、金元寶與一枚碎玉環，帶一點冷青色的光）。做法同上一節（本機 Z-Image-Turbo、純綠背景去背、沒有第三方素材），
+提示詞在 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)。小堆與中堆一開始被畫在桌子與托盤上，補了「沒有桌子、托盤、底座」重畫。
+
 ## 第二章的暗色仙俠美術（2026-10-15，本機 AI 生成 + 程式處理）
 
 依使用者的意見，第二章的環境與建築改成暗色仙俠、帶黑暗奇幻的調性（方向見 [chapter2-art-direction.md](docs/design/chapter2-art-direction.md)）。

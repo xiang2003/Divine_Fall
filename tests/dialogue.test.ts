@@ -194,7 +194,7 @@ describe('authored chapter 1 content', () => {
     for (const npc of Object.values(NPCS)) {
       const { intro, topics, greetings } = npc.conversation;
       expect(DIALOGUES[intro.graph], `${npc.id} intro`).toBeDefined();
-      for (const t of topics) expect(DIALOGUES[t.graph], `${npc.id} -> ${t.graph}`).toBeDefined();
+      for (const t of topics) if (t.kind !== 'shop') expect(DIALOGUES[t.graph!], `${npc.id} -> ${t.graph}`).toBeDefined();
       expect(topics.at(-1)?.if, `${npc.id} needs a topic that is always there`).toBeUndefined();
       expect(greetings.length, `${npc.id} needs greetings`).toBeGreaterThan(0);
     }

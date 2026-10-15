@@ -79,6 +79,10 @@ PROPS = {
     'lion_stone': ('lion_stone.webp', 'props/decor_lion.png', 140, 0.1, 'auto'),
     'fungus_c': ('fungus_c.webp', 'props/decor_fungus_c.png', 170, 0.25, 'auto'),
     'fungus_d': ('fungus_d.webp', 'props/decor_fungus_d.png', 170, 0.25, 'auto'),
+    # 墜金, the money that monsters drop: three sizes of heap
+    'gold_small': ('gold_small.webp', 'props/gold_small.png', 90, 0.3, 'auto'),
+    'gold_mid': ('gold_mid.webp', 'props/gold_mid.png', 120, 0.3, 'auto'),
+    'gold_big': ('gold_big.webp', 'props/gold_big.png', 160, 0.3, 'auto'),
     # the Mist Coast
     'wreck': ('wreck.webp', 'buildings/wreck.png', 520, 0.3, 'magenta', 60),  # small gaps between the sails and the rigging count as background
     'driftwood_a': ('driftwood_a.webp', 'props/decor_driftwood_a.png', 140, 0.25, 'auto'),

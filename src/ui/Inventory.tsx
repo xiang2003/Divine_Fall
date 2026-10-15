@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { EquipSlot, ItemInstance } from '../data/items';
+import { GOLD_NAME } from '../data/economy';
 import { RARITY_INFO } from '../data/rarity';
 import type { InventoryView } from '../game/Game';
 import { EquipmentSlots, StatList } from './EquipmentPanel';
@@ -25,7 +26,7 @@ interface Hover {
  * Left-click equips, right-click drops. Hovering shows the item and how it compares with what is worn.
  * Only this panel handles the clicks; they never reach the game canvas.
  */
-export function Inventory({ view, onEquip, onUnequip, onDrop, onClose }: InventoryActions & { view: InventoryView }) {
+export function Inventory({ view, gold, onEquip, onUnequip, onDrop, onClose }: InventoryActions & { view: InventoryView; gold: number }) {
   const [hover, setHover] = useState<Hover | null>(null);
   const used = view.slots.filter(Boolean).length;
 
@@ -39,6 +40,9 @@ export function Inventory({ view, onEquip, onUnequip, onDrop, onClose }: Invento
         <strong>背包</strong>
         <span className="muted">
           {used} / {view.slots.length}
+        </span>
+        <span className="inventory-gold">
+          {GOLD_NAME} <strong>{gold}</strong>
         </span>
         <button type="button" className="close" onClick={onClose} aria-label="關閉背包">
           ✕

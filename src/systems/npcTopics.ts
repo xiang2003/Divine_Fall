@@ -9,16 +9,19 @@ import { evalCondition, type Condition, type DialogueContext } from './dialogue'
  * - `active`  talk about a quest already under way, nothing to do right now (marked "…")
  * - `story`   a conversation that moves the story or reacts to something that happened
  * - `talk`    small talk
+ * - `shop`    opens the NPC's shop (buying and selling equipment) instead of playing a conversation
  * Topics are listed in the order given, so put the most important first.
  */
-export type TopicKind = 'quest' | 'turnin' | 'active' | 'story' | 'talk';
+export type TopicKind = 'quest' | 'turnin' | 'active' | 'story' | 'talk' | 'shop';
 
 export interface NpcTopic {
   /** Text of the menu entry. */
   label: string;
   kind: TopicKind;
-  /** Id of the conversation (data/dialogues.ts) this entry plays. */
-  graph: string;
+  /** Id of the conversation (data/dialogues.ts) this entry plays; a shop entry has none. */
+  graph?: string;
+  /** Id of the shop (data/economy.ts) a `shop` entry opens. */
+  shop?: string;
   /** The entry is only offered while this holds. */
   if?: Condition;
 }
@@ -32,7 +35,7 @@ export interface NpcConversation {
 }
 
 /** The mark shown in front of a menu entry (empty for entries that need no attention). */
-export const TOPIC_MARK: Record<TopicKind, string> = { quest: '！', turnin: '？', active: '…', story: '', talk: '' };
+export const TOPIC_MARK: Record<TopicKind, string> = { quest: '！', turnin: '？', active: '…', story: '', talk: '', shop: '◆' };
 
 type TopicContext = Pick<DialogueContext, 'hasFlag' | 'level' | 'questState' | 'mapId'>;
 

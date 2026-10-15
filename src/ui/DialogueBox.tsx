@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { assetUrl } from '../game/AssetLoader';
-import type { DialogueSnapshot } from '../game/Game';
+import type { DialogueSnapshot, InventoryView } from '../game/Game';
+import { ShopPanel, type ShopActions } from './ShopPanel';
 
-export interface DialogueActions {
+export interface DialogueActions extends ShopActions {
   onAdvance: () => void;
   onChoose: (index: number) => void;
   onTopic: (index: number) => void;
@@ -14,7 +15,18 @@ export interface DialogueActions {
  * With an NPC the panel first opens as a menu (a greeting and the topics on offer, quest ones marked), and a topic plays out
  * line by line before returning to the menu. Click or Enter / Space continues; 1-9 picks a choice or a topic; Esc leaves.
  */
-export function DialogueBox({ dialogue, onAdvance, onChoose, onTopic, onClose }: { dialogue: DialogueSnapshot } & DialogueActions) {
+export function DialogueBox({
+  dialogue,
+  gold,
+  inventory,
+  onAdvance,
+  onChoose,
+  onTopic,
+  onClose,
+  onBuy,
+  onSell,
+  onLeave,
+}: { dialogue: DialogueSnapshot; gold: number; inventory: InventoryView } & DialogueActions) {
   const { choices, topics, portrait } = dialogue;
   const [portraitFailed, setPortraitFailed] = useState(false);
   useEffect(() => setPortraitFailed(false), [portrait]);
@@ -41,10 +53,22 @@ export function DialogueBox({ dialogue, onAdvance, onChoose, onTopic, onClose }:
   const showPortrait = portrait !== null && !portraitFailed;
 
   return (
-    <div className="dialogue-layer" onContextMenu={(e) => e.preventDefault()}>
+    <div className={`dialogue-layer${dialogue.shop ? ' with-shop' : ''}`} onContextMenu={(e) => e.preventDefault()}>
       {showPortrait && (
         <img className="dialogue-portrait" src={assetUrl(portrait)} alt="" draggable={false} onError={() => setPortraitFailed(true)} />
       )}
+      {dialogue.shop ? (
+        <ShopPanel
+          speaker={dialogue.speaker}
+          title={dialogue.title}
+          shop={dialogue.shop}
+          gold={gold}
+          inventory={inventory}
+          onBuy={onBuy}
+          onSell={onSell}
+          onLeave={onLeave}
+        />
+      ) : (
       <div className={`panel dialogue-box${showPortrait ? ' with-portrait' : ''}`} onClick={choices || topics ? undefined : onAdvance}>
         <div className="dialogue-head">
           <span className="dialogue-speaker">{dialogue.speaker}</span>
@@ -103,6 +127,7 @@ export function DialogueBox({ dialogue, onAdvance, onChoose, onTopic, onClose }:
           <div className="dialogue-hint">{dialogue.last ? '點擊或按 Enter 結束' : '點擊或按 Enter 繼續'} · Esc 離開</div>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -108,7 +108,7 @@ describe('chapter 1 data', () => {
 
   it('every dialogue graph is sound and every dialogue / interactable rule points at a real graph', () => {
     for (const g of Object.values(DIALOGUES)) expect(validateDialogue(g), g.id).toEqual([]);
-    for (const npc of Object.values(NPCS)) for (const t of npc.conversation.topics) expect(DIALOGUES[t.graph], `${npc.id}->${t.graph}`).toBeDefined();
+    for (const npc of Object.values(NPCS)) for (const t of npc.conversation.topics) if (t.kind !== 'shop') expect(DIALOGUES[t.graph!], `${npc.id}->${t.graph}`).toBeDefined();
     for (const it of Object.values(INTERACTABLES)) for (const r of it.dialogue) expect(DIALOGUES[r.graph], `${it.id}->${r.graph}`).toBeDefined();
   });
 

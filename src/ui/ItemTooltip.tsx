@@ -9,10 +9,12 @@ interface Props {
   equipped: boolean;
   /** Character level, so the comparison uses the same stats as combat. */
   level: number;
+  /** The line at the bottom of the comparison (what a click does); defaults to the backpack's equip / drop hint. */
+  hint?: string;
 }
 
 /** Item description, plus a "if you wear this" comparison against whatever is in the same slot. */
-export function ItemTooltip({ item, equipment, equipped, level }: Props) {
+export function ItemTooltip({ item, equipment, equipped, level, hint }: Props) {
   const d = describeItem(item);
   const worn = equipment[item.slot];
   const rows = !equipped ? diffRows(...diffArgs(equipment, item, level)) : [];
@@ -55,7 +57,7 @@ export function ItemTooltip({ item, equipment, equipped, level }: Props) {
               </div>
             );
           })}
-          <div className="tooltip-hint">左鍵：裝備　右鍵：丟棄</div>
+          <div className="tooltip-hint">{hint ?? '左鍵：裝備　右鍵：丟棄'}</div>
         </div>
       )}
     </div>

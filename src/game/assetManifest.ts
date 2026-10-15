@@ -102,6 +102,9 @@ export const SpriteKey = {
   ECHO: 'monster.echo',
   BOSS: 'monster.boss',
   SHARD: 'object.shard',
+  GOLD_SMALL: 'object.gold_small',
+  GOLD_MID: 'object.gold_mid',
+  GOLD_BIG: 'object.gold_big',
   RELIC: 'object.relic',
   SPIKES_HIDDEN: 'trap.spikes_hidden',
   SPIKES_WARN: 'trap.spikes_warn',
@@ -380,6 +383,11 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...DIRT_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_${i}.png`)),
   ...DIRT_EDGE_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawDirtTile(i), `assets/tiles/dirt_edge_${i}.png`)),
   ...PROP_NAMES.map((name) => propSprite(`prop.${name}`, `assets/props/prop_${name}.png`, 1, 0.22)),
+  // 墜金, the money monsters drop: three sizes of heap (generated pictures)
+  ...([[SpriteKey.GOLD_SMALL, 'small'], [SpriteKey.GOLD_MID, 'mid'], [SpriteKey.GOLD_BIG, 'big']] as const).map(([key, size]) =>
+    propSprite(key, `assets/props/gold_${size}.png`, 0.5, 0.3, enlarged(drawShard, 64, 64)),
+  ),
+
   ...TOWN_PROP_KEYS.map((key) => propSprite(key, `assets/props/prop_${key.slice(5)}.png`, 0.36, 0.15)),
   ...DEAD_TREE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.5, 0.1, enlarged(drawTreeBlock, 256, 256))),
   ...SPIRE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.36, 0.1, enlarged(() => drawRock('pillar', 0), 64, 64))),

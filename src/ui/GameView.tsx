@@ -50,6 +50,9 @@ function HudBridge({ game }: { game: Game }) {
         onChoose: game.chooseDialogueOption,
         onTopic: game.chooseDialogueTopic,
         onClose: game.closeDialogue,
+        onBuy: game.buyEquipment,
+        onSell: game.sellItem,
+        onLeave: game.leaveShop,
       }}
     />
   );

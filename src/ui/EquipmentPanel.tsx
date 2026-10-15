@@ -1,3 +1,4 @@
+import { GOLD_NAME } from '../data/economy';
 import { EQUIP_SLOTS, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { RARITY_INFO } from '../data/rarity';
 import { STAT_ROWS } from '../systems/itemText';
@@ -56,7 +57,7 @@ export function StatList({ stats }: { stats: Readonly<PlayerStats> }) {
 }
 
 /** Compact "what am I wearing" list shown on the HUD. */
-export function EquipmentSummary({ equipment }: { equipment: Readonly<Equipment> }) {
+export function EquipmentSummary({ equipment, gold }: { equipment: Readonly<Equipment>; gold: number }) {
   return (
     <div className="panel hud-equipment">
       {EQUIP_SLOTS.map((slot) => {
@@ -72,6 +73,10 @@ export function EquipmentSummary({ equipment }: { equipment: Readonly<Equipment>
           </div>
         );
       })}
+      <div className="summary-row summary-gold">
+        <span className="summary-slot">{GOLD_NAME}</span>
+        <span>{gold}</span>
+      </div>
     </div>
   );
 }
