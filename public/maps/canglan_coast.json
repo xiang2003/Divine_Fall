@@ -33,10 +33,10 @@
   " TWWWWWWWWWWWWWWWW....................T.....T.......T....TT ",
   " TWWWWWWWWWWWWWWWWm....................TT.......T..TTT...TT ",
   " TWWWWWWWWWWWWWWWW.........................T.........T.T.TT ",
-  " TWWWWWWWWWWWWWWW..T.......................T......T..T...TT ",
+  " TWWWWWWWWWWWWWWW..T.......................T......T......TT ",
   " TWWWWWWWWWWWWWW....................T...T.T.TT...T.......TT ",
-  " TWWWWWWWWWWWWW.......................T.............T....TT ",
-  " TWWWWWWWWWWWW..............m..........T..TT..T..m.T..T..TT ",
+  " TWWWWWWWWWWWWW.......................T..................TT ",
+  " TWWWWWWWWWWWW..............m..........T..TT..T..m.......TT ",
   " TWWWWWWWWWWWT..........................T..T..TT.........TT ",
   " TWWWWWWWWWW.........#####.......................T..TT...TT ",
   " TWWWWWWWWW..........#####...............T.......T...T...TT ",
@@ -112,6 +112,10 @@
   "from_island": {
    "x": 8,
    "y": 37
+  },
+  "from_forest": {
+   "x": 53,
+   "y": 22
   }
  },
  "portals": [
@@ -124,6 +128,17 @@
    "to": {
     "map": "pure_coast",
     "entrance": "ferry_side"
+   }
+  },
+  {
+   "id": "to_forest",
+   "x": 55,
+   "y": 21,
+   "w": 1,
+   "h": 3,
+   "to": {
+    "map": "canglan_forest",
+    "entrance": "from_coast"
    }
   }
  ],

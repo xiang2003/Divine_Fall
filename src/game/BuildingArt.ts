@@ -6,7 +6,7 @@ import { makeCanvas } from './PlaceholderArt';
  * so edges stay clean on the 64x32 tile grid.
  */
 
-export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry' | 'wreck';
+export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard';
 
 /** One building sprite: its style and footprint. The manifest registers one asset per entry. */
 export interface BuildingVariant {
@@ -27,6 +27,10 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
   { style: 'well', w: 2, h: 2 },
   { style: 'ferry', w: 5, h: 3 },
   { style: 'wreck', w: 5, h: 3 },
+  { style: 'sword', w: 4, h: 3 },
+  { style: 'outpost', w: 4, h: 3 },
+  { style: 'stall', w: 2, h: 2 },
+  { style: 'noticeboard', w: 2, h: 2 },
 ];
 
 /**
@@ -47,6 +51,11 @@ export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: 
   well: { url: 'assets/buildings/well.png', width: 130, height: 177, anchorY: 0.2 },
   ferry: { url: 'assets/buildings/ferry.png', width: 520, height: 481, anchorY: 0.3 },
   wreck: { url: 'assets/buildings/wreck.png', width: 520, height: 570, anchorY: 0.27 },
+  // chapter 2 (generated): the broken giant sword, the ruined watch-post, the market stall and the bounty board (sizes: see tools/prepare_props.py)
+  sword: { url: 'assets/buildings/sword.png', width: 330, height: 609, anchorY: 0.2 },
+  outpost: { url: 'assets/buildings/outpost.png', width: 380, height: 464, anchorY: 0.2 },
+  stall: { url: 'assets/buildings/stall.png', width: 190, height: 252, anchorY: 0.2 },
+  noticeboard: { url: 'assets/buildings/noticeboard.png', width: 190, height: 229, anchorY: 0.2 },
 };
 
 export function buildingKey(style: string, w: number, h: number): string {
@@ -75,7 +84,7 @@ interface Palette {
   trim: string;
 }
 
-const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'wreck' | 'shed' | 'tent' | 'campfire'>, Palette> = {
+const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'wreck' | 'sword' | 'outpost' | 'stall' | 'noticeboard' | 'shed' | 'tent' | 'campfire'>, Palette> = {
   home: { wallLeft: '#a8774b', wallRight: '#835a38', wallLine: '#5b3d25', roofLeft: '#d2ad56', roofRight: '#b08b3c', roofStroke: '#7d6026', door: '#4a2f1b', trim: '#5b3d25' },
   elder: { wallLeft: '#c3a57c', wallRight: '#9c8160', wallLine: '#6e583f', roofLeft: '#8fa874', roofRight: '#6f8858', roofStroke: '#46583a', door: '#4a3a28', trim: '#6e583f' },
   store: { wallLeft: '#8a6644', wallRight: '#6b4e33', wallLine: '#43301f', roofLeft: '#a85d42', roofRight: '#864830', roofStroke: '#53291a', door: '#35261a', trim: '#43301f' },
@@ -165,7 +174,7 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
     drawWell(ctx, pt, w, h);
     return canvas;
   }
-  if (style === 'ferry' || style === 'wreck') {
+  if (style === 'ferry' || style === 'wreck' || style === 'sword' || style === 'outpost' || style === 'stall' || style === 'noticeboard') {
     drawFerry(ctx, pt, w, h);
     return canvas;
   }

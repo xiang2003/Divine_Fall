@@ -250,7 +250,7 @@ describe('public/maps/canglan_coast.json', () => {
   it('can be walked from the landing to every spawn, the elite, the trace, and the way back', () => {
     for (const p of [...map.spawns.monsters, ...map.spawns.elites, ...map.interactables.map((i) => i.pos), map.entrances.from_island!]) expect(at(p)).toBe(true);
     for (const portal of map.portals) expect(at({ x: (portal.rect.minX + portal.rect.maxX) / 2, y: (portal.rect.minY + portal.rect.maxY) / 2 })).toBe(true);
-    expect(map.portals.map((p) => p.to)).toEqual([{ map: 'pure_coast', entrance: 'ferry_side' }]);
+    expect(map.portals.map((p) => p.to)).toEqual([{ map: 'pure_coast', entrance: 'ferry_side' }, { map: 'canglan_forest', entrance: 'from_coast' }]);
   });
 
   it('is sealed: no floor touches void or the map edge', () => {

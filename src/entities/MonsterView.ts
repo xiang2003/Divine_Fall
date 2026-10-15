@@ -122,6 +122,7 @@ export class MonsterView {
     if (this.directional) {
       this.directional.setFacingWorld(m.facingDir.x, m.facingDir.y);
       this.directional.setHurtFlash(m.state === 'hurt');
+      this.directional.setEnraged(m.berserk);
       if (m.def.hop) this.directional.setGait(m.hopPhase);
     }
     this.animator.update(dt);

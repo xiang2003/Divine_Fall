@@ -35,6 +35,7 @@ const FLOOR_COLOR: Record<MapTheme, string> = {
   ruins: '#4f5a55',
   core: '#5a5648',
   mist: '#9a8a68',
+  mountain: '#6a6f7a',
   grass: '#3f6a37',
   sand: '#b59a63',
   cave: '#4b5568',
@@ -42,7 +43,7 @@ const FLOOR_COLOR: Record<MapTheme, string> = {
 const PATH_COLOR = '#8d6a3f';
 const WATER_COLOR = '#2f5f86';
 const WALL_COLOR = '#17131d';
-const TREE_COLOR: Record<MapTheme, string> = { stone: '#26212e', ruins: '#26212e', core: '#3a362c', mist: '#6b5d3c', grass: '#1f3a22', sand: '#6b5d3c', cave: '#2a303d' };
+const TREE_COLOR: Record<MapTheme, string> = { stone: '#26212e', ruins: '#26212e', core: '#3a362c', mist: '#6b5d3c', mountain: '#4a4e58', grass: '#1f3a22', sand: '#6b5d3c', cave: '#2a303d' };
 
 /** The colour of one tile on the minimap, or null for empty space. */
 export function minimapTileColor(map: MapData, x: number, y: number): string | null {

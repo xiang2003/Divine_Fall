@@ -39,6 +39,7 @@ import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { TrapSystem } from '../systems/TrapSystem';
 import { PillarSystem } from '../systems/PillarSystem';
+import { PoolSystem } from '../systems/PoolSystem';
 import { FogLayer } from './FogLayer';
 import { TorchSystem } from '../systems/TorchSystem';
 import { ARROW_DAMAGE, ARROW_POISON, ARROW_SPEED } from '../systems/hazards';
@@ -283,6 +284,8 @@ interface World {
   traps: TrapSystem;
   torches: TorchSystem;
   pillars: PillarSystem;
+  /** Lingering poison clouds. */
+  pools: PoolSystem;
   /** Fog drifting over the map, or null. */
   fog: FogLayer | null;
   lightning: LightningEffect;
@@ -439,6 +442,7 @@ export class Game {
     this.bossDefeated = false;
     w.projectiles.clear();
     w.pillars.clear();
+    w.pools.clear();
     w.skillBolts.clear();
     w.numbers.clear();
     w.slash.hide();
@@ -563,6 +567,7 @@ export class Game {
     w.traps.dispose();
     w.torches.dispose();
     w.pillars.dispose();
+    w.pools.dispose();
     w.fog?.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
@@ -575,6 +580,7 @@ export class Game {
         w.traps.group,
         w.torches.group,
         w.pillars.group,
+        w.pools.group,
         ...(w.fog ? [w.fog.group] : []),
         w.monsters.group,
         w.projectiles.group,
@@ -638,6 +644,7 @@ export class Game {
     // monsters call combat hooks), so the list is passed lazily.
     let monsters: MonsterAISystem;
     let pillars: PillarSystem;
+    let pools: PoolSystem;
     const combat = new CombatSystem(player, () => monsters.all, projectiles, skillBolts, collision, defaultRng, {
       damageDealt: (x, y, amount, crit) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt'),
       damageTaken: (x, y, amount) => {
@@ -666,6 +673,7 @@ export class Game {
       pillars: (points, radius, delay, damage, style) => {
         for (const p of points) pillars.add(p, radius, delay, damage, style);
       },
+      pool: (x, y, radius, delay, duration, dps) => pools.add({ x, y }, radius, delay, duration, dps),
       monsterKilled: (m: Monster) => {
         this.kills++;
         if (m.isBoss) this.setFlag(`${this.mapId}_boss_defeated`, true);
@@ -688,6 +696,7 @@ export class Game {
     monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
     monsters.spawnAll(map.spawns, defaultRng, map.population);
     pillars = new PillarSystem(assets, (damage) => combat.trapHit(damage));
+    pools = new PoolSystem(assets, (dps, seconds) => player.applyPoison(dps, seconds));
     const traps = new TrapSystem(map.traps, assets, collision, {
       stab: (damage) => combat.trapHit(damage),
       shoot: (x, y, dx, dy) => projectiles.fire(x, y, dx, dy, ARROW_SPEED, ARROW_DAMAGE, null, { poison: ARROW_POISON }),
@@ -715,6 +724,7 @@ export class Game {
       traps.group,
       torches.group,
       pillars.group,
+      pools.group,
       ...(fog ? [fog.group] : []),
       monsters.group,
       projectiles.group,
@@ -750,6 +760,7 @@ export class Game {
       traps,
       torches,
       pillars,
+      pools,
       fog,
       lightning,
       numbers,
@@ -1360,7 +1371,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, npcs, interactables, traps, torches, pillars, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, interactables, traps, torches, pillars, pools, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -1509,6 +1520,7 @@ export class Game {
     interactables.update(dt, (f) => this.flags.has(f));
     traps.update(dt, player);
     pillars.update(dt, player);
+    pools.update(dt, player);
     torches.update(dt, player.pos);
     this.scene.updateMap(dt, player.pos);
     slash.update(dt);

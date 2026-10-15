@@ -169,5 +169,61 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A big rusty iron ship anchor half sunk upright in the sand with a length of rusty chain and some seaweed on it, the whole anchor fully visible."
+  },
+  "fungus_a": {
+    "seed": 4301,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small cluster of large glowing bioluminescent mushrooms with pale cyan-green caps and soft glowing gills growing from a patch of dark moss, the whole cluster fully visible."
+  },
+  "fungus_b": {
+    "seed": 4303,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small cluster of large glowing bioluminescent mushrooms with pale cyan-green caps and soft glowing gills growing from a patch of dark moss, the whole cluster fully visible."
+  },
+  "tablet_a": {
+    "seed": 4302,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. An ancient tall carved stone stele standing upright, weathered grey stone with faint carved glowing runes and a thick coat of moss and vines at its base, the whole stele fully visible."
+  },
+  "altar_a": {
+    "seed": 4302,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A corroded ancient stone altar: a low square carved stone platform with a bowl on top, sickly purple-green glowing corruption seeping through cracks and dripping, thorny vines around it, the whole altar fully visible."
+  },
+  "sword": {
+    "seed": 4304,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A gigantic broken ancient greatsword stuck blade-down into the rocky ground, the blade snapped off halfway with a jagged edge, rusted steel with carved runes, piles of rubble and smaller broken weapons at its base, the whole thing fully visible."
+  },
+  "outpost": {
+    "seed": 4302,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A ruined abandoned mountain watchtower outpost built of grey stone and wood, a crumbling round tower with a collapsed wooden roof, a broken wooden palisade fence and a torn banner, the whole outpost fully visible."
+  },
+  "stall": {
+    "seed": 4302,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small wooden market stall with a striped cloth canopy, shelves with jars, baskets of herbs and cloth bundles, wooden counter, the whole stall fully visible."
+  },
+  "noticeboard": {
+    "seed": 4303,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A wooden bounty notice board on two posts with a small tiled roof, covered in pinned paper notices and wanted posters, a hanging red lantern, the whole board fully visible."
   }
 }

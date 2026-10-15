@@ -57,6 +57,12 @@ SPRITES = {
     'hunter_yanya': {'size': ('height', 54), 'side': 'left', 'roll': True, 'out': 'characters'},
     'waterer_xi': {'size': ('height', 41), 'side': 'left', 'roll': True, 'out': 'characters'},
     'boatwright_laodu': {'size': ('height', 38), 'side': 'left', 'roll': True, 'out': 'characters'},
+    # the people of Qinglan Town (chapter 2)
+    'innkeeper_zhoubo': {'size': ('height', 47), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'herbalist_qinghe': {'size': ('height', 46), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'blacksmith_tieshan': {'size': ('height', 50), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'wanderer_guchangfeng': {'size': ('height', 54), 'side': 'left', 'roll': True, 'out': 'characters'},
+    'patrol_linruotang': {'size': ('height', 48), 'side': 'left', 'roll': True, 'out': 'characters'},
     'forest_wolf': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters'},
     'forest_viper': {'size': ('width', 34), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'saturation': 1.2, 'contrast': 1.25},
     # the spring cave and the ruins; the big ones stand in a 96 px frame
@@ -71,6 +77,15 @@ SPRITES = {
     'cleft_boar': {'size': ('width', 48), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'brightness': 1.12},
     'wreck_revenant': {'size': ('height', 58), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.3, 'saturation': 1.25},
     'drowned_spirit': {'size': ('height', 54), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 80, 'saturation': 1.3},
+    # chapter 2: the green-vine forest and the broken-sword pass
+    'green_fang_wolf': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40},
+    'mountain_blade_wolf': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40},
+    'vine_ape': {'size': ('height', 70), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 96},
+    'rot_flower': {'size': ('height', 62), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 80, 'saturation': 1.2},
+    'old_wood_warden': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 128},
+    'exiled_swordsman': {'size': ('height', 60), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.15},
+    'fallen_cultivator': {'size': ('height', 60), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.3, 'saturation': 1.2},
+    'broken_sword_colossus': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 128},
     'core_watcher': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 128},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall

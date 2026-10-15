@@ -82,6 +82,35 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 第二章後半：青藤古林、青嵐鎮、斷劍山道（2026-10-15，本機 AI 生成 + 程式繪製）
+
+做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)、
+[docs/art/character-prompts.json](docs/art/character-prompts.json) 與 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)；轉面原圖在 [docs/art/turnarounds/](docs/art/turnarounds/)。
+
+**八種怪物**（像素精靈，`public/assets/monsters/`）：green_fang_wolf（青牙狼）、mountain_blade_wolf（山地刃狼，兩種狼用同一種畫法）、vine_ape（藤甲猿）、rot_flower（腐靈花妖）、
+old_wood_warden（古木巡守者，Boss）、exiled_swordsman（流亡刀客）、fallen_cultivator（墮靈修士）、broken_sword_colossus（斷劍巨像，Boss）。
+**青牙狼被呼叫來的同伴**（`green_fang_ally`）與青牙狼共用圖。
+
+**五位 NPC**（形象圖 `public/assets/art/characters/`、對話頭像 `art/portraits/`、地圖上的像素小人 `public/assets/characters/`）：innkeeper_zhoubo（周伯）、herbalist_qinghe（沈青禾）、
+blacksmith_tieshan（鐵山）、wanderer_guchangfeng（顧長風）、patrol_linruotang（林若棠）。做法與第一章的角色一樣：先畫一張形象圖，再用局部重繪補出正面、朝左的側面與背面，縮成像素。
+
+**場景小物**（生成圖；這批用新的「自動底色」去背，見 [tools/prepare_props.py](tools/prepare_props.py)，它跟著圖片自己的背景色走並把比背景暗的紫色陰影一起去掉）：
+
+| 專案內檔案 | 用途 |
+| --- | --- |
+| public/assets/props/decor_fungus_a/b.png | 發光菌類（古林的地面裝飾） |
+| public/assets/props/decor_tablet_a.png | 古老石碑（古林中央空地，可查看） |
+| public/assets/props/decor_altar_a.png | 被侵蝕的祭壇（古林，任務「靈氣的痕跡」） |
+| public/assets/buildings/sword.png | 斷裂的巨劍（山道的戰場） |
+| public/assets/buildings/outpost.png | 廢棄的哨站（山道） |
+| public/assets/buildings/stall.png、noticeboard.png | 市集攤位、懸賞告示板（青嵐鎮） |
+
+**青嵐鎮的房屋**用的是島上村子的木屋（第三方 CC0 圖）：客棧用村長家、藥鋪用雜貨店、鐵匠鋪與民宅用木屋、巡山司用船匠的屋子；**不是專屬的美術**，所以看起來和胎息村很像。
+**程式畫的**：根刺（Boss 召喚的）、毒霧。
+
+**已知的限制**：只有待機有畫格，其餘動作是程式演出；兩種狼和本島的野狼長得很像；青嵐鎮的建築沿用島上的木屋；斷劍山道的地面用的是洞窟的地磚（藍紫色），
+路用土路磚，兩種接起來有點雜；紫色陰影在哨站的圍籬裡還有一點殘留；NPC 的轉面是模型另外畫的，服裝的細節在不同面之間有出入。
+
 ## 迷霧海岸的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
 
 做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json) 與 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)。

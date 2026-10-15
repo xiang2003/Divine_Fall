@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent / 'public' / 'assets' / 'art'
 SRC = ROOT / 'characters'
 OUT = ROOT / 'portraits'
 
-NAMES = ['hero', 'elder_qiyi', 'hunter_yanya', 'waterer_xi', 'boatwright_laodu']
+NAMES = ['hero', 'elder_qiyi', 'hunter_yanya', 'waterer_xi', 'boatwright_laodu', 'innkeeper_zhoubo', 'herbalist_qinghe', 'blacksmith_tieshan', 'wanderer_guchangfeng', 'patrol_linruotang']
 TOLERANCE = 26  # max colour distance from the border colour that still counts as background
 POCKET_TOLERANCE = 16  # tighter than TOLERANCE: only pixels that really match the background
 POCKET_MIN_AREA = 900  # smaller patches are kept: they are part of a textured light cloth, not background

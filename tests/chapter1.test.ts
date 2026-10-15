@@ -99,8 +99,8 @@ describe('chapter 1 data', () => {
     expect(validateQuests(QUESTS, known)).toEqual([]);
   });
 
-  it('all four main quests exist in order', () => {
-    expect(Object.keys(QUESTS)).toEqual(['q1_first_hunt', 'q2_muddy_water', 'q3_resonance', 'q4_stranded_boat']);
+  it('all four main quests exist in order (the chapter 2 bounties come after them)', () => {
+    expect(Object.keys(QUESTS).slice(0, 4)).toEqual(['q1_first_hunt', 'q2_muddy_water', 'q3_resonance', 'q4_stranded_boat']);
     expect(QUESTS.q2_muddy_water!.requires).toEqual(['q1_first_hunt']);
     expect(QUESTS.q3_resonance!.requires).toEqual(['q2_muddy_water']);
     expect(QUESTS.q4_stranded_boat!.requires).toEqual(['q3_resonance']);

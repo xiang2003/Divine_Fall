@@ -312,6 +312,325 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
     },
   },
 
+  // ==== 第二章：青嵐鎮 =======================================================================================
+  // ---- 周伯（客棧老闆）----
+  zhou_intro: {
+    id: 'zhou_intro',
+    start: 'a',
+    nodes: {
+      a: { text: '喲，生面孔！風塵僕僕的，剛從海邊上來吧？進來坐，進來坐，先喝碗熱湯。', next: 'b' },
+      b: { text: '我是周伯，這間青嵐客棧的掌櫃。鎮上有什麼風吹草動，十有八九我先聽到。', set: ['met_zhou'], choices: [
+        { text: '這一帶安全嗎？', to: 'danger' },
+        { text: '最近有什麼怪事？', to: 'strange' },
+      ] },
+      danger: { text: '安全？嘿，往西是青藤古林，狼多，猿也不少；往東是斷劍山道，刀客、墮了道的修士都有。鎮上倒是太平，有巡山司盯著。', next: 'strange' },
+      strange: { text: '怪事嘛……近來靈氣不太對勁。林子裡的畜生眼睛發綠，山道上的人說話顛三倒四。我活了五十年，沒見過。', next: 'ask' },
+      ask: { text: '你要是有膽量，我這兒正好有個差事。你去問問看？', end: true },
+    },
+  },
+  zhou_repeat: {
+    id: 'zhou_repeat',
+    start: 'a',
+    nodes: {
+      a: { text: '客官有什麼吩咐？住店、吃飯，還是打聽事？', choices: [
+        { text: '說說這個鎮子。', to: 'town' },
+        { text: '那位在城外的流浪修士是誰？', to: 'gu', if: { flag: 'met_gu' } },
+        { text: '沒事，隨便看看。', to: 'bye' },
+      ] },
+      town: { text: '青嵐鎮靠山吃山。獵人、藥農、跑商的都往這兒歇腳。鐵山的鋪子，沈姑娘的藥鋪，巡山司的懸賞，樣樣齊全。', next: 'bye' },
+      gu: { text: '顧先生？他住店從來不多話，只愛在城外一站就是半天，說是看風。我也看不出什麼名堂。', next: 'bye' },
+      bye: { text: '好嘞，有事再叫我。', end: true },
+    },
+  },
+  zhou_q7_offer: {
+    id: 'zhou_q7_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '你來得巧。古林深處原本有條通到鎮上的老路，現在被一尊古樹和石頭拼成的守衛擋死了。進去的人，十個有九個沒走到它面前。', next: 'b' },
+      b: { text: '客棧的生意靠商旅，路斷了，我這兒冷清得很。你幫我把它清掉，我拿得出的酬謝不會少。', choices: [
+        { text: '我去會會它。', to: 'accept' },
+        { text: '讓我再準備一下。', to: 'later' },
+      ] },
+      accept: { text: '好！活著回來，我請你吃頓好的。', startQuest: 'q7_warden_bounty', end: true },
+      later: { text: '不急，路又不會自己好。但也別拖太久。', end: true },
+    },
+  },
+  zhou_q7_active: {
+    id: 'zhou_q7_active',
+    start: 'a',
+    nodes: { a: { text: '往西走青藤古林，一路穿到最深處。那尊守衛站在路口，你不會錯過它。', end: true } },
+  },
+  zhou_q7_turnin: {
+    id: 'zhou_q7_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '你、你真的把它打倒了？剛才有人從林子那邊跑來說，老路通啦！', next: 'b' },
+      b: { text: '拿著，這是我的一點心意。往後在鎮上住店，我給你留最好的房。', completeQuest: 'q7_warden_bounty', next: 'c' },
+      c: { text: '對了，那東西倒下的時候，林子裡的靈氣是不是……動了一下？算了，我隨口說說。', end: true },
+    },
+  },
+
+  // ---- 沈青禾（藥鋪學徒）----
+  qinghe_intro: {
+    id: 'qinghe_intro',
+    start: 'a',
+    nodes: {
+      a: { text: '……客人，請不要碰那邊的瓶子。那是剛配好的，味道很重。', next: 'b' },
+      b: { text: '我是沈青禾，在這間藥鋪幫師父看店。山裡的草藥，我多半認得。', set: ['met_qinghe'], choices: [
+        { text: '你看起來很熟悉這片山林。', to: 'woods' },
+        { text: '我身上的傷，有什麼藥能用？', to: 'wound' },
+      ] },
+      woods: { text: '採藥的人，總要記得每一條路。不過這一年，有些路上的草長歪了。靈氣太亂，連最普通的藥草都變了樣。', next: 'bye' },
+      wound: { text: '外傷的話，三七和止血草最有效。不過鋪子這幾天缺貨，等山道通了，才有新貨進來。', next: 'bye' },
+      bye: { text: '需要什麼，慢慢看吧。', end: true },
+    },
+  },
+  qinghe_repeat: {
+    id: 'qinghe_repeat',
+    start: 'a',
+    nodes: {
+      a: { text: '有事嗎？', choices: [
+        { text: '古林裡的花妖，是怎麼回事？', to: 'flower' },
+        { text: '你一個人守店不怕嗎？', to: 'brave' },
+        { text: '沒事。', to: 'bye' },
+      ] },
+      flower: { text: '那不是普通的花。它們被靈氣泡得太久，開始自己找食物。它們噴的粉，吸一口就會頭暈、發燒，千萬別站在白霧裡。', next: 'bye' },
+      brave: { text: '怕過。後來想，與其怕，不如多認幾種草。認得的東西，就沒那麼可怕了。', next: 'bye' },
+      bye: { text: '慢走。', end: true },
+    },
+  },
+
+  // ---- 鐵山（鐵匠）----
+  tieshan_intro: {
+    id: 'tieshan_intro',
+    start: 'a',
+    nodes: {
+      a: { text: '……要打什麼？先說清楚，我不接亂七八糟的活。', next: 'b' },
+      b: { text: '鐵山。這鋪子裡的鐵，每一塊我都認得。你的劍給我看看。', set: ['met_tieshan'], choices: [
+        { text: '您以前是做什麼的？', to: 'past' },
+        { text: '只是路過，看看。', to: 'pass' },
+      ] },
+      past: { text: '替人打過兵器。打給誰的，不必問。那都是過去的事了，現在只是個守著爐子的老頭。', next: 'bye' },
+      pass: { text: '看吧。好鐵不怕看。', next: 'bye' },
+      bye: { text: '要修要練再來。', end: true },
+    },
+  },
+  tieshan_repeat: {
+    id: 'tieshan_repeat',
+    start: 'a',
+    nodes: {
+      a: { text: '嗯。', choices: [
+        { text: '山道上的那把巨劍是怎麼回事？', to: 'sword' },
+        { text: '您怎麼會隱居在這種地方？', to: 'why' },
+        { text: '打擾了。', to: 'bye' },
+      ] },
+      sword: { text: '那是一把真正的劍，不是擺設。據說有人拿它斬過山。現在斷了，剩下半截戳在那兒，像一塊墓碑。', next: 'bye' },
+      why: { text: '……鐵打久了，會聽見它說話。有些話，我不想再聽了。', next: 'bye' },
+      bye: { text: '好走。', end: true },
+    },
+  },
+  tieshan_relic: {
+    id: 'tieshan_relic',
+    start: 'a',
+    nodes: {
+      a: { text: '等等。你掌心那個印……給我看看。', set: ['tieshan_saw_relic'], next: 'b' },
+      b: { text: '不是鐵，不是玉，也不是我見過的任何東西。我替宗門修過古遺跡裡挖出來的碎片，沒有一塊像它。', next: 'c' },
+      c: { text: '這東西，別隨便給人看。別問我為什麼——我也說不上來。', end: true },
+    },
+  },
+
+  // ---- 顧長風（流浪修士）----
+  gu_intro: {
+    id: 'gu_intro',
+    start: 'a',
+    nodes: {
+      a: { text: '……你從海上來。', next: 'b' },
+      b: { text: '別緊張。靈氣不會說謊，你身上有一股和這裡的修行者都不一樣的氣息。我叫顧長風，一個閒人。', set: ['met_gu'], choices: [
+        { text: '你知道我是什麼人？', to: 'who' },
+        { text: '你站在這裡做什麼？', to: 'what' },
+      ] },
+      who: { text: '不知道。我只知道，你身上的東西，比這片大陸上多數人願意承認的，要古老得多。', next: 'bye' },
+      what: { text: '看風。靈氣也有風，它從哪裡來、往哪裡去，站得久了，看得出一點端倪。這幾個月，它都在往西邊的古林聚。', next: 'bye' },
+      bye: { text: '如果你願意，我有件事想請你替我看一看。', end: true },
+    },
+  },
+  gu_repeat: {
+    id: 'gu_repeat',
+    start: 'a',
+    nodes: {
+      a: { text: '有事？', choices: [
+        { text: '你為什麼不直接告訴我我是誰？', to: 'why' },
+        { text: '靈氣到底怎麼了？', to: 'aura' },
+        { text: '沒事。', to: 'bye' },
+      ] },
+      why: { text: '因為我不確定。說了半句的話，比不說更容易誤人。等我看得清楚，會告訴你。', next: 'bye' },
+      aura: { text: '像一口井被攪渾了。攪的人或許不是壞意，只是不知道自己在攪。', next: 'bye' },
+      bye: { text: '去吧。', end: true },
+    },
+  },
+  gu_aura: {
+    id: 'gu_aura',
+    start: 'a',
+    nodes: {
+      a: { text: '你掌心的印，在這裡比在島上亮。你自己沒有發現嗎？', next: 'b' },
+      b: { text: '這片大陸上，有些地方的靈氣一直在等一個人。我還不能說是你。但你走過的地方，它們都有反應。', end: true },
+    },
+  },
+  gu_q6_offer: {
+    id: 'gu_q6_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '古林深處有一座祭壇，原本是早年修行者祭天用的。現在它被靈氣侵蝕了，我不敢靠太近，因為我的修為太淺，容易被它拖進去。', next: 'b' },
+      b: { text: '你身上的氣息很特別，或許能近前。去看看那座祭壇，回來告訴我你看到了什麼。', choices: [
+        { text: '我去看看。', to: 'accept' },
+        { text: '我還要想想。', to: 'later' },
+      ] },
+      accept: { text: '小心。如果覺得頭暈，立刻離開，不要逞強。', startQuest: 'q6_altar_trace', end: true },
+      later: { text: '不急。它不會跑。', end: true },
+    },
+  },
+  gu_q6_active: {
+    id: 'gu_q6_active',
+    start: 'a',
+    nodes: { a: { text: '祭壇在青藤古林的中央空地，從古老的石碑往東走。如果受不了，就退回來。', end: true } },
+  },
+  gu_q6_turnin: {
+    id: 'gu_q6_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '你回來了。說吧，你看到了什麼。', next: 'b' },
+      b: { text: '……靈氣從祭壇的裂縫往外滲，不是被誰引來的，是它自己在流。難怪古林的野獸都眼睛發綠。', next: 'c' },
+      c: { text: '謝謝你。這是我給你的一點酬謝。這件事我會記著，也請你記著：源頭不在古林，古林只是它流經的地方。', completeQuest: 'q6_altar_trace', next: 'd' },
+      d: { text: '往東的斷劍山道，或許能看見更多。', end: true },
+    },
+  },
+
+  // ---- 林若棠（巡山司接待人）----
+  lin_intro: {
+    id: 'lin_intro',
+    start: 'a',
+    nodes: {
+      a: { text: '領懸賞？登記，簽字，去做，回來報。我沒空聊天。', next: 'b' },
+      b: { text: '林若棠，巡山司接待。你的身手我看一眼就知道個大概，先從簡單的做起，做得好再給你更難的。', set: ['met_lin'], choices: [
+        { text: '有什麼懸賞？', to: 'bounty' },
+        { text: '巡山司是做什麼的？', to: 'office' },
+      ] },
+      bounty: { text: '現在貼著的，是青藤古林的狼群。你要接，就跟我說。', end: true },
+      office: { text: '管這一帶的除妖、探路、清道。山裡的東西越來越兇，人手卻不夠，所以懸賞才貼出去。', end: true },
+    },
+  },
+  lin_repeat: {
+    id: 'lin_repeat',
+    start: 'a',
+    nodes: {
+      a: { text: '還有事？', choices: [
+        { text: '最近的懸賞多嗎？', to: 'many' },
+        { text: '你不累嗎？', to: 'tired' },
+        { text: '沒事。', to: 'bye' },
+      ] },
+      many: { text: '比去年多了三倍。越往內陸走，越兇。我們把能接的人都接了，還是不夠。', next: 'bye' },
+      tired: { text: '累。但累也得做。山裡沒人管，鎮上就沒有安穩日子。', next: 'bye' },
+      bye: { text: '去吧。', end: true },
+    },
+  },
+  lin_q5_offer: {
+    id: 'lin_q5_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '青藤古林的青牙狼，成群、動作快，被咬傷的獵人已經有七八個。懸賞：擊殺五隻。', next: 'b' },
+      b: { text: '提醒你：它們受傷了會叫同伴，別在同一個地方糾纏太久。', choices: [
+        { text: '我接了。', to: 'accept' },
+        { text: '我再準備一下。', to: 'later' },
+      ] },
+      accept: { text: '登記完成。回來找我報，我會核對。', startQuest: 'q5_wolf_bounty', end: true },
+      later: { text: '準備好了再來。懸賞不會跑，但牠們會繼續咬人。', end: true },
+    },
+  },
+  lin_q5_active: {
+    id: 'lin_q5_active',
+    start: 'a',
+    nodes: { a: { text: '還沒五隻？古林在西邊。牠們成群，記得別被包圍。', end: true } },
+  },
+  lin_q5_turnin: {
+    id: 'lin_q5_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '五隻，核對無誤。身手不錯。', next: 'b' },
+      b: { text: '這是懸賞金與獎勵。', completeQuest: 'q5_wolf_bounty', next: 'c' },
+      c: { text: '下一件事，我已經給你留著了。是山道上的東西，比狼棘手得多。', end: true },
+    },
+  },
+  lin_q8_offer: {
+    id: 'lin_q8_offer',
+    start: 'a',
+    nodes: {
+      a: { text: '斷劍山道上，有一尊用舊兵器和石頭湊成的巨像，擋在去內陸的路口。巡山司的人已經折了三個。', next: 'b' },
+      b: { text: '你的名聲，我聽說了。這件事交給你，我放心一點。', choices: [
+        { text: '我去。', to: 'accept' },
+        { text: '我需要準備。', to: 'later' },
+      ] },
+      accept: { text: '登記完成。它很大，也很慢，但每一擊都能要人命。看清楚再動手。', startQuest: 'q8_colossus_bounty', end: true },
+      later: { text: '好好準備，別逞強。', end: true },
+    },
+  },
+  lin_q8_active: {
+    id: 'lin_q8_active',
+    start: 'a',
+    nodes: { a: { text: '往東出鎮，斷劍山道的盡頭。它會先蓄力再重擊，看到它舉起武器，就往外跑。', end: true } },
+  },
+  lin_q8_turnin: {
+    id: 'lin_q8_turnin',
+    start: 'a',
+    nodes: {
+      a: { text: '巨像……倒了？', next: 'b' },
+      b: { text: '這是你應得的。我會把這件事報給上面。', completeQuest: 'q8_colossus_bounty', next: 'c' },
+      c: { text: '山道通了，內陸的路也通了。……你的路，現在才開始。', end: true },
+    },
+  },
+
+  // ---- 第二章的互動物件 ----
+  tablet_read: {
+    id: 'tablet_read',
+    start: 'a',
+    nodes: {
+      a: { text: '石碑上的字被苔蘚蓋住大半，勉強能讀出幾個：「……氣聚於此，七日不散，修者宜靜……」', next: 'b' },
+      b: { text: '後面的字被人刻意鑿去了。鑿痕很舊，卻比周圍的字還清楚。', end: true },
+    },
+  },
+  altar_look: {
+    id: 'altar_look',
+    start: 'a',
+    nodes: {
+      a: { text: '祭壇的石盆裡積著一層紫綠色的黏液，從裂縫一點一點往外滲，滲到哪裡，哪裡的草就發黃。', next: 'b' },
+      b: { text: '你的掌心微微發燙。裂縫深處有東西在回應你，像是認得你的氣息。', next: 'c' },
+      c: { text: '你退後一步。靈氣的流向，不是指向這座祭壇，而是穿過它，往東去。', end: true },
+    },
+  },
+  outpost_look: {
+    id: 'outpost_look',
+    start: 'a',
+    nodes: {
+      a: { text: '哨站的木頭早已朽爛，牆上還插著幾支斷箭。地上有火堆的痕跡，不算舊。', next: 'b' },
+      b: { text: '角落裡有一面撕碎的旗，上面的字被血糊住。很久以前，有人在這裡守過。', end: true },
+    },
+  },
+  sword_look: {
+    id: 'sword_look',
+    start: 'a',
+    nodes: {
+      a: { text: '巨劍有三人高，劍身斷在中段，斷口像是被什麼東西生生撕開的，不是砍斷。', next: 'b' },
+      b: { text: '劍柄上刻著古老的符文，周圍散落著無數小兵器。這裡曾經是一座戰場，而且打得很慘。', end: true },
+    },
+  },
+  pass_end_look: {
+    id: 'pass_end_look',
+    start: 'a',
+    nodes: {
+      a: { text: '山道的盡頭，雲霧散開了一點。遠處的山脊像一道一道刀痕，一直延伸到看不見的地方。', next: 'b' },
+      b: { text: '這片大陸比你想像的大得多。（後面的路還沒有開通。）', end: true },
+    },
+  },
+
   // ==== 互動物件 ===========================================================================================
   shard_find: {
     id: 'shard_find',

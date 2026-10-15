@@ -14,6 +14,7 @@ from pathlib import Path
 
 W, H = 60, 46
 START = (9, 37)
+EAST_GATE = (W - 5, 22)  # the middle tile of the 1 x 3 portal into the forest
 WRECK = (21, 25, 5, 3)  # x, y, w, h of the wreck's footprint
 TRACE = (19, 23)
 
@@ -101,6 +102,13 @@ def build(seed):
             if grid[y][x] == 'T':
                 grid[y][x] = '.'
     grid[TRACE[1]][TRACE[0]] = '.'
+    # the way inland: an opening in the trees at the east edge, to the green-vine forest
+    for y in range(EAST_GATE[1] - 2, EAST_GATE[1] + 3):
+        for x in range(W - 9, W - 3):
+            if grid[y][x] in 'T':
+                grid[y][x] = '.'
+            if grid[y][x] == '.':
+                grass[y][x] = 'g'
     return grid, grass, spawns, elites
 
 
@@ -120,7 +128,7 @@ def reachable_all(grid, points):
 seed = 1
 while True:
     grid, grass, spawns, elites = build(seed)
-    all_points = [p for pts in spawns.values() for p in pts] + elites + [TRACE, (START[0] - 1, START[1])]
+    all_points = [p for pts in spawns.values() for p in pts] + elites + [TRACE, (START[0] - 1, START[1]), EAST_GATE, (EAST_GATE[0] - 2, EAST_GATE[1])]
     if reachable_all(grid, all_points):
         break
     seed += 1
@@ -155,8 +163,11 @@ data = {
     },
     'layout': layout,
     'grass': [''.join(row) for row in grass],
-    'entrances': {'from_island': {'x': START[0] - 1, 'y': START[1]}},
-    'portals': [{'id': 'to_island', 'x': 6, 'y': START[1] - 1, 'w': 1, 'h': 3, 'to': {'map': 'pure_coast', 'entrance': 'ferry_side'}}],
+    'entrances': {'from_island': {'x': START[0] - 1, 'y': START[1]}, 'from_forest': {'x': EAST_GATE[0] - 2, 'y': EAST_GATE[1]}},
+    'portals': [
+        {'id': 'to_island', 'x': 6, 'y': START[1] - 1, 'w': 1, 'h': 3, 'to': {'map': 'pure_coast', 'entrance': 'ferry_side'}},
+        {'id': 'to_forest', 'x': EAST_GATE[0], 'y': EAST_GATE[1] - 1, 'w': 1, 'h': 3, 'to': {'map': 'canglan_forest', 'entrance': 'from_coast'}},
+    ],
     'buildings': [{'style': 'wreck', 'x': WRECK[0], 'y': WRECK[1], 'w': WRECK[2], 'h': WRECK[3]}],
     'population': {'monsters': population, 'elites': ['wreck_revenant']},
     'decor': [{'kind': 'anchor', 'x': 27.5, 'y': 26.5}],

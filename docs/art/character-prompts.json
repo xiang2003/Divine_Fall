@@ -33,5 +33,40 @@
     "height": 1216,
     "steps": 8,
     "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm gold accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy primitive island folk, no cartoon or chibi look. A very short, extremely stocky middle-aged human man boatwright, chest-high to an ordinary adult but with a huge broad barrel chest and thick strong arms, realistic weathered face with a heavy brow, strong jaw and ordinary human round ears, thick russet-brown beard braided into two plaits, short cropped hair, a stub of cigar clamped between his teeth, narrowed angry eyes, a heavy scorched leather apron over a rolled-sleeve coarse shirt, a tool belt with hammer and chisel, heavy work boots, iron grey, dark red and burnt brown tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "innkeeper_zhoubo": {
+    "seed": 4202,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy ancient-China cultivation-world townsfolk, no cartoon or chibi look. A warm cheerful middle-aged male innkeeper about fifty, round friendly face with laugh lines and a short grey-streaked beard, slightly plump, a clean cloth towel over one shoulder, a plain brown linen robe with a dark apron tied at the waist, sleeves rolled up, a small abacus hanging from his belt, cloth shoes, warm brown and ochre tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "herbalist_qinghe": {
+    "seed": 4202,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy ancient-China cultivation-world townsfolk, no cartoon or chibi look. A calm young woman of about twenty-three working as a herbalist's apprentice, slender, steady observant eyes, long dark hair in a low braid with a green ribbon, a pale green and cream layered linen robe with a leather satchel of dried herbs and small glass bottles at the hip, a small woven basket on her back with leaves poking out, soft cloth boots, sage green and cream tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "blacksmith_tieshan": {
+    "seed": 4202,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy ancient-China cultivation-world townsfolk, no cartoon or chibi look. A broad heavily built male blacksmith in his fifties, bald with a thick grey moustache, many small burn scars on thick forearms, a deep calm serious face, a heavy scorched leather apron over a bare-armed dark shirt, a large hammer held in one hand resting on his shoulder, a leather belt with tongs, heavy boots, iron grey, charcoal and burnt orange tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "wanderer_guchangfeng": {
+    "seed": 4202,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy ancient-China cultivation-world townsfolk, no cartoon or chibi look. A lean tall male wandering cultivator of about thirty-five with an unreadable calm gaze, shoulder-length dark hair tied loosely with a cloth band, a faded blue-grey travel-stained robe with a rope belt, a long sword wrapped in worn cloth strapped across his back, a small wine gourd hanging at his hip, straw sandals, a faint thin white scar on his chin, slate blue and grey tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
+  },
+  "patrol_linruotang": {
+    "seed": 4202,
+    "width": 832,
+    "height": 1216,
+    "steps": 8,
+    "prompt": "Semi-realistic painterly character illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, realistic human proportions about 7.5 heads tall, realistic mature facial features, natural believable anatomy, muted earthy natural palette with a few warm accents, soft even studio light from the upper left, highly detailed fabric, leather and skin. Dark fantasy ancient-China cultivation-world townsfolk, no cartoon or chibi look. A sharp efficient young woman of about twenty-six, an official receptionist of the mountain patrol office, black hair in a tight high ponytail, a dark navy and white fitted official tunic with a bronze badge on the chest, a rolled bounty scroll in one hand and a brush pen behind her ear, a short blade at the belt, leather boots, direct no-nonsense expression, navy blue, white and bronze tones. Full figure centered with empty margin on all sides, whole body from head to toe fully inside the frame, standing relaxed, body turned 30 degrees toward the right, head turned slightly to the right. Plain flat very light gray background, no text, no watermark."
   }
 }

@@ -1,0 +1,388 @@
+{
+ "id": "canglan_forest",
+ "name": "青藤古林",
+ "theme": "grass",
+ "fog": 0.18,
+ "legend": {
+  "T": "ancient tree (blocks)",
+  ".": "forest floor",
+  " ": "void (not walkable, not drawn)",
+  "P": "arrival from the coast",
+  "m": "normal monster spawn (the kind follows population.monsters, in reading order)",
+  "e": "elite spawn (a vine ape)",
+  "B": "boss spawn (the old wood warden, in the arena)"
+ },
+ "layout": [
+  "                                                                        ",
+  "                                                                        ",
+  "                                                                        ",
+  "                      TTTTTTT              TTTTTTT                      ",
+  "                    TTTTTTTTT              TTTTTTT                      ",
+  "               TTTTTTTTT...TTT            TTT.T.TTT                     ",
+  "              TTTTTTTT.....TTT     TTTTTTTTTT...TTTT                    ",
+  "              TTT...........TT   TTTTTTTTTTT.....TTT                    ",
+  "              TT........m...TT   TTTT.............TTT                   ",
+  "              TT..m.........TTTTTTT...............TTT                   ",
+  "              TT............TTTTTTT........m.......TTTT                 ",
+  "              TT.............TTTT.......T..........TTTTT                ",
+  "              TT.T........m...........TTT........m...TTTT               ",
+  "              TT.T.T.................TTTT..T..........TTT               ",
+  "              TTTT..................TTTTTT.............TTT              ",
+  "              TTTTTT.......TT.....TTTTTTTTT..TTT.......TTT              ",
+  "               TTTT.......TTTTTTTTTTTT  TTTTTTTTTTT.....TT              ",
+  "                 TT....T..TTTTTTTTTT     TTTTTTTTTTT....TT              ",
+  "                 TT...TT.TTT                     TTT....TT              ",
+  "                 TT...TTTTTT                      TTT...TTTTTTTTTTTTTTT ",
+  "                 TT....TTTTT                      TTT...TTTTTTTTTTTTTTTT",
+  "   TTTTTTT       TT......TTT      TTTTTTTTTTTTTT   TT...TT..TTTT.....TTT",
+  "  TTTTTTTTT      TTT......TTTTTTTTTTTTTTTTTTTTTTT  TT.................TT",
+  " TTTT...TTTTTTTT TTTT.....TTT...TTTT....TTT...TTTTTTT.................TT",
+  " TTT.....TTTTTTTTTTT......T.T.m...T............TTTTTT.......T....T....TT",
+  " TT...........TTTTT...............T.....m.T.......TTTT................TT",
+  " TT.............TT.................................TTT....m...........TT",
+  " TT.............TT..................................TT................TT",
+  " TT....P.........T..m.........TT..............T...................B...TT",
+  " TT.........T...............TTTTT.............TTT.....................TT",
+  " TTT........TT.............TTTTTTT..m.......m.TTT.....................TT",
+  " TT...T....TTTT...........TTTT TTTT...........TTTTT..................TTT",
+  " TT......TTTTTTTT........TTTT   TTT.........TTTTTTTTT................TTT",
+  " TT....TTTTTTTTTTTTTT....TTTT    TT...TT...TTTT  TTTTT..............TTT ",
+  " TTTTTTTTTT    TTTTTT..TTTT      TT....TT.TTTT     TTT.......T.....TTTT ",
+  " TTTTTTTT          TTTTTTTT    TTTT......TTTT       TT....T.......TTTT  ",
+  "                   TTTTTT     TTTTTT...TTTTT        TT...TTT.....TTTT   ",
+  "                             TTTT..T....TTT         TT....TTT...TTTT    ",
+  "                            TTTT........TT          TT....TTTTTTTTT     ",
+  "                         TTTTTT.........TT     TTTTTTTT...TTTTTTTT      ",
+  "                        TTTTTT..........TT     TTTTTTTT...TTT           ",
+  "                       TTTT.........m..TTT    TTT....TT....TT           ",
+  "                       TTT.......m.....TTT   TTTT..........TT           ",
+  "                       TTT.....e.......TTTTTTTTT...........TT           ",
+  "                       TT...............TTTTTTT.........m.TTT           ",
+  "                       TT...m.............TTT...m.........TTT           ",
+  "                       TT..................T..............TT            ",
+  "                       TT...........m....................TTT            ",
+  "                       TTT............T.........TTT......TTT            ",
+  "                       TTTT.....T..T..TTT.....TTTTT.T...TTT             ",
+  "                        TTTT..........TTTTTTTTTTTTT....TTTT             ",
+  "                        TTTTTTTT......TTTTTTTTTT TTT..TTTT              ",
+  "                          TTTTTTT....TTT         TTTTTTTT               ",
+  "                              TTTTTTTTTT          TTTTTT                ",
+  "                               TTTTTTTT                                 ",
+  "                                                                        "
+ ],
+ "entrances": {
+  "from_coast": {
+   "x": 5,
+   "y": 28
+  },
+  "from_town": {
+   "x": 67,
+   "y": 28
+  }
+ },
+ "portals": [
+  {
+   "id": "to_coast",
+   "x": 3,
+   "y": 27,
+   "w": 1,
+   "h": 3,
+   "to": {
+    "map": "canglan_coast",
+    "entrance": "from_forest"
+   }
+  },
+  {
+   "id": "to_town",
+   "x": 69,
+   "y": 27,
+   "w": 1,
+   "h": 3,
+   "to": {
+    "map": "qinglan_town",
+    "entrance": "from_forest"
+   },
+   "requiresFlag": "canglan_forest_boss_defeated",
+   "blockedText": "林子深處的路被古老的樹根封死了，過不去。（擊敗古木巡守者之後才會通。）"
+  }
+ ],
+ "population": {
+  "monsters": [
+   "rot_flower",
+   "green_fang_wolf",
+   "rot_flower",
+   "green_fang_wolf",
+   "rot_flower",
+   "green_fang_wolf",
+   "vine_ape",
+   "rot_flower",
+   "rot_flower",
+   "rot_flower",
+   "green_fang_wolf",
+   "green_fang_wolf",
+   "rot_flower",
+   "vine_ape",
+   "vine_ape",
+   "rot_flower",
+   "vine_ape"
+  ],
+  "elites": [
+   "vine_ape"
+  ],
+  "boss": "old_wood_warden"
+ },
+ "decor": [
+  {
+   "kind": "fungus",
+   "x": 39.5,
+   "y": 39.5
+  },
+  {
+   "kind": "fungus",
+   "x": 25.5,
+   "y": 5.5
+  },
+  {
+   "kind": "fungus",
+   "x": 53.5,
+   "y": 20.5
+  },
+  {
+   "kind": "fungus",
+   "x": 53.5,
+   "y": 49.5
+  },
+  {
+   "kind": "fungus",
+   "x": 26.5,
+   "y": 15.5
+  },
+  {
+   "kind": "fungus",
+   "x": 18.5,
+   "y": 14.5
+  },
+  {
+   "kind": "fungus",
+   "x": 54.5,
+   "y": 35.5
+  },
+  {
+   "kind": "fungus",
+   "x": 52.5,
+   "y": 41.5
+  },
+  {
+   "kind": "fungus",
+   "x": 65.5,
+   "y": 21.5
+  },
+  {
+   "kind": "fungus",
+   "x": 54.5,
+   "y": 25.5
+  },
+  {
+   "kind": "fungus",
+   "x": 68.5,
+   "y": 32.5
+  },
+  {
+   "kind": "fungus",
+   "x": 22.5,
+   "y": 20.5
+  },
+  {
+   "kind": "fungus",
+   "x": 25.5,
+   "y": 47.5
+  },
+  {
+   "kind": "fungus",
+   "x": 55.5,
+   "y": 39.5
+  },
+  {
+   "kind": "fungus",
+   "x": 38.5,
+   "y": 11.5
+  },
+  {
+   "kind": "fungus",
+   "x": 34.5,
+   "y": 26.5
+  },
+  {
+   "kind": "fungus",
+   "x": 49.5,
+   "y": 30.5
+  },
+  {
+   "kind": "fungus",
+   "x": 4.5,
+   "y": 24.5
+  },
+  {
+   "kind": "fungus",
+   "x": 19.5,
+   "y": 19.5
+  },
+  {
+   "kind": "fungus",
+   "x": 35.5,
+   "y": 34.5
+  },
+  {
+   "kind": "fungus",
+   "x": 35.5,
+   "y": 50.5
+  },
+  {
+   "kind": "fungus",
+   "x": 40.5,
+   "y": 35.5
+  },
+  {
+   "kind": "fungus",
+   "x": 21.5,
+   "y": 7.5
+  },
+  {
+   "kind": "fungus",
+   "x": 27.5,
+   "y": 41.5
+  },
+  {
+   "kind": "fungus",
+   "x": 19.5,
+   "y": 32.5
+  },
+  {
+   "kind": "fungus",
+   "x": 58.5,
+   "y": 42.5
+  },
+  {
+   "kind": "fungus",
+   "x": 25.5,
+   "y": 44.5
+  },
+  {
+   "kind": "fungus",
+   "x": 44.5,
+   "y": 15.5
+  },
+  {
+   "kind": "fungus",
+   "x": 33.5,
+   "y": 37.5
+  },
+  {
+   "kind": "fungus",
+   "x": 31.5,
+   "y": 49.5
+  },
+  {
+   "kind": "fungus",
+   "x": 40.5,
+   "y": 48.5
+  },
+  {
+   "kind": "fungus",
+   "x": 32.5,
+   "y": 12.5
+  },
+  {
+   "kind": "fungus",
+   "x": 50.5,
+   "y": 26.5
+  },
+  {
+   "kind": "fungus",
+   "x": 26.5,
+   "y": 25.5
+  },
+  {
+   "kind": "fungus",
+   "x": 40.5,
+   "y": 8.5
+  },
+  {
+   "kind": "fungus",
+   "x": 10.5,
+   "y": 25.5
+  },
+  {
+   "kind": "fungus",
+   "x": 57.5,
+   "y": 22.5
+  },
+  {
+   "kind": "fungus",
+   "x": 52.5,
+   "y": 17.5
+  },
+  {
+   "kind": "fungus",
+   "x": 16.5,
+   "y": 12.5
+  },
+  {
+   "kind": "fungus",
+   "x": 39.5,
+   "y": 32.5
+  },
+  {
+   "kind": "fungus",
+   "x": 45.5,
+   "y": 23.5
+  },
+  {
+   "kind": "fungus",
+   "x": 29.5,
+   "y": 28.5
+  },
+  {
+   "kind": "fungus",
+   "x": 3.5,
+   "y": 32.5
+  },
+  {
+   "kind": "fungus",
+   "x": 15.5,
+   "y": 31.5
+  },
+  {
+   "kind": "fungus",
+   "x": 46.5,
+   "y": 27.5
+  },
+  {
+   "kind": "fungus",
+   "x": 49.5,
+   "y": 8.5
+  },
+  {
+   "kind": "tablet",
+   "x": 23.5,
+   "y": 28.4
+  },
+  {
+   "kind": "altar",
+   "x": 40.5,
+   "y": 28.4
+  }
+ ],
+ "interactables": [
+  {
+   "id": "forest_tablet",
+   "x": 23,
+   "y": 29
+  },
+  {
+   "id": "forest_altar",
+   "x": 40,
+   "y": 29
+  }
+ ]
+}

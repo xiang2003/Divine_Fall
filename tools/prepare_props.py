@@ -39,6 +39,15 @@ PROPS = {
     'roots_a': ('roots_a.webp', 'props/decor_roots_a.png', 220, 0.3),
     'roots_b': ('roots_b.webp', 'props/decor_roots_b.png', 220, 0.3),
     'core': ('core.webp', 'props/decor_core.png', 240, 0.15),
+    # chapter 2: the forest (glowing mushrooms, the stele, the corrupted altar), the pass (the broken sword, the watch-post) and the town (stall, bounty board)
+    'fungus_a': ('fungus_a.webp', 'props/decor_fungus_a.png', 130, 0.3, 'auto'),
+    'fungus_b': ('fungus_b.webp', 'props/decor_fungus_b.png', 130, 0.3, 'auto'),
+    'tablet_a': ('tablet_a.webp', 'props/decor_tablet_a.png', 120, 0.14, 'auto'),
+    'altar_a': ('altar_a.webp', 'props/decor_altar_a.png', 200, 0.22, 'auto'),
+    'sword': ('sword.webp', 'buildings/sword.png', 330, 0.2, 'auto'),
+    'outpost': ('outpost.webp', 'buildings/outpost.png', 380, 0.2, 'auto'),
+    'stall': ('stall.webp', 'buildings/stall.png', 190, 0.2, 'auto'),
+    'noticeboard': ('noticeboard.webp', 'buildings/noticeboard.png', 190, 0.2, 'auto'),
     # the Mist Coast
     'wreck': ('wreck.webp', 'buildings/wreck.png', 520, 0.3, 'magenta', 60),  # small gaps between the sails and the rigging count as background
     'driftwood_a': ('driftwood_a.webp', 'props/decor_driftwood_a.png', 130, 0.25),
@@ -56,11 +65,27 @@ POCKET_MIN_AREA = 700  # smaller patches of magenta-looking pixels inside the ob
 EDGE = 2  # how many pixels in from the background the soft edge reaches
 
 
+REF = {}  # the background colour of the picture being cut ('auto' mode), set by cut_out
+
+
 def magenta(px, x, y, mode='magenta'):
     """How much like the background colour key a pixel is (0 = not at all, about 0.3 or more = background): magenta by default;
     'orange' is for objects that are themselves violet, pink or green (the crystals), drawn on flat orange: its cast shadow is a darker
     orange, which is keyed out together with the background."""
     r, g, b = px[x, y][:3]
+    if mode == 'auto':
+        # the background's own colour, whatever it is: same balance between the channels as the border, and not brighter than it (a cast shadow is darker)
+        br, bg_, bb = REF['rgb']
+        s, bs = max(r + g + b, 1), max(br + bg_ + bb, 1)
+        brightness = s / bs
+        if brightness > 1.12 or brightness < 0.2:
+            return 0.0
+        # a cast shadow is the background seen darker and bluer: any clearly darker pixel with a violet cast and little green is shadow
+        if brightness < 0.82 and g < 0.62 * min(r, b) + 12 and b >= 0.8 * r:
+            return 1.0
+        d = abs(r / s - br / bs) + abs(g / s - bg_ / bs) + abs(b / s - bb / bs)
+        tolerance = 0.16 + 0.22 * max(0.0, 1.0 - brightness)
+        return max(0.0, 1.0 - d / tolerance)
     if mode == 'orange':
         return (r - b) / max(r, 40) if r > g else 0.0
     m = min(r, b)
@@ -73,10 +98,13 @@ def cut_out(path: Path, mode: str = 'magenta', pocket_min: int = POCKET_MIN_AREA
     The background is the magenta that can be reached from the picture's border (a flood fill over pixels that are magenta enough, so
     magenta-tinted metal or paint inside the object is never mistaken for it); along that border the edge is made soft and the magenta
     fringe is pulled out of the colour."""
-    key_full, key_none = (KEY_FULL, KEY_NONE) if mode == 'magenta' else (0.3, 0.15)
+    key_full, key_none = (KEY_FULL, KEY_NONE) if mode == 'magenta' else (0.55, 0.3) if mode == 'auto' else (0.3, 0.15)
     im = Image.open(path).convert('RGB')
     w, h = im.size
     px = im.load()
+    if mode == 'auto':
+        border = [px[x, 0] for x in range(w)] + [px[x, h - 1] for x in range(w)] + [px[0, y] for y in range(h)] + [px[w - 1, y] for y in range(h)]
+        REF['rgb'] = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
     bg = bytearray(w * h)
     queue = deque()
     for x in range(w):
@@ -141,7 +169,9 @@ def cut_out(path: Path, mode: str = 'magenta', pocket_min: int = POCKET_MIN_AREA
                 key = magenta(px, x, y, mode)
                 if key > 0:
                     alpha = 255 if key <= key_none else round(255 * (key_full - key) / (key_full - key_none))
-                    if mode == 'orange':
+                    if mode == 'auto':
+                        pass
+                    elif mode == 'orange':
                         spill = (r - b) * 0.5
                         if spill > 0 and r > g:
                             r = int(r - spill)

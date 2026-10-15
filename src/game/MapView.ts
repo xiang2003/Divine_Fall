@@ -154,7 +154,7 @@ export class MapView {
         wall.matrixAutoUpdate = false;
         wall.updateMatrix();
         this.root.add(wall);
-        if (map.theme === 'stone' || map.theme === 'ruins' || map.theme === 'core' || map.theme === 'cave') {
+        if (map.theme === 'stone' || map.theme === 'ruins' || map.theme === 'core' || map.theme === 'mountain' || map.theme === 'cave') {
           // its own copy of the material, so that one wall can fade without the others
           const material = (wall.material as THREE.MeshBasicMaterial).clone();
           wall.material = material;

@@ -19,7 +19,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawCloud, drawDisc, drawGlow, drawRipple, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
+import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawCloud, drawDisc, drawGlow, drawRipple, drawRootSpike, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
 import { drawMossyWall } from './RuinsArt';
 import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
@@ -81,11 +81,20 @@ export const SpriteKey = {
   MASK: 'monster.mask_spirit',
   WATCHER: 'monster.core_watcher',
   BOAR: 'monster.cleft_boar',
+  GREEN_FANG: 'monster.green_fang_wolf',
+  VINE_APE: 'monster.vine_ape',
+  ROT_FLOWER: 'monster.rot_flower',
+  WARDEN: 'monster.old_wood_warden',
+  BLADE_WOLF: 'monster.mountain_blade_wolf',
+  SWORDSMAN: 'monster.exiled_swordsman',
+  CULTIST: 'monster.fallen_cultivator',
+  COLOSSUS: 'monster.broken_sword_colossus',
   SPIRIT: 'monster.drowned_spirit',
   REVENANT: 'monster.wreck_revenant',
   RIPPLE: 'fx.ripple',
   CHUNK: 'fx.chunk',
   DISC: 'fx.disc',
+  ROOT_SPIKE: 'fx.root_spike',
   CLOUD: 'fx.cloud',
   PILLAR: 'fx.pillar',
   WARPED: 'monster.warped',
@@ -106,6 +115,11 @@ export const SpriteKey = {
   NPC_HUNTER: 'npc.hunter',
   NPC_WATERER: 'npc.waterer',
   NPC_BOATWRIGHT: 'npc.boatwright',
+  NPC_ZHOU: 'npc.zhou',
+  NPC_QINGHE: 'npc.qinghe',
+  NPC_TIESHAN: 'npc.tieshan',
+  NPC_GU: 'npc.gu',
+  NPC_LIN: 'npc.lin',
 } as const;
 
 /**
@@ -146,6 +160,9 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   shard: { keys: ['decor.shard_a', 'decor.shard_b'], scale: 0.32, floats: true },
   core: { keys: ['decor.core'], scale: 0.5 },
   // the Mist Coast
+  fungus: { keys: ['decor.fungus_a', 'decor.fungus_b'], scale: 0.4 },
+  tablet: { keys: ['decor.tablet_a'], scale: 0.42 },
+  altar: { keys: ['decor.altar_a'], scale: 0.45 },
   driftwood: { keys: ['decor.driftwood_a', 'decor.driftwood_b'], scale: 0.4 },
   anchor: { keys: ['decor.anchor'], scale: 0.4 },
 };
@@ -154,6 +171,7 @@ export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density
   ruins: { kinds: ['vines', 'moss', 'vines'], density: 0.05 },
   core: { kinds: ['roots', 'shard', 'roots', 'vines', 'shard'], density: 0.06 },
   mist: { kinds: ['driftwood', 'tuft', 'tuft', 'driftwood', 'shrub'], density: 0.03 },
+  mountain: { kinds: ['tuft', 'shrub', 'tuft'], density: 0.008 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
   cave: { kinds: ['moss', 'moss', 'vines'], density: 0.045 },
@@ -187,6 +205,7 @@ export const THEME_ART: Record<MapTheme, ThemeArt> = {
   grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
   sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
   mist: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
+  mountain: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: MURK_KEYS },
   // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
   cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: [PILLAR_KEYS[0]!, CRYSTAL_KEYS[0]!, PILLAR_KEYS[1]!, PILLAR_KEYS[2]!, CRYSTAL_KEYS[1]!, PILLAR_KEYS[0]!, PILLAR_KEYS[1]!, CRYSTAL_KEYS[2]!, PILLAR_KEYS[2]!], water: MURK_KEYS },
 };
@@ -407,6 +426,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   { key: SpriteKey.TORCH_A, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(0) },
   { key: SpriteKey.TORCH_B, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(1) },
   { key: SpriteKey.CLOUD, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawCloud },
+  { key: SpriteKey.ROOT_SPIKE, frameWidth: 40, frameHeight: 84, anchor: { x: 0.5, y: 0.1 }, placeholder: drawRootSpike },
   { key: SpriteKey.DISC, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawDisc },
   { key: SpriteKey.RIPPLE, frameWidth: 48, frameHeight: 24, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawRipple },
   { key: SpriteKey.CHUNK, frameWidth: 12, frameHeight: 10, anchor: { x: 0.5, y: 0.5 }, placeholder: drawChunk },
@@ -498,6 +518,15 @@ function directionalMonsters(): SpriteAssetDef[] {
     directionalMonster(SpriteKey.BOAR, 'cleft_boar', drawHoundSheet),
     directionalMonster(SpriteKey.SPIRIT, 'drowned_spirit', drawWaterShadeSheet, 80),
     directionalMonster(SpriteKey.REVENANT, 'wreck_revenant', drawGhoulSheet, 80),
+    // chapter 2: the green-vine forest and the broken-sword pass (frame sizes follow tools/prepare_sprites.py)
+    directionalMonster(SpriteKey.GREEN_FANG, 'green_fang_wolf', drawHoundSheet),
+    directionalMonster(SpriteKey.VINE_APE, 'vine_ape', drawGhoulSheet, 96),
+    directionalMonster(SpriteKey.ROT_FLOWER, 'rot_flower', drawShadeSheet, 80),
+    directionalMonster(SpriteKey.WARDEN, 'old_wood_warden', drawArchonSheet, 128, BOSS_FRAME),
+    directionalMonster(SpriteKey.BLADE_WOLF, 'mountain_blade_wolf', drawHoundSheet),
+    directionalMonster(SpriteKey.SWORDSMAN, 'exiled_swordsman', drawGhoulSheet, 80),
+    directionalMonster(SpriteKey.CULTIST, 'fallen_cultivator', drawShadeSheet, 80),
+    directionalMonster(SpriteKey.COLOSSUS, 'broken_sword_colossus', drawArchonSheet, 128, BOSS_FRAME),
   ];
 }
 
@@ -508,6 +537,11 @@ function directionalCharacters(): SpriteAssetDef[] {
     directionalSheet(SpriteKey.NPC_HUNTER, 'hunter_yanya', drawHunterSheet),
     directionalSheet(SpriteKey.NPC_WATERER, 'waterer_xi', drawWatererSheet),
     directionalSheet(SpriteKey.NPC_BOATWRIGHT, 'boatwright_laodu', drawBoatwrightSheet),
+    directionalSheet(SpriteKey.NPC_ZHOU, 'innkeeper_zhoubo', drawElderSheet),
+    directionalSheet(SpriteKey.NPC_QINGHE, 'herbalist_qinghe', drawWatererSheet),
+    directionalSheet(SpriteKey.NPC_TIESHAN, 'blacksmith_tieshan', drawBoatwrightSheet),
+    directionalSheet(SpriteKey.NPC_GU, 'wanderer_guchangfeng', drawHunterSheet),
+    directionalSheet(SpriteKey.NPC_LIN, 'patrol_linruotang', drawWatererSheet),
   ];
 }
 

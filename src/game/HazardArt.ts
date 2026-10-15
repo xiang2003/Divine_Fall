@@ -123,11 +123,11 @@ export function drawCloud(): HTMLCanvasElement {
 /** A warning disc: a translucent filled circle with a bright rim (it is squashed into an ellipse on the floor). 128 x 128. */
 export function drawDisc(): HTMLCanvasElement {
   const [c, ctx] = makeCanvas(128, 128);
-  ctx.fillStyle = 'rgba(255, 150, 50, 0.45)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
   ctx.beginPath();
   ctx.arc(64, 64, 60, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 220, 140, 1)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(64, 64, 59, 0, Math.PI * 2);
@@ -147,6 +147,47 @@ export function drawRipple(): HTMLCanvasElement {
   ctx.beginPath();
   ctx.ellipse(24, 12, 11, 5, 0, 0, Math.PI * 2);
   ctx.stroke();
+  return c;
+}
+
+/** A root spike: a thorny sharpened root shooting up out of the ground, bark brown with a green glow at the tip. 40 x 84, the foot is 8 px above the bottom. */
+export function drawRootSpike(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(40, 84);
+  const body = ctx.createLinearGradient(8, 0, 32, 0);
+  body.addColorStop(0, '#6a4a2a');
+  body.addColorStop(0.5, '#9a7040');
+  body.addColorStop(1, '#4a3220');
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(20, 6);
+  ctx.lineTo(31, 62);
+  ctx.lineTo(36, 76);
+  ctx.lineTo(4, 76);
+  ctx.lineTo(9, 62);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#3a2616';
+  ctx.fillRect(18, 20, 2, 46);
+  ctx.fillStyle = '#7fd25a';
+  ctx.beginPath();
+  ctx.moveTo(20, 6);
+  ctx.lineTo(24, 24);
+  ctx.lineTo(16, 24);
+  ctx.closePath();
+  ctx.fill();
+  // thorns and a root flare at the foot
+  ctx.fillStyle = '#5a3d22';
+  for (const [x, y, d] of [[12, 40, -1], [28, 50, 1], [13, 58, -1], [27, 32, 1]] as const) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + d * 7, y - 4);
+    ctx.lineTo(x, y + 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.ellipse(20, 76, 17, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
   return c;
 }
 

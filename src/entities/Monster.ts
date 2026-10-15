@@ -1,7 +1,7 @@
 import type { EliteAffixId } from '../data/eliteAffixes';
 import { ELITE_XP_MULT } from '../data/progression';
 import type { LootTableId } from '../data/lootTables';
-import type { BossAttackKind, MonsterDef, SlamDef } from '../data/monsters';
+import type { BossAttackKind, ComboDef, GroundStrikeStyle, MonsterDef, SlamDef } from '../data/monsters';
 import type { Vec2 } from '../game/iso';
 import { AttackTimer } from '../systems/AttackTimer';
 import { chooseBossAttack, phaseForHpRatio } from '../systems/bossAI';
@@ -33,12 +33,14 @@ export interface MonsterHooks {
   /** A badly hurt monster throws off `count` copies of the monster `into`. */
   split(monster: Monster, into: string, count: number): void;
   /** A boss calls `count` stone pillars up out of the floor around its target: each shows a circle of `radius` and bursts out after `delay` seconds. */
-  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number): void;
+  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number, style?: GroundStrikeStyle): void;
+  /** A monster lobs a poison cloud onto (x, y). */
+  dropPool?(monster: Monster, x: number, y: number): void;
 }
 
 /** What one attack looks like right now (normal attacks and boss moves alike). */
 interface AttackSpec {
-  kind: 'melee' | 'projectile' | 'pounce' | BossAttackKind;
+  kind: 'melee' | 'projectile' | 'pounce' | 'pool' | BossAttackKind;
   duration: number;
   hitFraction: number;
   damageMult: number;
@@ -47,6 +49,10 @@ interface AttackSpec {
   spread: number;
   /** charge: distance of the rush in world units. */
   rush?: number;
+  /** pillars: what comes up out of the floor. */
+  strike?: GroundStrikeStyle;
+  /** melee / pounce: more blows after the first. */
+  combo?: ComboDef;
 }
 
 /** Fraction of the attack animation at which the blow lands. */
@@ -86,6 +92,8 @@ const HOME_SPEED_FACTOR = 0.6;
 let nextId = 1;
 
 export interface MonsterOptions {
+  /** Called into the fight by another monster: it never splits or calls for help itself. */
+  summoned?: boolean;
   /** Elite affixes. A non-empty list makes the monster an elite. */
   affixes?: readonly EliteAffixId[];
   /** Random source for boss attack choice (inject a seeded one in tests). */
@@ -141,6 +149,8 @@ export class Monster {
   private age = 0;
   private splitDue = false;
   private splitDone = false;
+  /** How many of the extra blows of a combo have been dealt in the current attack. */
+  private comboFired = 0;
 
   constructor(
     readonly def: MonsterDef,
@@ -154,6 +164,13 @@ export class Monster {
     this.stats = computeMonsterStats(def, this.affixes);
     this.hp = this.stats.maxHp;
     this.hidden = def.ambush !== undefined;
+    if (options.summoned) this.splitDone = true;
+  }
+
+  /** True once a berserker is hurt enough to go wild. */
+  get berserk(): boolean {
+    const b = this.def.berserk;
+    return b !== undefined && this.state !== 'dead' && this.hp / this.maxHp <= b.hpFraction;
   }
 
   /** True while it can be hit and targeted: alive and not hiding. */
@@ -183,7 +200,7 @@ export class Monster {
   }
   /** Base damage per hit (elite bonuses included, armor not yet applied). */
   get damage(): number {
-    return this.stats.damage;
+    return this.stats.damage * (this.berserk ? this.def.berserk!.damageMult : 1);
   }
   get scale(): number {
     return this.stats.scale;
@@ -199,11 +216,11 @@ export class Monster {
     return this.state === 'dead' && this.stateTime >= CORPSE_LIFETIME;
   }
   get moveSpeed(): number {
-    return this.stats.moveSpeed * (this.def.phaseSpeed?.[this.phase] ?? 1);
+    return this.stats.moveSpeed * (this.def.phaseSpeed?.[this.phase] ?? 1) * (this.berserk ? this.def.berserk!.speedMult : 1);
   }
   /** Seconds between the start of one attack and the next (faster in later boss phases). */
   get attackCooldown(): number {
-    return this.stats.attackCooldown * (this.def.phaseCooldown?.[this.phase] ?? 1);
+    return this.stats.attackCooldown * (this.def.phaseCooldown?.[this.phase] ?? 1) * (this.berserk ? this.def.berserk!.cooldownMult : 1);
   }
   /** Where a hopping monster is in its hop (0 to 1; the last part of the cycle is the flight). 0 for monsters that do not hop. */
   get hopPhase(): number {
@@ -341,6 +358,7 @@ export class Monster {
     if (state !== 'attack') this.currentAttack = null;
     this.leapDir = null;
     this.chargeHit = false;
+    this.comboFired = 0;
   }
 
   private updateIdle(dt: number, target: MonsterTarget, collision: CollisionSystem): void {
@@ -396,7 +414,7 @@ export class Monster {
         return;
       }
       if (reach <= this.def.attackRange && sees && this.attack.canStart) {
-        this.beginAttack(this.standardAttack('projectile'), target, hooks);
+        this.beginAttack(this.standardAttack(this.def.pool ? 'pool' : 'projectile'), target, hooks);
         return;
       }
       if (this.def.strafe && sees && reach <= this.def.attackRange) {
@@ -421,6 +439,7 @@ export class Monster {
           radius: 0,
           count: 1,
           spread: 0,
+          combo: this.def.combo,
         },
         target,
         hooks,
@@ -502,6 +521,7 @@ export class Monster {
             count: choice.pillars ?? choice.count ?? 1,
             spread: choice.spread ?? 0,
             rush: choice.rush,
+            strike: choice.strike,
           },
           target,
           hooks,
@@ -515,7 +535,7 @@ export class Monster {
     }
   }
 
-  private standardAttack(kind: 'melee' | 'projectile'): AttackSpec {
+  private standardAttack(kind: 'melee' | 'projectile' | 'pool'): AttackSpec {
     return {
       kind,
       duration: this.stats.attackDuration,
@@ -524,6 +544,7 @@ export class Monster {
       radius: 0,
       count: 1,
       spread: 0,
+      combo: kind === 'melee' ? this.def.combo : undefined,
     };
   }
 
@@ -532,7 +553,7 @@ export class Monster {
     this.enter('attack');
     this.currentAttack = spec;
     if (spec.kind === 'nova') hooks.telegraph(this, spec.radius, spec.duration * spec.hitFraction);
-    if (spec.kind === 'pillars') hooks.summonPillars(this, spec.count, spec.radius, spec.duration * spec.hitFraction, spec.damageMult);
+    if (spec.kind === 'pillars') hooks.summonPillars(this, spec.count, spec.radius, spec.duration * spec.hitFraction, spec.damageMult, spec.strike);
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
   }
 
@@ -542,6 +563,16 @@ export class Monster {
     if (spec?.kind === 'charge') this.rush(spec, dt, target, collision, hooks);
     const { hit, finished } = this.attack.update(dt);
     if (hit && spec) this.strike(spec, target, hooks);
+    if (spec?.combo && (spec.kind === 'melee' || spec.kind === 'pounce') && !target.isDead) {
+      // the rest of a combo: one more blow every `gap` seconds after the first
+      const first = spec.duration * spec.hitFraction;
+      const due = Math.min(spec.combo.hits - 1, Math.floor((this.stateTime - first) / spec.combo.gap));
+      while (this.comboFired < due) {
+        this.comboFired++;
+        this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
+        hooks.meleeStrike(this, spec.damageMult);
+      }
+    }
     if (finished) this.enter(target.isDead ? 'idle' : 'chase');
   }
 
@@ -613,6 +644,9 @@ export class Monster {
       case 'pounce':
       case 'cleave':
         hooks.meleeStrike(this, spec.damageMult);
+        break;
+      case 'pool':
+        hooks.dropPool?.(this, target.pos.x, target.pos.y);
         break;
       case 'charge':
       case 'pillars':

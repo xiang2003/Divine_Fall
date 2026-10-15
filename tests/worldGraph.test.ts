@@ -35,6 +35,9 @@ describe('world graph', () => {
         'pure_ruins|pure_core',
         'pure_coast|pure_village',
         'pure_coast|canglan_coast',
+        'canglan_coast|canglan_forest',
+        'canglan_forest|qinglan_town',
+        'qinglan_town|broken_sword_pass',
       ].map((p) => p.split('|').sort().join('|')).sort(),
     );
     expect(new Set(pairs).size).toBe(pairs.length);
@@ -64,8 +67,10 @@ describe('world graph', () => {
     expect(edgeOf(closed, 'pure_forest', 'pure_spring_cave')?.locked).toBe(false);
 
     expect(edgeOf(closed, 'pure_coast', 'canglan_coast')?.locked).toBe(true); // the ferry only sails after the chapter 1 ending
+    expect(edgeOf(closed, 'canglan_forest', 'qinglan_town')?.locked).toBe(true); // the old road is sealed until the warden falls
+    expect(edgeOf(closed, 'qinglan_town', 'broken_sword_pass')?.locked).toBe(false);
     expect(edgeOf(closed, 'pure_ruins', 'pure_core')).toMatchObject({ locked: true, hint: '出口的石門紋絲不動。守衛還在這座遺跡裡。' });
-    const open = buildWorldGraph(maps, WORLD_MAP_LAYOUT, new Set(['coast_open', 'ruins_open', 'pure_ruins_boss_defeated', 'chapter2_started']), new Set(), 'pure_village');
+    const open = buildWorldGraph(maps, WORLD_MAP_LAYOUT, new Set(['coast_open', 'ruins_open', 'pure_ruins_boss_defeated', 'chapter2_started', 'canglan_forest_boss_defeated']), new Set(), 'pure_village');
     expect(open.edges.every((e) => !e.locked)).toBe(true);
     const half = buildWorldGraph(maps, WORLD_MAP_LAYOUT, new Set(['ruins_open']), new Set(), 'pure_village');
     expect(edgeOf(half, 'pure_forest', 'pure_ruins')?.locked).toBe(false);

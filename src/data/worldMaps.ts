@@ -10,6 +10,9 @@ export const WORLD_MAP_FILES = {
   pure_core: 'maps/pure_core.json',
   // chapter 2: the continent of Canglan
   canglan_coast: 'maps/canglan_coast.json',
+  canglan_forest: 'maps/canglan_forest.json',
+  qinglan_town: 'maps/qinglan_town.json',
+  broken_sword_pass: 'maps/broken_sword_pass.json',
 } as const satisfies Record<string, string>;
 
 export type WorldMapId = keyof typeof WORLD_MAP_FILES;
@@ -23,13 +26,16 @@ export const START_ENTRANCE = DEFAULT_ENTRANCE;
 
 /** Where each map is drawn on the world-map screen (percent of the panel) and what kind of place it is. */
 export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: string }> = {
-  pure_village: { x: 20, y: 50, kind: '村落' },
-  pure_forest: { x: 50, y: 50, kind: '野外' },
-  pure_spring_cave: { x: 50, y: 17, kind: '洞窟' },
-  pure_ruins: { x: 80, y: 50, kind: '遺跡' },
-  pure_coast: { x: 20, y: 84, kind: '海岸' },
-  pure_core: { x: 80, y: 17, kind: '遺跡' },
-  canglan_coast: { x: 50, y: 84, kind: '海岸' },
+  pure_village: { x: 12, y: 50, kind: '村落' },
+  pure_forest: { x: 32, y: 50, kind: '野外' },
+  pure_spring_cave: { x: 32, y: 17, kind: '洞窟' },
+  pure_ruins: { x: 52, y: 50, kind: '遺跡' },
+  pure_coast: { x: 12, y: 84, kind: '海岸' },
+  pure_core: { x: 52, y: 17, kind: '遺跡' },
+  canglan_coast: { x: 32, y: 84, kind: '海岸' },
+  canglan_forest: { x: 52, y: 84, kind: '野外' },
+  qinglan_town: { x: 72, y: 84, kind: '城鎮' },
+  broken_sword_pass: { x: 90, y: 84, kind: '山道' },
 };
 
 /** The names of the maps, for the debug teleport list (the maps themselves carry the same names). */
@@ -41,6 +47,9 @@ export const WORLD_MAP_NAMES: Record<WorldMapId, string> = {
   pure_coast: '斷潮海岸',
   pure_core: '初胎核心',
   canglan_coast: '迷霧海岸',
+  canglan_forest: '青藤古林',
+  qinglan_town: '青嵐鎮',
+  broken_sword_pass: '斷劍山道',
 };
 
 /** The maps in the order the debug keys step through them. */
@@ -55,8 +64,10 @@ export function stepMap(current: string, step: number): WorldMapId {
 
 /** Coming back to a town refills the potions. */
 export function isTown(mapId: string): boolean {
-  return isWorldMapId(mapId) && WORLD_MAP_LAYOUT[mapId].kind === '村落';
+  return isWorldMapId(mapId) && TOWN_KINDS.includes(WORLD_MAP_LAYOUT[mapId].kind);
 }
+
+const TOWN_KINDS = ['村落', '城鎮'];
 
 export function isWorldMapId(id: string): id is WorldMapId {
   return Object.prototype.hasOwnProperty.call(WORLD_MAP_FILES, id);

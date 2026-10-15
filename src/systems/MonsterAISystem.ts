@@ -60,9 +60,10 @@ export class MonsterAISystem {
     const start = rng() * Math.PI * 2;
     for (let i = 0; i < count; i++) {
       const angle = start + (i / count) * Math.PI * 2;
-      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng });
+      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng, summoned: true });
       this.collision.pushOut(monster.pos, def.radius);
       this.spawn(monster);
+      if (!def.phantom) this.spawnedTotal++; // real reinforcements are part of the count of monsters on the map
       monster.engage(); // it was born in the middle of a fight
     }
   }

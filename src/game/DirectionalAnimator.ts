@@ -68,6 +68,7 @@ export class DirectionalAnimator {
   private poisoned = false;
   private slowed = false;
   private ghost = false;
+  private enraged = false;
   /** Where a hopping monster is in its hop (0 to 1), set by the monster's own clock so the picture and the movement agree. */
   private gait = 0;
   private flap = 0;
@@ -149,6 +150,13 @@ export class DirectionalAnimator {
     this.applyTint();
   }
 
+  /** Tints the figure red while it is berserk. */
+  setEnraged(on: boolean): void {
+    if (on === this.enraged) return;
+    this.enraged = on;
+    this.applyTint();
+  }
+
   /** Draws the figure see-through and pale blue (an illusion). */
   setGhost(on: boolean): void {
     this.ghost = on;
@@ -176,6 +184,7 @@ export class DirectionalAnimator {
     if (this.hurtFlash) this.material.color.setRGB(1, 0.5, 0.5);
     else if (this.poisoned) this.material.color.setRGB(0.62, 1, 0.62);
     else if (this.slowed) this.material.color.setRGB(0.6, 0.9, 1);
+    else if (this.enraged) this.material.color.setRGB(1, 0.62, 0.62);
     else if (this.ghost) this.material.color.setRGB(0.7, 0.95, 1);
     else this.material.color.setRGB(1, 1, 1);
   }

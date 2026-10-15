@@ -1,5 +1,6 @@
 import { PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS } from '../data/legendaryEffects';
+import type { GroundStrikeStyle } from '../data/monsters';
 import type { SkillDef } from '../data/skills';
 import type { BoltTarget } from '../entities/Bolt';
 import type { Vec2 } from '../game/iso';
@@ -41,7 +42,9 @@ export interface CombatEvents {
   /** Copies of the monster `defId` should appear around `owner`. */
   spawnMinions(owner: Monster, defId: string, count: number): void;
   /** Ground strikes were summoned: a circle of `radius` at each point, going off after `delay` seconds for `damage` (before armor). `style` is a stone pillar bursting out, or a plain burst of resentment. */
-  pillars(points: readonly Vec2[], radius: number, delay: number, damage: number, style?: 'pillar' | 'burst'): void;
+  pillars(points: readonly Vec2[], radius: number, delay: number, damage: number, style?: GroundStrikeStyle): void;
+  /** A poison cloud was lobbed onto (x, y): a warning circle for `delay` seconds, then it lingers for `duration` seconds and poisons whoever stands in it (`dps`). */
+  pool?(x: number, y: number, radius: number, delay: number, duration: number, dps: number): void;
 }
 
 /** Spawn the projectile slightly in front of the caster so it doesn't start inside its body. */
@@ -117,7 +120,12 @@ export class CombatSystem implements MonsterHooks {
   }
 
   /** The first pillar comes up right where the player stands; the others around it, on floor that is free. */
-  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number): void {
+  dropPool(monster: Monster, x: number, y: number): void {
+    const pool = monster.def.pool;
+    if (pool) this.events.pool?.(x, y, pool.radius, pool.delay, pool.duration, pool.dps);
+  }
+
+  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number, style: GroundStrikeStyle = 'pillar'): void {
     const centre = this.player.pos;
     const points: Vec2[] = [{ x: centre.x, y: centre.y }];
     for (let i = 1; i < count; i++) {
@@ -131,7 +139,7 @@ export class CombatSystem implements MonsterHooks {
         break;
       }
     }
-    this.events.pillars(points, radius, delay, monster.damage * damageMult);
+    this.events.pillars(points, radius, delay, monster.damage * damageMult, style);
   }
 
   fireProjectile(monster: Monster, dirX: number, dirY: number, damageMult = 1): void {

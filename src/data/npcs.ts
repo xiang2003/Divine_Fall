@@ -114,6 +114,102 @@ export const NPCS: Record<string, NpcDef> = {
   },
 };
 
+/** Chapter 2: the people of Qinglan Town (docs/design/chapter2-canglan-continent.md). */
+Object.assign(NPCS, {
+  innkeeper_zhoubo: {
+    id: 'innkeeper_zhoubo',
+    name: '周伯',
+    title: '客棧老闆',
+    spriteKey: SpriteKey.NPC_ZHOU,
+    scale: 1,
+    tagHeight: 50,
+    portrait: 'assets/art/portraits/innkeeper_zhoubo.webp',
+    conversation: {
+      intro: { graph: 'zhou_intro', metFlag: 'met_zhou' },
+      greetings: ['客官，住店還是吃飯？', '鎮上有什麼事，十有八九我先聽到。', '熱湯剛出鍋，趁熱喝。'],
+      topics: [
+        { kind: 'turnin', label: '回報老路', graph: 'zhou_q7_turnin', if: { quest: 'q7_warden_bounty', state: 'ready' } },
+        { kind: 'active', label: '古林的老路', graph: 'zhou_q7_active', if: { quest: 'q7_warden_bounty', state: 'active' } },
+        { kind: 'quest', label: '客棧的傳聞', graph: 'zhou_q7_offer', if: { quest: 'q7_warden_bounty', state: 'available' } },
+        { kind: 'talk', label: '打聽消息', graph: 'zhou_repeat' },
+      ],
+    },
+  },
+  herbalist_qinghe: {
+    id: 'herbalist_qinghe',
+    name: '沈青禾',
+    title: '藥鋪學徒',
+    spriteKey: SpriteKey.NPC_QINGHE,
+    scale: 1,
+    tagHeight: 46,
+    portrait: 'assets/art/portraits/herbalist_qinghe.webp',
+    conversation: {
+      intro: { graph: 'qinghe_intro', metFlag: 'met_qinghe' },
+      greetings: ['……請不要碰那邊的瓶子。', '今天的露水比往常重。', '認得的東西，就沒那麼可怕。'],
+      topics: [{ kind: 'talk', label: '山林與草藥', graph: 'qinghe_repeat' }],
+    },
+  },
+  blacksmith_tieshan: {
+    id: 'blacksmith_tieshan',
+    name: '鐵山',
+    title: '鐵匠',
+    spriteKey: SpriteKey.NPC_TIESHAN,
+    scale: 1,
+    tagHeight: 52,
+    portrait: 'assets/art/portraits/blacksmith_tieshan.webp',
+    conversation: {
+      intro: { graph: 'tieshan_intro', metFlag: 'met_tieshan' },
+      greetings: ['……要打什麼？', '好鐵不怕看。', '爐子不等人。'],
+      topics: [
+        { kind: 'story', label: '你掌心的印', graph: 'tieshan_relic', if: { all: [{ flag: 'has_relic' }, { notFlag: 'tieshan_saw_relic' }] } },
+        { kind: 'talk', label: '閒聊', graph: 'tieshan_repeat' },
+      ],
+    },
+  },
+  wanderer_guchangfeng: {
+    id: 'wanderer_guchangfeng',
+    name: '顧長風',
+    title: '流浪修士',
+    spriteKey: SpriteKey.NPC_GU,
+    scale: 1,
+    tagHeight: 56,
+    portrait: 'assets/art/portraits/wanderer_guchangfeng.webp',
+    conversation: {
+      intro: { graph: 'gu_intro', metFlag: 'met_gu' },
+      greetings: ['……風向變了。', '你走過的地方，靈氣都有反應。', '我只是個閒人。'],
+      topics: [
+        { kind: 'turnin', label: '回報祭壇', graph: 'gu_q6_turnin', if: { quest: 'q6_altar_trace', state: 'ready' } },
+        { kind: 'active', label: '古林的祭壇', graph: 'gu_q6_active', if: { quest: 'q6_altar_trace', state: 'active' } },
+        { kind: 'quest', label: '靈氣的痕跡', graph: 'gu_q6_offer', if: { quest: 'q6_altar_trace', state: 'available' } },
+        { kind: 'story', label: '關於你的印', graph: 'gu_aura', if: { flag: 'has_relic' } },
+        { kind: 'talk', label: '閒聊', graph: 'gu_repeat' },
+      ],
+    },
+  },
+  patrol_linruotang: {
+    id: 'patrol_linruotang',
+    name: '林若棠',
+    title: '巡山司接待',
+    spriteKey: SpriteKey.NPC_LIN,
+    scale: 1,
+    tagHeight: 48,
+    portrait: 'assets/art/portraits/patrol_linruotang.webp',
+    conversation: {
+      intro: { graph: 'lin_intro', metFlag: 'met_lin' },
+      greetings: ['領懸賞？登記，簽字，去做。', '我沒空聊天。', '山裡的東西越來越兇。'],
+      topics: [
+        { kind: 'turnin', label: '回報狼群', graph: 'lin_q5_turnin', if: { quest: 'q5_wolf_bounty', state: 'ready' } },
+        { kind: 'turnin', label: '回報巨像', graph: 'lin_q8_turnin', if: { quest: 'q8_colossus_bounty', state: 'ready' } },
+        { kind: 'active', label: '古林的狼群', graph: 'lin_q5_active', if: { quest: 'q5_wolf_bounty', state: 'active' } },
+        { kind: 'active', label: '山道的巨像', graph: 'lin_q8_active', if: { quest: 'q8_colossus_bounty', state: 'active' } },
+        { kind: 'quest', label: '古林的狼群', graph: 'lin_q5_offer', if: { quest: 'q5_wolf_bounty', state: 'available' } },
+        { kind: 'quest', label: '山道的巨像', graph: 'lin_q8_offer', if: { quest: 'q8_colossus_bounty', state: 'available' } },
+        { kind: 'talk', label: '閒聊', graph: 'lin_repeat' },
+      ],
+    },
+  },
+} satisfies Record<string, NpcDef>);
+
 export function getNpc(id: string): NpcDef {
   const def = NPCS[id];
   if (!def) throw new Error(`Unknown NPC "${id}"`);

@@ -60,6 +60,49 @@ export const QUESTS: Record<string, QuestDef> = {
   },
 };
 
+/**
+ * Chapter 2 quests: bounties and requests in Qinglan Town (docs/design/chapter2-canglan-continent.md). They are first drafts:
+ * the design only says what each person does, not what they ask for.
+ */
+Object.assign(QUESTS, {
+  q5_wolf_bounty: {
+    id: 'q5_wolf_bounty',
+    title: '古林的狼群',
+    summary: '林若棠在巡山司貼出懸賞：青藤古林裡的青牙狼成群出沒，傷了不少獵人。',
+    giver: 'patrol_linruotang',
+    requires: [],
+    objectives: [{ type: 'kill', label: '擊殺青藤古林的青牙狼', count: 5, monster: 'green_fang_wolf', map: 'canglan_forest' }],
+    rewards: { xp: 220, items: [{ rarity: 'magic', count: 2 }] },
+  },
+  q6_altar_trace: {
+    id: 'q6_altar_trace',
+    title: '靈氣的痕跡',
+    summary: '顧長風說古林深處有一座被靈氣侵蝕的祭壇，要你去看一眼，回來告訴他看到了什麼。',
+    giver: 'wanderer_guchangfeng',
+    requires: [],
+    objectives: [{ type: 'interact', label: '調查青藤古林的祭壇', target: 'forest_altar' }],
+    rewards: { xp: 260, items: [{ rarity: 'rare', count: 1 }] },
+  },
+  q7_warden_bounty: {
+    id: 'q7_warden_bounty',
+    title: '客棧的傳聞',
+    summary: '周伯說，進過古林深處的人回來都說，那裡有一尊會動的古樹守衛，把通往鎮上的老路封死了。',
+    giver: 'innkeeper_zhoubo',
+    requires: [],
+    objectives: [{ type: 'kill', label: '擊敗古木巡守者', count: 1, map: 'canglan_forest', boss: true }],
+    rewards: { xp: 600, items: [{ rarity: 'rare', count: 1 }] },
+  },
+  q8_colossus_bounty: {
+    id: 'q8_colossus_bounty',
+    title: '山道的巨像',
+    summary: '山道上有一尊用舊兵器湊成的巨像，擋住了去內陸的路。林若棠要你清掉它。',
+    giver: 'patrol_linruotang',
+    requires: ['q5_wolf_bounty'],
+    objectives: [{ type: 'kill', label: '擊敗斷劍巨像', count: 1, map: 'broken_sword_pass', boss: true }],
+    rewards: { xp: 800, items: [{ rarity: 'rare', count: 2 }] },
+  },
+} satisfies Record<string, QuestDef>);
+
 export function getQuest(id: string): QuestDef {
   const q = QUESTS[id];
   if (!q) throw new Error(`Unknown quest "${id}"`);

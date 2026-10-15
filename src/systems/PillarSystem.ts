@@ -3,6 +3,7 @@ import { TILE_H, TILE_W } from '../config/gameConfig';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
+import type { GroundStrikeStyle } from '../data/monsters';
 
 /** Seconds a stone pillar stays up after it has hit, and how long it takes to rise and to sink back. */
 export const PILLAR_STAND = 1.2;
@@ -10,6 +11,8 @@ export const PILLAR_RISE = 0.18;
 export const PILLAR_SINK = 0.3;
 /** A burst's warning circle stays this long after it went off. */
 const BURST_LINGER = 0.25;
+/** The colour of the warning circle of each kind of ground strike. */
+const RING_TINT: Record<GroundStrikeStyle, number> = { pillar: 0xffb060, burst: 0xff7050, root: 0x9be06a };
 /** How much bigger than its picture the pillar is drawn. */
 const COLUMN_SCALE = 1.4;
 
@@ -28,7 +31,7 @@ export class Pillar {
     readonly delay: number,
     readonly damage: number,
     /** A pillar bursts out of the floor and stays a moment; a burst is only the blast (no column). */
-    readonly style: 'pillar' | 'burst' = 'pillar',
+    readonly style: GroundStrikeStyle = 'pillar',
   ) {}
 
   /** Seconds the pillar (or the flash of a burst) lingers after it went off. */
@@ -83,17 +86,19 @@ export class PillarSystem {
     return this.views.length;
   }
 
-  add(pos: Vec2, radius: number, delay: number, damage: number, style: 'pillar' | 'burst' = 'pillar'): void {
+  add(pos: Vec2, radius: number, delay: number, damage: number, style: GroundStrikeStyle = 'pillar'): void {
     const pillar = new Pillar(pos, radius, delay, damage, style);
     const ringMaterial = this.assets.material(SpriteKey.DISC).clone();
     ringMaterial.opacity = 0;
+    ringMaterial.color.setHex(RING_TINT[style]);
     const ring = new THREE.Mesh(this.assets.sharedGeometry(SpriteKey.DISC), ringMaterial);
     placeAt(ring, Layer.GROUND_DECAL, pos.x, pos.y);
     // a circle on the floor is an ellipse on the screen; the disc picture is 128 px across
     const rx = radius * (TILE_W / 2) * Math.SQRT2;
     const ry = radius * (TILE_H / 2) * Math.SQRT2;
     ring.scale.set((2 * rx) / 128, (2 * ry) / 128, 1);
-    const column = new THREE.Mesh(this.assets.sharedGeometry(SpriteKey.PILLAR), this.assets.material(SpriteKey.PILLAR));
+    const columnKey = style === 'root' ? SpriteKey.ROOT_SPIKE : SpriteKey.PILLAR;
+    const column = new THREE.Mesh(this.assets.sharedGeometry(columnKey), this.assets.material(columnKey));
     placeAt(column, Layer.OBJECT, pos.x, pos.y);
     column.visible = false;
     this.group.add(ring, column);

@@ -5,6 +5,9 @@ export type MonsterBehavior = 'melee' | 'ranged';
 
 export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge' | 'pillars';
 
+/** What a ground strike looks like: a stone pillar, a root spike, or only a blast. */
+export type GroundStrikeStyle = 'pillar' | 'root' | 'burst';
+
 /** One move in a boss's repertoire. Which are available depends on the current phase and distance to the player. */
 export interface BossAttackDef {
   id: string;
@@ -29,6 +32,8 @@ export interface BossAttackDef {
   rush?: number;
   /** pillars: how many stone pillars are summoned (`radius` is the size of each one's circle). */
   pillars?: number;
+  /** pillars: what comes up out of the floor (default: stone pillars). */
+  strike?: GroundStrikeStyle;
 }
 
 /** How a monster with directional art acts out its attack (see DirectionalAnimator). */
@@ -102,6 +107,32 @@ export interface DeathBurstDef {
   damageMult: number;
 }
 
+/** A combo: after the first blow of a melee attack (or of a pounce, when it lands) `hits - 1` more follow, `gap` seconds apart. The attack must last long enough to hold them all. */
+export interface ComboDef {
+  hits: number;
+  gap: number;
+}
+
+/** Berserk: once its health is at or below `hpFraction` of the maximum it moves, attacks and hits harder. */
+export interface BerserkDef {
+  hpFraction: number;
+  speedMult: number;
+  /** Multiplier of the time between attacks (< 1 attacks more often). */
+  cooldownMult: number;
+  damageMult: number;
+}
+
+/** Its ranged attack lobs a cloud onto the target's spot instead of a projectile: it shows a warning circle, then lingers and poisons whoever stands in it. */
+export interface PoolDef {
+  radius: number;
+  /** Seconds from the throw to the cloud forming (the warning). */
+  delay: number;
+  /** Seconds the cloud stays. */
+  duration: number;
+  /** Poison damage per second while standing in it. */
+  dps: number;
+}
+
 /** Splitting: the first time its health drops to `hpFraction` of the maximum, `count` copies of the monster `into` appear around it. */
 export interface SplitDef {
   hpFraction: number;
@@ -163,6 +194,12 @@ export interface MonsterDef {
   glow?: { color: number; height: number; size: number; hz: number };
   /** Its projectiles steer toward the target, turning at most this many radians per second. */
   homing?: number;
+  /** Melee: a string of blows (see ComboDef). */
+  combo?: ComboDef;
+  /** Goes berserk when badly hurt (see BerserkDef). */
+  berserk?: BerserkDef;
+  /** Ranged: lobs poison clouds (see PoolDef). */
+  pool?: PoolDef;
   /** Melee: when it chases you it comes in from the side (each member of a pack takes a side), and only closes in straight when it is near. */
   flank?: boolean;
   /** Melee: a charge from a distance (see ChargeDef). */
@@ -569,6 +606,226 @@ export const MONSTERS = {
     xp: 20,
     lootTable: 'normalMonster',
     barHeight: 62,
+  },
+  // ---- the green-vine forest (chapter 2) -------------------------------------------------------------
+  /** A wolf of the old forest: fast, in a pack, comes at you from the side, and howls for the rest of the pack when it is badly hurt. */
+  green_fang_wolf: {
+    id: 'green_fang_wolf',
+    name: '青牙狼',
+    spriteKey: SpriteKey.GREEN_FANG,
+    directional: true,
+    attackStyle: 'pounce',
+    behavior: 'melee',
+    maxHp: 40,
+    damage: 9,
+    moveSpeed: 4.3,
+    detectRange: 9,
+    attackRange: 0.35,
+    attackCooldown: 1.3,
+    attackDuration: 0.4,
+    radius: 0.28,
+    pounce: { range: 2.8, speed: 8.5, duration: 0.75, damageMult: 1.3 },
+    flank: true,
+    packSize: 3,
+    split: { hpFraction: 0.35, into: 'green_fang_ally', count: 2 },
+    xp: 12,
+    lootTable: 'normalMonster',
+    barHeight: 46,
+  },
+  /** A wolf that came when another one howled: the same, only weaker, and it cannot howl itself. */
+  green_fang_ally: {
+    id: 'green_fang_ally',
+    name: '青牙狼',
+    spriteKey: SpriteKey.GREEN_FANG,
+    directional: true,
+    attackStyle: 'pounce',
+    behavior: 'melee',
+    maxHp: 24,
+    damage: 7,
+    moveSpeed: 4.3,
+    detectRange: 12,
+    attackRange: 0.35,
+    attackCooldown: 1.3,
+    attackDuration: 0.4,
+    radius: 0.28,
+    pounce: { range: 2.8, speed: 8.5, duration: 0.75, damageMult: 1.3 },
+    flank: true,
+    xp: 6,
+    lootTable: 'normalMonster',
+    barHeight: 46,
+  },
+  /** A big ape in armour of vines and bark. Slow; every blow is two fists slammed into the ground. */
+  vine_ape: {
+    id: 'vine_ape',
+    name: '藤甲猿',
+    spriteKey: SpriteKey.VINE_APE,
+    directional: true,
+    attackStyle: 'slam',
+    behavior: 'melee',
+    maxHp: 150,
+    damage: 14,
+    moveSpeed: 1.9,
+    detectRange: 7,
+    attackRange: 1.8,
+    attackCooldown: 2.2,
+    attackDuration: 1.3,
+    radius: 0.5,
+    slam: { radius: 2.4, duration: 1.3, hitFraction: 0.7, damageMult: 1.2 },
+    xp: 30,
+    lootTable: 'normalMonster',
+    barHeight: 74,
+  },
+  /** A tainted flower. It hardly moves, and lobs clouds of poison dust that stay on the ground. */
+  rot_flower: {
+    id: 'rot_flower',
+    name: '腐靈花妖',
+    spriteKey: SpriteKey.ROT_FLOWER,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 60,
+    damage: 5,
+    moveSpeed: 1.1,
+    detectRange: 9,
+    attackRange: 7,
+    attackCooldown: 3.2,
+    attackDuration: 0.9,
+    radius: 0.4,
+    keepDistance: 3.5,
+    pool: { radius: 1.7, delay: 0.8, duration: 6, dps: 4 },
+    xp: 22,
+    lootTable: 'normalMonster',
+    barHeight: 60,
+  },
+  /** The boss of the green-vine forest: a guardian of old trees and stone. Swings its arms, stamps, and calls root spikes out of the ground. */
+  old_wood_warden: {
+    id: 'old_wood_warden',
+    name: '古木巡守者',
+    spriteKey: SpriteKey.WARDEN,
+    directional: true,
+    attackStyle: 'slam',
+    behavior: 'melee',
+    maxHp: 1100,
+    damage: 20,
+    moveSpeed: 2.2,
+    detectRange: 12,
+    attackRange: 1.6,
+    attackCooldown: 2,
+    attackDuration: 1.2,
+    radius: 0.75,
+    xp: 600,
+    lootTable: 'boss',
+    barHeight: 130,
+    isBoss: true,
+    phaseThresholds: [0.66, 0.33],
+    phaseSpeed: [1, 1.1, 1.25],
+    phaseCooldown: [1, 0.85, 0.7],
+    bossAttacks: [
+      { id: 'swing', kind: 'cleave', minPhase: 0, weight: 3, duration: 1.2, damageMult: 1 },
+      { id: 'stomp', kind: 'nova', minPhase: 0, weight: 2, duration: 1.5, damageMult: 1.3, radius: 3.6, hitFraction: 0.85 },
+      { id: 'roots', kind: 'pillars', minPhase: 1, weight: 3, duration: 1.8, damageMult: 1.2, pillars: 5, radius: 1.1, hitFraction: 0.9, strike: 'root' },
+      { id: 'root_storm', kind: 'pillars', minPhase: 2, weight: 3, duration: 1.8, damageMult: 1.2, pillars: 9, radius: 1.1, hitFraction: 0.9, strike: 'root' },
+    ],
+  },
+  // ---- the broken-sword pass (chapter 2) --------------------------------------------------------------
+  /** A mountain wolf with claws like blades: fast, a short dash, and a string of slashes when it lands. */
+  mountain_blade_wolf: {
+    id: 'mountain_blade_wolf',
+    name: '山地刃狼',
+    spriteKey: SpriteKey.BLADE_WOLF,
+    directional: true,
+    attackStyle: 'pounce',
+    behavior: 'melee',
+    maxHp: 48,
+    damage: 8,
+    moveSpeed: 4.8,
+    detectRange: 9,
+    attackRange: 0.35,
+    attackCooldown: 1.6,
+    attackDuration: 1.2,
+    radius: 0.28,
+    pounce: { range: 3.2, speed: 9.5, duration: 1.15, damageMult: 1.1 },
+    combo: { hits: 3, gap: 0.15 },
+    xp: 16,
+    lootTable: 'normalMonster',
+    barHeight: 46,
+  },
+  /** A swordsman with a broken sabre: a short dash, then three quick cuts. */
+  exiled_swordsman: {
+    id: 'exiled_swordsman',
+    name: '流亡刀客',
+    spriteKey: SpriteKey.SWORDSMAN,
+    directional: true,
+    attackStyle: 'charge',
+    behavior: 'melee',
+    maxHp: 90,
+    damage: 11,
+    moveSpeed: 2.8,
+    detectRange: 8,
+    attackRange: 0.5,
+    attackCooldown: 2,
+    attackDuration: 1.3,
+    radius: 0.34,
+    pounce: { range: 3.4, speed: 9, duration: 1.3, damageMult: 1.0 },
+    combo: { hits: 3, gap: 0.22 },
+    xp: 24,
+    lootTable: 'normalMonster',
+    barHeight: 62,
+  },
+  /** A cultivator gone wrong: dark bolts from a distance, and when it is badly hurt it goes wild. */
+  fallen_cultivator: {
+    id: 'fallen_cultivator',
+    name: '墮靈修士',
+    spriteKey: SpriteKey.CULTIST,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 70,
+    damage: 10,
+    moveSpeed: 2.2,
+    detectRange: 10,
+    attackRange: 7.5,
+    attackCooldown: 2.2,
+    attackDuration: 0.8,
+    radius: 0.3,
+    keepDistance: 3.5,
+    projectileSpeed: 6.5,
+    projectileTint: 0x9a4aff,
+    berserk: { hpFraction: 0.35, speedMult: 1.5, cooldownMult: 0.55, damageMult: 1.3 },
+    xp: 24,
+    lootTable: 'normalMonster',
+    barHeight: 62,
+  },
+  /** The boss of the pass: weapons of an old war and rock, fused into one giant. Great sweeps, and a slam it takes a long breath for. */
+  broken_sword_colossus: {
+    id: 'broken_sword_colossus',
+    name: '斷劍巨像',
+    spriteKey: SpriteKey.COLOSSUS,
+    directional: true,
+    attackStyle: 'slam',
+    behavior: 'melee',
+    maxHp: 1300,
+    damage: 22,
+    moveSpeed: 1.9,
+    detectRange: 12,
+    attackRange: 1.8,
+    attackCooldown: 2.2,
+    attackDuration: 1.3,
+    radius: 0.8,
+    xp: 700,
+    lootTable: 'boss',
+    barHeight: 140,
+    isBoss: true,
+    phaseThresholds: [0.66, 0.33],
+    phaseSpeed: [1, 1.1, 1.25],
+    phaseCooldown: [1, 0.85, 0.7],
+    bossAttacks: [
+      { id: 'slash', kind: 'cleave', minPhase: 0, weight: 3, duration: 1.3, damageMult: 1 },
+      { id: 'sweep', kind: 'nova', minPhase: 0, weight: 3, duration: 1.4, damageMult: 1.3, radius: 3.8, hitFraction: 0.6 },
+      { id: 'heavy_slam', kind: 'nova', minPhase: 0, weight: 2, duration: 2.6, damageMult: 2, radius: 5.6, hitFraction: 0.92 },
+      { id: 'charge', kind: 'charge', minPhase: 1, weight: 2, duration: 1.5, damageMult: 1.5, rush: 6.5, hitFraction: 0.95 },
+      { id: 'shards', kind: 'pillars', minPhase: 2, weight: 3, duration: 1.6, damageMult: 1.2, pillars: 7, radius: 1.2, hitFraction: 0.9 },
+    ],
   },
   // ---- the ruins --------------------------------------------------------------------------------------
   /** A golem of ruin stone, furred with moss, a red core in its chest. Slow, and every blow is a slam that hits everything around it. */
