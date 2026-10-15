@@ -37,6 +37,17 @@ describe('asset manifest', () => {
     }
   });
 
+  it('has monster sheets of exactly 4 idle frames by 4 facings, at the frame size the manifest declares', () => {
+    // A frame size that merely divides the sheet is not enough: a 320 px sheet read with 64 px frames shows a sliver of the figure.
+    const monsters = withUrl.filter((d) => d.url!.startsWith('assets/monsters/'));
+    expect(monsters.length).toBeGreaterThanOrEqual(12);
+    for (const def of monsters) {
+      const { width, height } = pngSize(join(PUBLIC, def.url!));
+      expect(width, `${def.url} width`).toBe(def.frameWidth * 4);
+      expect(height, `${def.url} height`).toBe(def.frameHeight * 4);
+    }
+  });
+
   it('declares the building images at their real size', () => {
     for (const [style, cabin] of Object.entries(CABIN_SPRITES)) {
       expect(pngSize(join(PUBLIC, cabin!.url)), style).toEqual({ width: cabin!.width, height: cabin!.height });

@@ -496,8 +496,8 @@ function directionalMonsters(): SpriteAssetDef[] {
     directionalMonster(SpriteKey.MASK, 'mask_spirit', drawShadeSheet),
     directionalMonster(SpriteKey.WATCHER, 'core_watcher', drawArchonSheet, 128, BOSS_FRAME),
     directionalMonster(SpriteKey.BOAR, 'cleft_boar', drawHoundSheet),
-    directionalMonster(SpriteKey.SPIRIT, 'drowned_spirit', drawWaterShadeSheet),
-    directionalMonster(SpriteKey.REVENANT, 'wreck_revenant', drawGhoulSheet),
+    directionalMonster(SpriteKey.SPIRIT, 'drowned_spirit', drawWaterShadeSheet, 80),
+    directionalMonster(SpriteKey.REVENANT, 'wreck_revenant', drawGhoulSheet, 80),
   ];
 }
 
