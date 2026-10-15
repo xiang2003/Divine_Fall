@@ -10,7 +10,7 @@ import { WORLD_MAP_FILES, isTown } from '../src/data/worldMaps';
 import { validateDialogue } from '../src/systems/dialogue';
 
 const load = (id: string): MapData => parseMap(JSON.parse(readFileSync(new URL(`../public/${WORLD_MAP_FILES[id as keyof typeof WORLD_MAP_FILES]}`, import.meta.url), 'utf8')) as unknown);
-const IDS = ['canglan_forest', 'qinglan_town', 'broken_sword_pass'] as const;
+const IDS = ['canglan_forest', 'qinglan_town', 'broken_sword_pass', 'truce_plateau'] as const;
 
 function reach(map: MapData) {
   const key = (x: number, y: number) => y * map.width + x;

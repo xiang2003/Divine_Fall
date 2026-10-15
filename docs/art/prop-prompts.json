@@ -541,5 +541,93 @@
     "size": "1024x1024",
     "background": "flat bright green (colour key auto)",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A big heap of old tarnished gold coins with square holes (ancient Chinese cash coins), several gold ingots shaped like boats, a broken jade ring, a faint cold teal glow, glittering, the whole heap fully visible."
+  },
+  "tex_plateau": {
+    "seed": 7201,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. Wind-scoured high plateau ground: pale dry flattened dead grass between patches of grey-blue gravel and packed dust, faded ochre earth, scattered tiny bone-white chips, wind-combed texture."
+  },
+  "tex_plateauroad": {
+    "seed": 7202,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "texture": true,
+    "prompt": "Seamless tileable game texture, perfectly flat top-down orthographic view looking straight down from directly above, filling the whole picture edge to edge, even flat lighting with no shadows, no perspective, no objects, no characters, no text, dark desaturated grim colour palette, hand-painted stylized look. An ancient worn pale stone paved road half buried in dust, large grey-blue slabs with cracks, faint traces of faded vermilion paint in the joints, scuffed by countless marching feet."
+  },
+  "stele_a": {
+    "seed": 7211,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall weathered grey stone stele standing upright on a small base, worn carved characters almost erased by wind, a diagonal break across the top, a few tattered faded red cloth ribbons tied to it, the whole stele fully visible."
+  },
+  "stele_b": {
+    "seed": 7212,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A leaning snapped grey stone stele, the upper half lying broken against the lower half, faint worn carvings, moss-free bare stone, a rusted broken spear thrust into the earth beside it, the whole thing fully visible."
+  },
+  "stele_c": {
+    "seed": 7213,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A low cairn of broken stele fragments and flat grey stones with a planted rusted halberd and a tattered faded banner on a short pole, the whole cairn fully visible."
+  },
+  "truce_stele": {
+    "seed": 7221,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. An enormous tall stone monument standing alone on a three-tiered stepped square base: a huge blank-faced dark grey stele with no statue and no carving on its upper half, the lower half covered in dense worn inscription, faded vermilion paint traces in the carvings, a few long tattered cloth ribbons moving in the wind, cracks running through the stone, the whole monument fully visible."
+  },
+  "record_win": {
+    "seed": 7231,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall grey stone stele with a roof-like cap, its inscription painted in faded vermilion, a small tarnished bronze incense bowl at its foot and a few withered flower stems, proud and formal, the whole stele fully visible."
+  },
+  "record_lose": {
+    "seed": 7232,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A dark charcoal-black stone stele with a cracked and chipped top, scratched angry inscription in white, ash and rusted chains lying at its foot, bitter and bleak, the whole stele fully visible."
+  },
+  "record_folk": {
+    "seed": 7233,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A small heap of grey stones holding a weathered bundle of bamboo slips and cloth scrolls tied with hemp cord, a cracked clay bowl and a bundle of dried grass, humble and moving, the whole thing fully visible."
+  },
+  "weapons": {
+    "seed": 7241,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A low mound of earth with a cluster of rusted spears, swords and halberds thrust into it at different angles, a dented helmet resting on one of them, the whole mound fully visible."
+  },
+  "flagpole": {
+    "seed": 7242,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "background": "flat bright green (colour key auto)",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure bright chroma-key green (#00FF00) background, soft moody lighting, clean crisp edges, hand-painted textures, dark desaturated colour palette of charcoal, slate and weathered wood with only small accents of faded vermilion and cold teal light, grim ancient Chinese xianxia dark fantasy style, no cast shadow and no ground, no text, no watermark. A tall tilted wooden pole planted in a small mound of stones, carrying a long shredded faded red-grey war banner torn by wind, the whole pole and banner fully visible."
   }
 }

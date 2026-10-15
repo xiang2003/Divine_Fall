@@ -53,6 +53,7 @@ body,
 .game-canvas[data-theme='sect'],
 .game-canvas[data-theme='blight'],
 .game-canvas[data-theme='mountain'],
+.game-canvas[data-theme='plateau'],
 .game-canvas[data-theme='mist'] {
   --grade-cast: #b6c4d8;
   --grade-vignette: 0.5;
@@ -64,18 +65,24 @@ body,
 .game-canvas[data-theme='mountain'] {
   --grade-cast: #b9c0d0;
 }
+.game-canvas[data-theme='plateau'] {
+  --grade-cast: #b4bfd2;
+  --grade-vignette: 0.55;
+}
 .game-canvas[data-theme='mist'] {
   --grade-cast: #c0cacf;
 }
 .game-canvas[data-theme='sect'] canvas,
 .game-canvas[data-theme='blight'] canvas,
 .game-canvas[data-theme='mountain'] canvas,
+.game-canvas[data-theme='plateau'] canvas,
 .game-canvas[data-theme='mist'] canvas {
   filter: saturate(0.85) contrast(1.05);
 }
 .game-canvas[data-theme='sect']::before,
 .game-canvas[data-theme='blight']::before,
 .game-canvas[data-theme='mountain']::before,
+.game-canvas[data-theme='plateau']::before,
 .game-canvas[data-theme='mist']::before {
   content: '';
   position: absolute;
@@ -87,6 +94,7 @@ body,
 .game-canvas[data-theme='sect']::after,
 .game-canvas[data-theme='blight']::after,
 .game-canvas[data-theme='mountain']::after,
+.game-canvas[data-theme='plateau']::after,
 .game-canvas[data-theme='mist']::after {
   content: '';
   position: absolute;

@@ -13,6 +13,8 @@ export const WORLD_MAP_FILES = {
   canglan_forest: 'maps/canglan_forest.json',
   qinglan_town: 'maps/qinglan_town.json',
   broken_sword_pass: 'maps/broken_sword_pass.json',
+  // chapter 2, part two
+  truce_plateau: 'maps/truce_plateau.json',
 } as const satisfies Record<string, string>;
 
 export type WorldMapId = keyof typeof WORLD_MAP_FILES;
@@ -36,6 +38,7 @@ export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: 
   canglan_forest: { x: 52, y: 84, kind: '野外' },
   qinglan_town: { x: 72, y: 84, kind: '城鎮' },
   broken_sword_pass: { x: 90, y: 84, kind: '山道' },
+  truce_plateau: { x: 90, y: 62, kind: '高原' },
 };
 
 /** The names of the maps, for the debug teleport list (the maps themselves carry the same names). */
@@ -50,6 +53,7 @@ export const WORLD_MAP_NAMES: Record<WorldMapId, string> = {
   canglan_forest: '青藤古林',
   qinglan_town: '青嵐鎮',
   broken_sword_pass: '斷劍山道',
+  truce_plateau: '停戰碑原',
 };
 
 /** The maps in the order the debug keys step through them. */

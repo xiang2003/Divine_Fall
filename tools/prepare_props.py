@@ -93,6 +93,16 @@ PROPS = {
     'vines_a': ('vines_a.webp', 'props/decor_vines_a.png', 160, 0.25),
     'vines_b': ('vines_b.webp', 'props/decor_vines_b.png', 160, 0.25),
     'vines_c': ('vines_c.webp', 'props/decor_vines_c.png', 160, 0.25),
+    # the truce plateau (chapter 2, part two): stelae in place of trees, the great stele, the three records, planted weapons and a war flag
+    'stele_a': ('stele_a.webp', 'props/stele_a.png', 200, 0.1, 'auto'),
+    'stele_b': ('stele_b.webp', 'props/stele_b.png', 210, 0.1, 'auto'),
+    'stele_c': ('stele_c.webp', 'props/stele_c.png', 200, 0.12, 'auto'),
+    'truce_stele': ('truce_stele.webp', 'buildings/truce_stele.png', 380, 0.2, 'auto'),
+    'record_win': ('record_win.webp', 'props/decor_record_win.png', 180, 0.12, 'auto'),
+    'record_lose': ('record_lose.webp', 'props/decor_record_lose.png', 180, 0.12, 'auto'),
+    'record_folk': ('record_folk.webp', 'props/decor_record_folk.png', 170, 0.15, 'auto'),
+    'weapons': ('weapons.webp', 'props/decor_weapons.png', 190, 0.15, 'auto'),
+    'flagpole': ('flagpole.webp', 'props/decor_flagpole.png', 170, 0.1, 'auto'),
 }
 KEY_FULL = 0.26  # "magentaness" (min(red, blue) - green, as a fraction of min(red, blue)) at or above this can be background
 KEY_NONE = 0.12  # at or below this an edge pixel is fully the object; in between the edge is soft

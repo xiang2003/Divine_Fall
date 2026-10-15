@@ -30,9 +30,11 @@ SETS = {
     'rockroad': ('tex_rockroad', 170, 8, 6, 0.9),
     'ash': ('tex_ash', 400, 8, 0, 0.5),
     'ashtrail': ('tex_ashtrail', 400, 8, 6, 0.6),
+    'plateau': ('tex_plateau', 380, 8, 0, 1.0),
+    'plateauroad': ('tex_plateauroad', 300, 8, 6, 0.85),
 }
 # how much of the texture's own contrast a set keeps (1 = all of it); the stone textures are busy once they are shrunk to half size
-CONTRAST = {'ash': 1.6, 'ashtrail': 1.3, 'flag': 0.55, 'flagroad': 0.7, 'soil': 0.8, 'rock': 0.7, 'rockroad': 0.75}
+CONTRAST = {'ash': 1.6, 'ashtrail': 1.3, 'flag': 0.55, 'flagroad': 0.7, 'soil': 0.8, 'rock': 0.7, 'rockroad': 0.75, 'plateau': 0.8, 'plateauroad': 0.75}
 # where the patches come from: (x, y of the top-left corner as a fraction of the room left in the texture, turns of 90 degrees, mirrored)
 PLACES = [(0.05, 0.05, 0, False), (0.9, 0.1, 1, False), (0.2, 0.85, 2, True), (0.8, 0.8, 3, False), (0.5, 0.45, 0, True), (0.1, 0.5, 1, True),
           (0.6, 0.05, 2, False), (0.35, 0.7, 3, True), (0.95, 0.5, 0, False), (0.45, 0.2, 1, False)]

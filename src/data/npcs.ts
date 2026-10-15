@@ -185,6 +185,7 @@ Object.assign(NPCS, {
       topics: [
         { kind: 'turnin', label: '殘缺的記錄', graph: 'gu_q9_turnin', if: { quest: 'q9_ruin_record', state: 'ready' } },
         { kind: 'story', label: '地圖上的三個記號', graph: 'gu_three_places', if: { quest: 'q9_ruin_record', state: 'completed' } },
+        { kind: 'story', label: '停戰碑原上的三份記錄', graph: 'gu_truce', if: { flag: 'truce_understood' } },
         { kind: 'turnin', label: '回報祭壇', graph: 'gu_q6_turnin', if: { quest: 'q6_altar_trace', state: 'ready' } },
         { kind: 'active', label: '古林的祭壇', graph: 'gu_q6_active', if: { quest: 'q6_altar_trace', state: 'active' } },
         { kind: 'quest', label: '靈氣的痕跡', graph: 'gu_q6_offer', if: { quest: 'q6_altar_trace', state: 'available' } },

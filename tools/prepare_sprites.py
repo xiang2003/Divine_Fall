@@ -86,6 +86,11 @@ SPRITES = {
     'exiled_swordsman': {'size': ('height', 60), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.15},
     'fallen_cultivator': {'size': ('height', 60), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.3, 'saturation': 1.2},
     'broken_sword_colossus': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 128},
+    # chapter 2, part two: the truce plateau
+    'truce_soldier': {'size': ('height', 60), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.2},
+    'oath_hound': {'size': ('width', 46), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'brightness': 1.15},
+    'banner_wraith': {'size': ('height', 62), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 80, 'brightness': 1.25, 'saturation': 1.1},
+    'nameless_general': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 44, 'frame': 128, 'brightness': 1.15},
     'core_watcher': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 128},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall

@@ -112,6 +112,15 @@ for y in (30, 34):
     grid[y][4] = '#'
 for y in (30, 31, 32, 33, 34):
     grid[y][3] = '#'
+# the gate in the east (on to the truce plateau; it opens when the colossus is down)
+EAST = (75, 25)
+for y in (25, 26, 27):
+    assert grid[y][74] == '.', (74, y, grid[y][74])
+    grid[y][75] = '.'
+for y in (24, 28):
+    grid[y][75] = '#'
+for y in range(24, 29):
+    grid[y][76] = '#'
 # reachability
 seen = {START}
 queue = deque([START])
@@ -158,8 +167,14 @@ data = {
         'B': 'boss spawn (the broken sword colossus, in the arena)',
     },
     'layout': layout,
-    'entrances': {'from_town': {'x': 6, 'y': 32}},
-    'portals': [{'id': 'to_town', 'x': WEST[0], 'y': WEST[1], 'w': 1, 'h': 3, 'to': {'map': 'qinglan_town', 'entrance': 'from_pass'}}],
+    'entrances': {'from_town': {'x': 6, 'y': 32}, 'from_plateau': {'x': 72, 'y': 26}},
+    'portals': [
+        {'id': 'to_town', 'x': WEST[0], 'y': WEST[1], 'w': 1, 'h': 3, 'to': {'map': 'qinglan_town', 'entrance': 'from_pass'}},
+        {
+            'id': 'to_plateau', 'x': EAST[0], 'y': EAST[1], 'w': 1, 'h': 3, 'to': {'map': 'truce_plateau', 'entrance': 'from_pass'},
+            'requiresFlag': 'broken_sword_pass_boss_defeated', 'blockedText': '巨像還擋在路上。',
+        },
+    ],
     'buildings': [{'style': s, 'x': x, 'y': y, 'w': w, 'h': h} for s, x, y, w, h in (OUTPOST, SWORD)],
     'population': {'monsters': population, 'elites': ['exiled_swordsman'], 'boss': 'broken_sword_colossus'},
     'interactables': [

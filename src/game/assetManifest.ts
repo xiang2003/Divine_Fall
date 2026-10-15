@@ -89,6 +89,10 @@ export const SpriteKey = {
   SWORDSMAN: 'monster.exiled_swordsman',
   CULTIST: 'monster.fallen_cultivator',
   COLOSSUS: 'monster.broken_sword_colossus',
+  TRUCE_SOLDIER: 'monster.truce_soldier',
+  OATH_HOUND: 'monster.oath_hound',
+  BANNER_WRAITH: 'monster.banner_wraith',
+  NAMELESS_GENERAL: 'monster.nameless_general',
   SPIRIT: 'monster.drowned_spirit',
   REVENANT: 'monster.wreck_revenant',
   RIPPLE: 'fx.ripple',
@@ -149,6 +153,8 @@ export const TILE_SETS = {
   rockroad: { full: 8, edge: 6 },
   ash: { full: 8, edge: 0 },
   ashtrail: { full: 8, edge: 6 },
+  plateau: { full: 8, edge: 0 },
+  plateauroad: { full: 8, edge: 6 },
 } as const;
 export type TileSetName = keyof typeof TILE_SETS;
 /** How big a heap of 墜金 is drawn, as a fraction of its picture's pixel size (it was 0.5 at first, which was too big: now a fifth of that). */
@@ -156,6 +162,8 @@ export const GOLD_ICON_SCALE = 0.1;
 /** Dead trees (forest, town, the wet woods of the coast), sword cairns and pillars (the pass), black sea rocks (the coast): generated pictures. */
 export const DEAD_TREE_KEYS = ['a', 'c', 'e', 'f', 'g'].map((n) => `terrain.tree_dead_${n}`);
 export const SPIRE_KEYS = ['a', 'b', 'c'].map((n) => `terrain.spire_${n}`);
+/** The stone stelae that stand on the truce plateau in place of trees and boulders. */
+export const STELE_KEYS = ['a', 'b', 'c'].map((n) => `terrain.stele_${n}`);
 export const SEA_ROCK_KEYS = ['a', 'b'].map((n) => `terrain.rock_sea_${n}`);
 /** The solid props of Qinglan Town, in place of crates and barrels: sealed jars, burial urns, a coffin. */
 export const TOWN_PROP_KEYS = ['jar_a', 'jar_b', 'jar_c'].map((n) => `prop.${n}`);
@@ -205,6 +213,12 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   altar: { keys: ['decor.altar_a'], scale: 0.45 },
   driftwood: { keys: ['decor.driftwood_a', 'decor.driftwood_b'], scale: 0.4 },
   anchor: { keys: ['decor.anchor'], scale: 0.4 },
+  // the truce plateau: planted weapons, a torn war flag, and the three records
+  weapons: { keys: ['decor.weapons'], scale: 0.4 },
+  flagpole: { keys: ['decor.flagpole'], scale: 0.42 },
+  record_win: { keys: ['decor.record_win'], scale: 0.4 },
+  record_lose: { keys: ['decor.record_lose'], scale: 0.4 },
+  record_folk: { keys: ['decor.record_folk'], scale: 0.4 },
 };
 export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density: number } | null> = {
   stone: null,
@@ -213,6 +227,7 @@ export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density
   mist: { kinds: ['driftwood', 'bones', 'driftwood', 'fungus'], density: 0.022 },
   mountain: { kinds: ['bones', 'bones', 'shard'], density: 0.006 },
   sect: null,
+  plateau: { kinds: ['bones', 'weapons', 'bones', 'flagpole'], density: 0.007 },
   blight: { kinds: ['fungus', 'bones', 'roots', 'fungus', 'vines'], density: 0.03 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
@@ -264,6 +279,7 @@ export const THEME_ART: Record<MapTheme, ThemeArt> = {
     wild: { floor: tileKeys('soil', false), trees: DEAD_TREE_KEYS },
   },
   mountain: { floor: tileKeys('rock', false), floorPick: PICK8, obstacles: SPIRE_KEYS, water: MURK_KEYS, path: tilePath('rockroad'), walls: CLIFF_WALL_KEYS },
+  plateau: { floor: tileKeys('plateau', false), floorPick: PICK8, obstacles: STELE_KEYS, water: MURK_KEYS, path: tilePath('plateauroad'), walls: CLIFF_WALL_KEYS },
   sect: { floor: tileKeys('flag', false), floorPick: PICK8, obstacles: DEAD_TREE_KEYS, water: SEA_KEYS, path: tilePath('flagroad'), props: TOWN_PROP_KEYS },
   blight: { floor: tileKeys('soil', false), floorPick: PICK8, obstacles: DEAD_TREE_KEYS, water: SEA_KEYS, path: tilePath('trail') },
   // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
@@ -393,6 +409,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...TOWN_PROP_KEYS.map((key) => propSprite(key, `assets/props/prop_${key.slice(5)}.png`, 0.36, 0.15)),
   ...DEAD_TREE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.5, 0.1, enlarged(drawTreeBlock, 256, 256))),
   ...SPIRE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.36, 0.1, enlarged(() => drawRock('pillar', 0), 64, 64))),
+  ...STELE_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.3, 0.1, enlarged(() => drawRock('pillar', 0), 64, 64))),
   ...SEA_ROCK_KEYS.map((key) => propSprite(key, `assets/props/${key.replace('terrain.', '')}.png`, 0.5, 0.2, enlarged(() => drawRock('boulder', 0), 64, 64))),
   ...Object.values(DECOR_KINDS).flatMap((k) => k.keys.map((key) => propSprite(key, `assets/props/${key.replace('.', '_')}.png`, k.scale, 0.2))),
   ...MURK_KEYS.map((key, i) => terrainSprite(key, 64, 32, 0.5, () => drawWaterTile('murk', i))),
@@ -600,6 +617,11 @@ function directionalMonsters(): SpriteAssetDef[] {
     directionalMonster(SpriteKey.SWORDSMAN, 'exiled_swordsman', drawGhoulSheet, 80),
     directionalMonster(SpriteKey.CULTIST, 'fallen_cultivator', drawShadeSheet, 80),
     directionalMonster(SpriteKey.COLOSSUS, 'broken_sword_colossus', drawArchonSheet, 128, BOSS_FRAME),
+    // chapter 2, part two: the truce plateau
+    directionalMonster(SpriteKey.TRUCE_SOLDIER, 'truce_soldier', drawGhoulSheet, 80),
+    directionalMonster(SpriteKey.OATH_HOUND, 'oath_hound', drawHoundSheet),
+    directionalMonster(SpriteKey.BANNER_WRAITH, 'banner_wraith', drawShadeSheet, 80),
+    directionalMonster(SpriteKey.NAMELESS_GENERAL, 'nameless_general', drawArchonSheet, 128, BOSS_FRAME),
   ];
 }
 

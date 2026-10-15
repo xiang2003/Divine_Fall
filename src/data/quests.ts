@@ -122,6 +122,16 @@ Object.assign(QUESTS, {
     objectives: [{ type: 'talk', label: '把記錄帶給顧長風', npc: 'wanderer_guchangfeng' }],
     rewards: { xp: worth(24, 4), items: [{ rarity: 'rare', count: 1 }], flags: ['part2_open'] },
   },
+  q10_truce_records: {
+    id: 'q10_truce_records',
+    title: '被省略的停戰條款',
+    summary: '停戰碑原上立著三份互相矛盾的記錄：勝方的碑文、敗方的碑文、民間的殘卷。把它們讀過，再到原中央的停戰碑前對照。',
+    giver: null,
+    turnIn: 'wanderer_guchangfeng', // never used: the collation at the stele completes it on the spot
+    requires: [],
+    objectives: [{ type: 'interact', label: '讀過三份記錄，到停戰碑前對照', target: 'plateau_stele' }],
+    rewards: { xp: worth(24, 5), items: [{ rarity: 'rare', count: 1 }] },
+  },
 } satisfies Record<string, QuestDef>);
 
 export function getQuest(id: string): QuestDef {

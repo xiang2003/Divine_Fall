@@ -143,6 +143,21 @@ blacksmith_tieshan（鐵山）、wanderer_guchangfeng（顧長風）、patrol_li
 
 **已知的限制**：只有待機有畫格，其餘動作是程式演出；兩種狼和本島的野狼長得很像；紫色陰影在哨站的圍籬裡還有一點殘留；NPC 的轉面是模型另外畫的，服裝的細節在不同面之間有出入。
 
+## 停戰碑原（第二章後篇階段 3，2026-10-16，本機 AI 生成）
+
+做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json) 與 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)。
+
+| 專案內檔案 | 內容 |
+| --- | --- |
+| public/assets/monsters/truce_soldier.png、oath_hound.png、banner_wraith.png、nameless_general.png | 戰痕亡兵、誓約獵犬、殘旗戰魂（戰場殘魂 `war_soul` 共用它的圖）、無名將領（Boss）；做法同其他怪物：基礎圖 → 局部重繪補正面與背面 → `tools/prepare_sprites.py` |
+| public/assets/buildings/truce_stele.png | 停戰碑（原中央的大石碑） |
+| public/assets/props/stele_a/b/c.png | 風蝕的石碑與碑堆（地圖的障礙，取代樹與岩石） |
+| public/assets/props/decor_record_win/lose/folk.png | 勝方碑文、敗方碑文、民間殘卷（三處可查看的記錄） |
+| public/assets/props/decor_weapons.png、decor_flagpole.png | 插在土裡的兵器、撕裂的軍旗 |
+| public/assets/tiles/plateau_、plateauroad_ 開頭的檔案 | 高原的地面（風蝕的枯草與碎石）與舊石板路（柔邊補丁是檔名有 `edge_` 的） |
+
+**已知的限制**：戰場殘魂與殘旗戰魂長一樣；停戰碑的上半沒有「留白」得很明顯（模型畫了一些刻痕），地圖的懸崖牆沿用斷劍山道的程式畫牆。
+
 ## 迷霧海岸的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
 
 做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json) 與 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)。
