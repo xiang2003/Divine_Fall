@@ -26,6 +26,9 @@ export const GOLD_CONFIG = {
   maxPiles: 40,
 } as const;
 
+/** The glow ring under a heap, shrunk along with the heap itself. */
+const RING_SCALE = 0.5;
+
 /** Which picture a heap of this size uses. */
 export function goldSpriteKey(amount: number): string {
   return amount >= 60 ? SpriteKey.GOLD_BIG : amount >= 12 ? SpriteKey.GOLD_MID : SpriteKey.GOLD_SMALL;
@@ -123,6 +126,7 @@ export class GoldSystem {
 
   private place(pile: GoldPile): void {
     placeAt(pile.ring, Layer.GROUND_DECAL, pile.pos.x, pile.pos.y);
+    pile.ring.scale.set(RING_SCALE, RING_SCALE, 1);
     placeAt(pile.sprite, Layer.OBJECT, pile.pos.x, pile.pos.y);
   }
 

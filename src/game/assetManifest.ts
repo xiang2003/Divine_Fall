@@ -151,6 +151,8 @@ export const TILE_SETS = {
   ashtrail: { full: 8, edge: 6 },
 } as const;
 export type TileSetName = keyof typeof TILE_SETS;
+/** How big a heap of 墜金 is drawn, as a fraction of its picture's pixel size (it was 0.5 at first, which was too big: now a fifth of that). */
+export const GOLD_ICON_SCALE = 0.1;
 /** Dead trees (forest, town, the wet woods of the coast), sword cairns and pillars (the pass), black sea rocks (the coast): generated pictures. */
 export const DEAD_TREE_KEYS = ['a', 'c', 'e', 'f', 'g'].map((n) => `terrain.tree_dead_${n}`);
 export const SPIRE_KEYS = ['a', 'b', 'c'].map((n) => `terrain.spire_${n}`);
@@ -385,7 +387,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...PROP_NAMES.map((name) => propSprite(`prop.${name}`, `assets/props/prop_${name}.png`, 1, 0.22)),
   // 墜金, the money monsters drop: three sizes of heap (generated pictures)
   ...([[SpriteKey.GOLD_SMALL, 'small'], [SpriteKey.GOLD_MID, 'mid'], [SpriteKey.GOLD_BIG, 'big']] as const).map(([key, size]) =>
-    propSprite(key, `assets/props/gold_${size}.png`, 0.5, 0.3, enlarged(drawShard, 64, 64)),
+    propSprite(key, `assets/props/gold_${size}.png`, GOLD_ICON_SCALE, 0.3, enlarged(drawShard, 64, 64)),
   ),
 
   ...TOWN_PROP_KEYS.map((key) => propSprite(key, `assets/props/prop_${key.slice(5)}.png`, 0.36, 0.15)),
