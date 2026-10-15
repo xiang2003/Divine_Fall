@@ -115,10 +115,10 @@ export class MonsterAISystem {
     const list = this.monsters;
     for (let i = 0; i < list.length; i++) {
       const a = list[i]!;
-      if (a.isDead) continue;
+      if (a.isDead || a.hidden) continue;
       for (let j = i + 1; j < list.length; j++) {
         const b = list[j]!;
-        if (b.isDead) continue;
+        if (b.isDead || b.hidden) continue;
         const dx = b.pos.x - a.pos.x;
         const dy = b.pos.y - a.pos.y;
         const min = a.def.radius + b.def.radius;

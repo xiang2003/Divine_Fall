@@ -66,6 +66,10 @@ SPRITES = {
     # the Primordial Core
     'stone_attendant': {'size': ('height', 70), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
     'mask_spirit': {'size': ('width', 34), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36},
+    # the Mist Coast (chapter 2)
+    'cleft_boar': {'size': ('width', 48), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36},
+    'wreck_revenant': {'size': ('height', 58), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
+    'drowned_spirit': {'size': ('height', 54), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 36, 'frame': 80},
     'core_watcher': {'size': ('height', 112), 'side': 'right', 'roll': False, 'out': 'monsters', 'colors': 40, 'frame': 128},
 }
 SOURCE_HEIGHT = 660  # the source figures were drawn about this tall

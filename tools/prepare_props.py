@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'docs' / 'art' / 'props'
 OUT = ROOT / 'public' / 'assets'
 
-# name -> (source file, output file under public/assets, width in picture pixels (the game shows it at half), anchorY, optional colour key: 'orange' instead of magenta)
+# name -> (source file, output file under public/assets, width in picture pixels (the game shows it at half), anchorY, optional colour key: 'orange' instead of magenta, optional smallest gap in pixels that counts as background)
 PROPS = {
     'well': ('well.webp', 'buildings/well.png', 130, 0.17),
     'ferry': ('ferry.webp', 'buildings/ferry.png', 520, 0.27),
@@ -39,6 +39,11 @@ PROPS = {
     'roots_a': ('roots_a.webp', 'props/decor_roots_a.png', 220, 0.3),
     'roots_b': ('roots_b.webp', 'props/decor_roots_b.png', 220, 0.3),
     'core': ('core.webp', 'props/decor_core.png', 240, 0.15),
+    # the Mist Coast
+    'wreck': ('wreck.webp', 'buildings/wreck.png', 520, 0.3, 'magenta', 60),  # small gaps between the sails and the rigging count as background
+    'driftwood_a': ('driftwood_a.webp', 'props/decor_driftwood_a.png', 130, 0.25),
+    'driftwood_b': ('driftwood_b.webp', 'props/decor_driftwood_b.png', 130, 0.25),
+    'anchor': ('anchor.webp', 'props/decor_anchor.png', 140, 0.2),
     'moss_a': ('moss_a.webp', 'props/decor_moss_a.png', 230, 0.4),
     'moss_b': ('moss_b.webp', 'props/decor_moss_b.png', 230, 0.4),
     'vines_a': ('vines_a.webp', 'props/decor_vines_a.png', 160, 0.25),
@@ -62,7 +67,7 @@ def magenta(px, x, y, mode='magenta'):
     return (m - g) / max(m, 40)
 
 
-def cut_out(path: Path, mode: str = 'magenta') -> Image.Image:
+def cut_out(path: Path, mode: str = 'magenta', pocket_min: int = POCKET_MIN_AREA) -> Image.Image:
     """The object with a transparent background, cropped to its outline.
 
     The background is the magenta that can be reached from the picture's border (a flood fill over pixels that are magenta enough, so
@@ -104,7 +109,7 @@ def cut_out(path: Path, mode: str = 'magenta') -> Image.Image:
                     if 0 <= nx < w and 0 <= ny < h and not bg[ny * w + nx] and not pocket_seen[ny * w + nx] and magenta(px, nx, ny, mode) >= key_full:
                         pocket_seen[ny * w + nx] = 1
                         stack.append((nx, ny))
-            if len(region) >= POCKET_MIN_AREA:
+            if len(region) >= pocket_min:
                 for x, y in region:
                     bg[y * w + x] = 1
 
@@ -153,7 +158,7 @@ def cut_out(path: Path, mode: str = 'magenta') -> Image.Image:
 
 def build(name: str, preview: Path | None) -> None:
     source, out, width, anchor, *rest = PROPS[name]
-    figure = cut_out(SRC / source, rest[0] if rest else 'magenta')
+    figure = cut_out(SRC / source, rest[0] if rest else 'magenta', rest[1] if len(rest) > 1 else POCKET_MIN_AREA)
     size = (width, max(1, round(figure.height * width / figure.width)))
     figure = figure.convert('RGBa').resize(size, Image.LANCZOS).convert('RGBA')
     target = OUT / out

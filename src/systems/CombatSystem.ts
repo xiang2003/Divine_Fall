@@ -40,8 +40,8 @@ export interface CombatEvents {
   phaseChanged(boss: Monster, phase: number): void;
   /** Copies of the monster `defId` should appear around `owner`. */
   spawnMinions(owner: Monster, defId: string, count: number): void;
-  /** Stone pillars were summoned: a circle of `radius` at each point, bursting out after `delay` seconds for `damage` (before armor). */
-  pillars(points: readonly Vec2[], radius: number, delay: number, damage: number): void;
+  /** Ground strikes were summoned: a circle of `radius` at each point, going off after `delay` seconds for `damage` (before armor). `style` is a stone pillar bursting out, or a plain burst of resentment. */
+  pillars(points: readonly Vec2[], radius: number, delay: number, damage: number, style?: 'pillar' | 'burst'): void;
 }
 
 /** Spawn the projectile slightly in front of the caster so it doesn't start inside its body. */
@@ -68,7 +68,7 @@ export class CombatSystem implements MonsterHooks {
     const { stats, pos } = this.player;
     let firstHit: Monster | null = null;
     for (const m of this.monsters()) {
-      if (m.isDead) continue;
+      if (!m.hittable) continue;
       const hit = inAttackArc(
         pos.x,
         pos.y,
@@ -154,7 +154,7 @@ export class CombatSystem implements MonsterHooks {
       case 'spin': {
         const radius = def.radius ?? 2;
         for (const m of this.monsters()) {
-          if (m.isDead) continue;
+          if (!m.hittable) continue;
           if (Math.hypot(m.pos.x - pos.x, m.pos.y - pos.y) <= radius + m.def.radius) this.skillHit(m, stats.damageMult);
         }
         this.events.skillFx('spin', pos.x, pos.y, radius);
@@ -182,7 +182,7 @@ export class CombatSystem implements MonsterHooks {
         const ty = pos.y + vy * k;
         const radius = def.radius ?? 2;
         for (const m of this.monsters()) {
-          if (m.isDead) continue;
+          if (!m.hittable) continue;
           if (Math.hypot(m.pos.x - tx, m.pos.y - ty) <= radius + m.def.radius) {
             if (!this.skillHit(m, stats.damageMult)) m.stun(def.stunSeconds ?? 1);
           }
@@ -196,7 +196,7 @@ export class CombatSystem implements MonsterHooks {
   /** A player bolt reached an enemy. */
   boltHit(target: BoltTarget, damageMult: number): void {
     const m = this.monsters().find((x) => x === target);
-    if (m && !m.isDead) this.skillHit(m, damageMult);
+    if (m && m.hittable) this.skillHit(m, damageMult);
   }
 
   /** Rolls a skill hit (attack damage x multiplier, with crits). Returns true if it killed the monster. */
@@ -238,6 +238,10 @@ export class CombatSystem implements MonsterHooks {
     if (this.player.hasEffect('killFrenzy')) {
       this.player.buffs.hasteAttack(cfg.killFrenzy.duration, cfg.killFrenzy.attackSpeedBonus);
     }
+    const burst = m.def.deathBurst;
+    if (burst && this.rng() < burst.chance) {
+      this.events.pillars([{ x: m.pos.x, y: m.pos.y }], burst.radius, burst.delay, m.damage * burst.damageMult, 'burst');
+    }
     this.events.monsterKilled(m);
   }
 
@@ -252,7 +256,7 @@ export class CombatSystem implements MonsterHooks {
       let best: Monster | null = null;
       let bestDist: number = cfg.range;
       for (const m of this.monsters()) {
-        if (m.isDead || struck.has(m)) continue;
+        if (!m.hittable || struck.has(m)) continue;
         const d = Math.hypot(m.pos.x - from.pos.x, m.pos.y - from.pos.y);
         if (d <= bestDist) {
           best = m;

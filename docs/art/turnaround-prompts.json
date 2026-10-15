@@ -226,5 +226,53 @@
       "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A floating ancient ceremonial mask made of cracked pale stone and tarnished bronze, hollow glowing teal eyes and a thin mouth slit, ornate carved patterns on its forehead, thin wisps of teal spirit smoke trailing from beneath it, hovering in the air, no body, three-quarter view facing right, the whole mask visible. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
       "note": "one picture for all four directions"
     }
+  },
+  "cleft_boar": {
+    "base_seed": 6102,
+    "front": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a front view, the creature facing straight toward the viewer, head and chest toward the camera, symmetrical pose. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A massive wild boar with thick bristly dark brown hide scarred by old fights, heavy muscular shoulders, small angry red eyes, long curved tusks and a pair of broken split horns on its brow, standing on four legs."
+    },
+    "back": {
+      "seed": 11,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a rear view seen from directly behind: its back and the back of its head are closest to the camera, the creature faces away from the viewer and its face is not visible. Identical colours, markings and proportions, same size as the left one, the whole animal visible. No text, no labels, no watermark. A massive wild boar with thick bristly dark brown hide scarred by old fights, heavy muscular shoulders, small angry red eyes, long curved tusks and a pair of broken split horns on its brow, standing on four legs."
+    },
+    "right": {
+      "seed": 6102,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A massive wild boar with thick bristly dark brown hide scarred by old fights, heavy muscular shoulders, small angry red eyes, long curved tusks and a pair of broken split horns on its brow, head lowered ready to charge, standing on four legs, three-quarter view facing right, the whole animal visible. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
+  },
+  "wreck_revenant": {
+    "base_seed": 6202,
+    "front": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a front view, the creature facing straight toward the viewer, head and chest toward the camera, symmetrical pose. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A drowned sailor's revenant: a hunched rotting corpse in tattered sea-stained clothes with barnacles and dripping seaweed clinging to it, hollow pale green glowing eyes, rusty chains, holding a corroded rusty cutlass and a splintered plank as a shield, wisps of cold mist around its feet, slow heavy stance."
+    },
+    "back": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a rear view seen from directly behind: its back and the back of its head are closest to the camera, the creature faces away from the viewer and its face is not visible. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A drowned sailor's revenant: a hunched rotting corpse in tattered sea-stained clothes with barnacles and dripping seaweed clinging to it, hollow pale green glowing eyes, rusty chains, holding a corroded rusty cutlass and a splintered plank as a shield, wisps of cold mist around its feet, slow heavy stance."
+    },
+    "right": {
+      "seed": 6202,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A drowned sailor's revenant: a hunched rotting corpse in tattered sea-stained clothes with barnacles and dripping seaweed clinging to it, hollow pale green glowing eyes, rusty chains, holding a corroded rusty cutlass and a splintered plank as a shield, wisps of cold mist around its feet, slow heavy stance, three-quarter view facing right, full body. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
+  },
+  "drowned_spirit": {
+    "base_seed": 6302,
+    "front": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a front view, the creature facing straight toward the viewer, head and chest toward the camera, symmetrical pose. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A semi-transparent humanoid figure made of living seawater: a glassy pale blue-green body with faint bubbles inside and droplets running down it, no face except two softly glowing eyes, long fluid arms ending in curved blades of water, standing in a small puddle of sea water."
+    },
+    "back": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a rear view seen from directly behind: its back and the back of its head are closest to the camera, the creature faces away from the viewer and its face is not visible. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A semi-transparent humanoid figure made of living seawater: a glassy pale blue-green body with faint bubbles inside and droplets running down it, no face except two softly glowing eyes, long fluid arms ending in curved blades of water, standing in a small puddle of sea water."
+    },
+    "right": {
+      "seed": 6302,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A semi-transparent humanoid figure made of living seawater: a glassy pale blue-green body with faint bubbles inside and droplets running down it, no face except two softly glowing eyes, long fluid arms ending in curved blades of water, standing in a small puddle of sea water, three-quarter view facing right, full body. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
   }
 }

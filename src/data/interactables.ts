@@ -43,6 +43,14 @@ export const INTERACTABLES: Record<string, InteractableDef> = {
     reportOnUse: true,
     dialogue: [{ graph: 'relic_take' }],
   },
+  mist_trace: {
+    id: 'mist_trace',
+    name: '殘留的靈氣痕跡',
+    prompt: '查看',
+    spriteKey: null,
+    reportOnUse: false,
+    dialogue: [{ graph: 'mist_trace' }],
+  },
   primordial_core: {
     id: 'primordial_core',
     name: '初胎核心',

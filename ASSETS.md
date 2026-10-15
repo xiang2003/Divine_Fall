@@ -82,6 +82,24 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 迷霧海岸的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
+
+做法與前面相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）。種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json) 與 [docs/art/prop-prompts.json](docs/art/prop-prompts.json)。
+
+| 專案內檔案 | 內容 |
+| --- | --- |
+| public/assets/monsters/cleft_boar.png | 裂角野豬（256×256） |
+| public/assets/monsters/wreck_revenant.png | 沉船怨骸（320×320，80 像素的格子） |
+| public/assets/monsters/drowned_spirit.png | 溺靈水妖（320×320，80 像素的格子） |
+| public/assets/buildings/wreck.png | 擱淺的沉船（520×570，當作建築畫在 5×3 格上） |
+| public/assets/props/decor_driftwood_a/b.png | 浮木堆（地面裝飾，不擋路） |
+| public/assets/props/decor_anchor.png | 生鏽的船錨（地面裝飾） |
+
+**荒林野狼沿用林道野狼的圖**（同一種動物；只是數值與行為不同，見 README）。**程式畫的**：霧（白色的柔邊雲，[HazardArt.ts](src/game/HazardArt.ts) 的 `drawCloud`）、水面的漣漪（水妖潛伏時）。
+
+**已知的限制**：只有待機有畫格，其餘動作是程式演出；水妖是半透明水體，縮成像素後顏色偏綠褐、透明感不見了；沉船很大（比 5×3 格的腳印高很多），走到它後面角色會被擋住，目前沒有淡出；
+沉船、浮木、船錨是同一批生成圖，木頭的顏色和島上的建築不太一致。
+
 ## 初胎核心的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
 
 做法與源泉洞相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）：

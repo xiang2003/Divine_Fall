@@ -73,6 +73,9 @@ const POUNCE_MIN_GAP = 0.15;
 export const CHARGE_START = 0.35;
 export const CHARGE_END = 0.8;
 
+/** A flanker closes in straight once it is this near, and swings out at most this far to the side. */
+const FLANK_CLOSE = 3;
+const FLANK_OFFSET = 3.2;
 /** A circling monster turns the other way round every this many seconds. */
 const STRAFE_TURN = 1.6;
 
@@ -131,6 +134,9 @@ export class Monster {
   private chargeHit = false;
   /** Seconds spent trying to move, for hopping monsters (they only travel while airborne). */
   private hopClock = 0;
+  /** An ambusher is hidden until the player comes close; then it surfaces, which takes a moment during which it does nothing. */
+  hidden: boolean;
+  private emergeLeft = 0;
   /** Seconds alive (for a phantom's lifetime), and the state of a split: due, and done. */
   private age = 0;
   private splitDue = false;
@@ -147,6 +153,17 @@ export class Monster {
     this.rng = options.rng ?? defaultRng;
     this.stats = computeMonsterStats(def, this.affixes);
     this.hp = this.stats.maxHp;
+    this.hidden = def.ambush !== undefined;
+  }
+
+  /** True while it can be hit and targeted: alive and not hiding. */
+  get hittable(): boolean {
+    return this.state !== 'dead' && !this.hidden;
+  }
+  /** True while a surfacing ambusher is rising out of the water (0 to 1). */
+  get emergeProgress(): number {
+    const e = this.def.ambush?.emerge ?? 0;
+    return this.emergeLeft > 0 && e > 0 ? 1 - this.emergeLeft / e : 1;
   }
 
   get isDead(): boolean {
@@ -223,7 +240,7 @@ export class Monster {
 
   /** Applies already-final damage. Returns true if this hit killed the monster. */
   takeDamage(amount: number): boolean {
-    if (this.state === 'dead') return false;
+    if (this.state === 'dead' || this.hidden) return false;
     this.hp = Math.max(0, this.hp - amount);
     if (this.hp === 0) {
       this.enter('dead');
@@ -274,6 +291,22 @@ export class Monster {
     if (this.phase !== this.announcedPhase) {
       this.announcedPhase = this.phase;
       hooks.phaseChanged(this, this.phase);
+    }
+    if (this.hidden) {
+      const ambush = this.def.ambush!;
+      const dist = Math.hypot(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
+      if (!target.isDead && dist <= ambush.triggerRange && collision.hasLineOfSight(this.pos.x, this.pos.y, target.pos.x, target.pos.y)) {
+        this.hidden = false;
+        this.emergeLeft = ambush.emerge;
+        this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
+        this.enter('chase');
+      }
+      return;
+    }
+    if (this.emergeLeft > 0) {
+      this.emergeLeft -= dt;
+      this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
+      return; // it is still rising out of the water
     }
     // The attack cooldown keeps running in every state; during 'attack' the timer is advanced by updateAttack.
     if (this.state !== 'attack') this.attack.update(dt);
@@ -394,13 +427,33 @@ export class Monster {
       );
       return;
     }
+    const charge = this.def.charge;
+    if (charge && sees && reach <= charge.range && reach >= charge.minRange && this.attack.canStart) {
+      this.beginAttack(
+        { kind: 'charge', duration: charge.duration, hitFraction: 0.95, damageMult: charge.damageMult, radius: 0, count: 1, spread: 0, rush: charge.rush },
+        target,
+        hooks,
+      );
+      return;
+    }
     if (reach <= this.def.attackRange && this.attack.canStart) {
       this.beginAttack(this.def.slam ? this.slamAttack(this.def.slam) : this.standardAttack('melee'), target, hooks);
       return;
     }
     if (reach > this.def.attackRange * 0.9) {
-      this.moveToward(target.pos.x, target.pos.y, this.moveSpeed, dt, collision, true);
+      const aim = this.def.flank ? this.flankPoint(target, dist) : target.pos;
+      this.moveToward(aim.x, aim.y, this.moveSpeed, dt, collision, true);
     }
+  }
+
+  /** Where a flanker heads: to the side of the target while it is far, straight at it once it is close. Each monster keeps to one side. */
+  private flankPoint(target: MonsterTarget, dist: number): Vec2 {
+    if (dist < FLANK_CLOSE) return target.pos;
+    const side = this.id % 2 === 0 ? 1 : -1;
+    const offset = Math.min(FLANK_OFFSET, dist * 0.55);
+    const ux = (target.pos.x - this.pos.x) / dist;
+    const uy = (target.pos.y - this.pos.y) / dist;
+    return { x: target.pos.x - uy * side * offset, y: target.pos.y + ux * side * offset };
   }
 
   /** Keeps its distance by circling: sideways to the target, drifting in or out to stay in the middle of its range. */
@@ -529,8 +582,15 @@ export class Monster {
     }
     const speed = (spec.rush ?? 6) / ((CHARGE_END - CHARGE_START) * spec.duration);
     const step = speed * dt;
+    const bx = this.pos.x;
+    const by = this.pos.y;
     collision.moveCircle(this.pos, this.def.radius, this.leapDir.x * step, this.leapDir.y * step);
     this.moving = true;
+    const stun = this.def.charge?.stunSeconds;
+    if (stun && Math.hypot(this.pos.x - bx, this.pos.y - by) < step * 0.25) {
+      this.stun(stun); // it ran into something solid
+      return;
+    }
     if (!this.chargeHit && !target.isDead && this.reachTo(target) <= this.def.attackRange + MELEE_STRIKE_SLACK * 0.5) {
       this.chargeHit = true;
       hooks.meleeStrike(this, spec.damageMult);

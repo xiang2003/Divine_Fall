@@ -34,6 +34,7 @@ const FLOOR_COLOR: Record<MapTheme, string> = {
   stone: '#5b5566',
   ruins: '#4f5a55',
   core: '#5a5648',
+  mist: '#9a8a68',
   grass: '#3f6a37',
   sand: '#b59a63',
   cave: '#4b5568',
@@ -41,18 +42,18 @@ const FLOOR_COLOR: Record<MapTheme, string> = {
 const PATH_COLOR = '#8d6a3f';
 const WATER_COLOR = '#2f5f86';
 const WALL_COLOR = '#17131d';
-const TREE_COLOR: Record<MapTheme, string> = { stone: '#26212e', ruins: '#26212e', core: '#3a362c', grass: '#1f3a22', sand: '#6b5d3c', cave: '#2a303d' };
+const TREE_COLOR: Record<MapTheme, string> = { stone: '#26212e', ruins: '#26212e', core: '#3a362c', mist: '#6b5d3c', grass: '#1f3a22', sand: '#6b5d3c', cave: '#2a303d' };
 
 /** The colour of one tile on the minimap, or null for empty space. */
 export function minimapTileColor(map: MapData, x: number, y: number): string | null {
   const theme = map.theme;
   switch (tileAt(map, x, y)) {
     case TileType.FLOOR:
-      return map.ground[y * map.width + x] === 1 ? PATH_COLOR : FLOOR_COLOR[theme];
+      return map.ground[y * map.width + x] === 1 ? PATH_COLOR : map.ground[y * map.width + x] === 2 ? FLOOR_COLOR.grass : FLOOR_COLOR[theme];
     case TileType.WATER:
       return WATER_COLOR;
     case TileType.TREE:
-      return TREE_COLOR[theme];
+      return map.ground[y * map.width + x] === 2 ? TREE_COLOR.grass : TREE_COLOR[theme];
     case TileType.WALL:
       return WALL_COLOR;
     default:

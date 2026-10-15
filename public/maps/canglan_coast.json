@@ -1,0 +1,172 @@
+{
+ "id": "canglan_coast",
+ "name": "迷霧海岸",
+ "theme": "mist",
+ "fog": 0.85,
+ "legend": {
+  "#": "solid tile under a building (the wreck)",
+  "T": "rock on the beach, tree in the woods (the \"grass\" mask says which)",
+  "W": "sea (blocks walking, not sight)",
+  ".": "sand or grass (the \"grass\" mask says which)",
+  "P": "arrival from the ferry",
+  "m": "normal monster spawn (the kind follows population.monsters, in reading order)",
+  "e": "elite spawn"
+ },
+ "layout": [
+  "                                                            ",
+  " TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT ",
+  " TWWWWWWWWWWWWWWWWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT ",
+  " TWWWWWWWWWWWWWWWW.............T......T.....T........T...TT ",
+  " TWWWWWWWWWWWWWWWW......................T..........TT....TT ",
+  " TWWWWWWWWWWWWWWWW...............T........T..T........T..TT ",
+  " TWWWWWWWWWWWWWWW..........................T..TT.....TTT.TT ",
+  " TWWWWWWWWWWWWWW..........................T.T...T........TT ",
+  " TWWWWWWWWWWWWW...........................T..............TT ",
+  " TWWWWWWWWWWWW...T...................T.TT.T.m.TT..T......TT ",
+  " TWWWWWWWWWWWWm...TT....................T................TT ",
+  " TWWWWWWWWWWWW...T....................T....T.T.......T.T.TT ",
+  " TWWWWWWWWWWWW...T.......................T...............TT ",
+  " TWWWWWWWWWWWWW..T.................T....T....T.T.....m...TT ",
+  " TWWWWWWWWWWWWWW.................T...TT.T................TT ",
+  " TWWWWWWWWWWWWWWW....................T..........T........TT ",
+  " TWWWWWWWWWWWWWWWW.........T............m..............T.TT ",
+  " TWWWWWWWWWWWWWWWW....................T.....T.......T....TT ",
+  " TWWWWWWWWWWWWWWWWm....................TT.......T..TTT...TT ",
+  " TWWWWWWWWWWWWWWWW.........................T.........T.T.TT ",
+  " TWWWWWWWWWWWWWWW..T.......................T......T..T...TT ",
+  " TWWWWWWWWWWWWWW....................T...T.T.TT...T.......TT ",
+  " TWWWWWWWWWWWWW.......................T.............T....TT ",
+  " TWWWWWWWWWWWW..............m..........T..TT..T..m.T..T..TT ",
+  " TWWWWWWWWWWWT..........................T..T..TT.........TT ",
+  " TWWWWWWWWWW.........#####.......................T..TT...TT ",
+  " TWWWWWWWWW..........#####...............T.......T...T...TT ",
+  " TWWWWWWWWW..........#####...................T...........TT ",
+  " TWWWWWWWWW..................e..............TT.T.....T...TT ",
+  " TWWWWWWWWW.TT.....m.....................................TT ",
+  " TWWWWWWWWW..........................T..T.T...m..T...T...TT ",
+  " TWWWWWWWWm..T...........m.....T................T........TT ",
+  " TWWWWWWW...................................T.....T.TTTT.TT ",
+  " TWWWWWWW...............T......................T.......T.TT ",
+  " TWWWWW..............................TT.T..T.....T.T.T...TT ",
+  " TWWWW................................T.....T.....T..TT..TT ",
+  " TWWWW...........................T....T..m....T...TT..T..TT ",
+  " TWWWW...P........................T.T............TT...TT.TT ",
+  " TWWWW...............................T...T...T...T.....T.TT ",
+  " TWWWW.............T....T...........TT.....TTT......T....TT ",
+  " TWWWW..................................T...T.....TT..T..TT ",
+  " TWWWW............................T....T..........T.T....TT ",
+  " TWWWW.............T....T...T.............TT...T.T..T.TT.TT ",
+  " TWWWWTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT ",
+  " TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT ",
+  "                                                            "
+ ],
+ "grass": [
+  "                                                            ",
+  "                                     gggggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                     gggggggggggggggggggggg ",
+  "                                    ggggggggggggggggggggggg ",
+  "                                    ggggggggggggggggggggggg ",
+  "                                   gggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                   gggggggggggggggggggggggg ",
+  "                                    ggggggggggggggggggggggg ",
+  "                                     gggggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                       gggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                     gggggggggggggggggggggg ",
+  "                                    ggggggggggggggggggggggg ",
+  "                                   gggggggggggggggggggggggg ",
+  "                                   gggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                 gggggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                  ggggggggggggggggggggggggg ",
+  "                                   gggggggggggggggggggggggg ",
+  "                                    ggggggggggggggggggggggg ",
+  "                                     gggggggggggggggggggggg ",
+  "                                      ggggggggggggggggggggg ",
+  "                                                            "
+ ],
+ "entrances": {
+  "from_island": {
+   "x": 8,
+   "y": 37
+  }
+ },
+ "portals": [
+  {
+   "id": "to_island",
+   "x": 6,
+   "y": 36,
+   "w": 1,
+   "h": 3,
+   "to": {
+    "map": "pure_coast",
+    "entrance": "ferry_side"
+   }
+  }
+ ],
+ "buildings": [
+  {
+   "style": "wreck",
+   "x": 21,
+   "y": 25,
+   "w": 5,
+   "h": 3
+  }
+ ],
+ "population": {
+  "monsters": [
+   "wild_wolf",
+   "drowned_spirit",
+   "cleft_boar",
+   "cleft_boar",
+   "drowned_spirit",
+   "wreck_revenant",
+   "wild_wolf",
+   "wreck_revenant",
+   "cleft_boar",
+   "drowned_spirit",
+   "wreck_revenant",
+   "wild_wolf"
+  ],
+  "elites": [
+   "wreck_revenant"
+  ]
+ },
+ "decor": [
+  {
+   "kind": "anchor",
+   "x": 27.5,
+   "y": 26.5
+  }
+ ],
+ "interactables": [
+  {
+   "id": "mist_trace",
+   "x": 19,
+   "y": 23
+  }
+ ]
+}

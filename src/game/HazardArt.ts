@@ -108,6 +108,18 @@ export function drawTorch(frame: number): HTMLCanvasElement {
   return c;
 }
 
+/** A fog cloud: white, solid in the middle and soft only at its rim, so a few of them really cover the view. 128 x 128. */
+export function drawCloud(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(128, 128);
+  const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  g.addColorStop(0.55, 'rgba(255, 255, 255, 0.85)');
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return c;
+}
+
 /** A warning disc: a translucent filled circle with a bright rim (it is squashed into an ellipse on the floor). 128 x 128. */
 export function drawDisc(): HTMLCanvasElement {
   const [c, ctx] = makeCanvas(128, 128);
@@ -119,6 +131,21 @@ export function drawDisc(): HTMLCanvasElement {
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.arc(64, 64, 59, 0, Math.PI * 2);
+  ctx.stroke();
+  return c;
+}
+
+/** Ripples on the water where something lies hidden: two thin rings. 48 x 24. */
+export function drawRipple(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(48, 24);
+  ctx.strokeStyle = 'rgba(200, 235, 255, 0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(24, 12, 20, 9, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(200, 235, 255, 0.5)';
+  ctx.beginPath();
+  ctx.ellipse(24, 12, 11, 5, 0, 0, Math.PI * 2);
   ctx.stroke();
   return c;
 }

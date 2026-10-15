@@ -58,6 +58,19 @@
     "map": "pure_village",
     "entrance": "from_coast"
    }
+  },
+  {
+   "id": "to_canglan",
+   "x": 24,
+   "y": 15,
+   "w": 2,
+   "h": 1,
+   "to": {
+    "map": "canglan_coast",
+    "entrance": "from_island"
+   },
+   "requiresFlag": "chapter2_started",
+   "blockedText": "渡船還沒有出海的理由。（第一章的結局之後才會通。）"
   }
  ],
  "buildings": [

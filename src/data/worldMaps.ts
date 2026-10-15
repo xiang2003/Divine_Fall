@@ -8,9 +8,14 @@ export const WORLD_MAP_FILES = {
   pure_spring_cave: 'maps/pure_spring_cave.json',
   pure_coast: 'maps/pure_coast.json',
   pure_core: 'maps/pure_core.json',
+  // chapter 2: the continent of Canglan
+  canglan_coast: 'maps/canglan_coast.json',
 } as const satisfies Record<string, string>;
 
 export type WorldMapId = keyof typeof WORLD_MAP_FILES;
+
+/** The ferry at the end of chapter 1 lands the player here (chapter 2). */
+export const CHAPTER2_START_MAP: WorldMapId = 'canglan_coast';
 
 /** A new game starts here. */
 export const START_MAP_ID: WorldMapId = 'pure_village';
@@ -24,6 +29,7 @@ export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: 
   pure_ruins: { x: 80, y: 50, kind: '遺跡' },
   pure_coast: { x: 20, y: 84, kind: '海岸' },
   pure_core: { x: 80, y: 17, kind: '遺跡' },
+  canglan_coast: { x: 50, y: 84, kind: '海岸' },
 };
 
 /** The names of the maps, for the debug teleport list (the maps themselves carry the same names). */
@@ -34,6 +40,7 @@ export const WORLD_MAP_NAMES: Record<WorldMapId, string> = {
   pure_ruins: '初胎遺跡',
   pure_coast: '斷潮海岸',
   pure_core: '初胎核心',
+  canglan_coast: '迷霧海岸',
 };
 
 /** The maps in the order the debug keys step through them. */

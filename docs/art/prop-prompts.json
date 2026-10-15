@@ -141,5 +141,33 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A mysterious ancient glowing core: a sphere of swirling pale gold and white light floating above a round carved stone pedestal with runes, thin wisps of energy rising, the whole thing fully visible."
+  },
+  "wreck": {
+    "seed": 6402,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A large wrecked wooden sailing ship stranded on its side, a broken hull with exposed ribs, a snapped mast with torn grey sails, rotting dark planks, barnacles and seaweed, tilted in the sand, the whole wreck fully visible."
+  },
+  "driftwood_a": {
+    "seed": 6412,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small pile of bleached driftwood logs and a few splintered ship planks with some tangled seaweed, lying on the ground, the whole pile fully visible."
+  },
+  "driftwood_b": {
+    "seed": 6414,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A small pile of bleached driftwood logs and a few splintered ship planks with some tangled seaweed, lying on the ground, the whole pile fully visible."
+  },
+  "anchor": {
+    "seed": 6422,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A big rusty iron ship anchor half sunk upright in the sand with a length of rusty chain and some seaweed on it, the whole anchor fully visible."
   }
 }

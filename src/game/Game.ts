@@ -12,7 +12,7 @@ import { LOOT_TABLES } from '../data/lootTables';
 import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
 import { MAX_LEVEL } from '../data/progression';
-import { START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId, stepMap } from '../data/worldMaps';
+import { CHAPTER2_START_MAP, START_MAP_ID, WORLD_MAP_FILES, WORLD_MAP_LAYOUT, isTown, isWorldMapId, stepMap } from '../data/worldMaps';
 import { buildWorldGraph, type WorldGraphView } from '../systems/worldGraph';
 import { DEFAULT_ENTRANCE, MapParseError, parseMap, type MapData } from '../data/mapData';
 import type { Monster } from '../entities/Monster';
@@ -39,6 +39,7 @@ import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { TrapSystem } from '../systems/TrapSystem';
 import { PillarSystem } from '../systems/PillarSystem';
+import { FogLayer } from './FogLayer';
 import { TorchSystem } from '../systems/TorchSystem';
 import { ARROW_DAMAGE, ARROW_POISON, ARROW_SPEED } from '../systems/hazards';
 import { defaultRng } from '../systems/rng';
@@ -282,6 +283,8 @@ interface World {
   traps: TrapSystem;
   torches: TorchSystem;
   pillars: PillarSystem;
+  /** Fog drifting over the map, or null. */
+  fog: FogLayer | null;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -371,7 +374,7 @@ export class Game {
   getMinimapView = (): MinimapView | null => {
     const w = this.world;
     if (!w) return null;
-    const alive = w.monsters.all.filter((m) => !m.isDead);
+    const alive = w.monsters.all.filter((m) => m.hittable && !m.def.phantom);
     return {
       map: w.map,
       player: w.player.pos,
@@ -560,6 +563,7 @@ export class Game {
     w.traps.dispose();
     w.torches.dispose();
     w.pillars.dispose();
+    w.fog?.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
     w.effects.dispose();
@@ -571,6 +575,7 @@ export class Game {
         w.traps.group,
         w.torches.group,
         w.pillars.group,
+        ...(w.fog ? [w.fog.group] : []),
         w.monsters.group,
         w.projectiles.group,
         w.skillBolts.group,
@@ -658,8 +663,8 @@ export class Game {
       },
       phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
       spawnMinions: (owner, defId, count) => monsters.spawnMinions(owner, defId, count, defaultRng),
-      pillars: (points, radius, delay, damage) => {
-        for (const p of points) pillars.add(p, radius, delay, damage);
+      pillars: (points, radius, delay, damage, style) => {
+        for (const p of points) pillars.add(p, radius, delay, damage, style);
       },
       monsterKilled: (m: Monster) => {
         this.kills++;
@@ -688,6 +693,7 @@ export class Game {
       shoot: (x, y, dx, dy) => projectiles.fire(x, y, dx, dy, ARROW_SPEED, ARROW_DAMAGE, null, { poison: ARROW_POISON }),
     });
     const torches = new TorchSystem(map.torches, assets);
+    const fog = map.fog > 0 ? new FogLayer(assets, map.fog) : null;
 
     player.hooks = {
       swingStarted: (dx, dy, duration) =>
@@ -709,6 +715,7 @@ export class Game {
       traps.group,
       torches.group,
       pillars.group,
+      ...(fog ? [fog.group] : []),
       monsters.group,
       projectiles.group,
       skillBolts.group,
@@ -743,6 +750,7 @@ export class Game {
       traps,
       torches,
       pillars,
+      fog,
       lightning,
       numbers,
       debug,
@@ -1042,6 +1050,13 @@ export class Game {
 
   dismissChapterEnd = (): void => {
     this.publish({ chapterEnd: false });
+  };
+
+  /** From the chapter 1 end screen: the ferry lands on the continent, and the character (level, equipment, potions, quests) goes along. */
+  continueToChapter2 = (): void => {
+    this.publish({ chapterEnd: false });
+    this.setFlag('chapter2_started', true);
+    if (this.travelTo(CHAPTER2_START_MAP, DEFAULT_ENTRANCE)) this.notify('第二章　滄玄洲');
   };
 
   /** The dialogue context with the live character level. */
@@ -1536,6 +1551,7 @@ export class Game {
     if (moveTarget) placeAt(moveMarker, Layer.GROUND_DECAL, moveTarget.x, moveTarget.y);
 
     this.cameraCtl.follow(worldToSceneX(player.pos.x, player.pos.y), worldToSceneY(player.pos.x, player.pos.y), dt);
+    w.fog?.update(dt, this.cameraCtl.camera.position.x, this.cameraCtl.camera.position.y);
 
     this.statsFrames++;
     this.statsTimer += dt;

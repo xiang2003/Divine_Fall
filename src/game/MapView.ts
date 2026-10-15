@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TileType, tileAt, type MapData } from '../data/mapData';
 import type { AssetLoader } from './AssetLoader';
-import { DECOR_KINDS, DIRT_EDGE_KEYS, DIRT_KEYS, PROP_KEYS, SpriteKey, THEME_ART, THEME_SCATTER } from './assetManifest';
+import { DECOR_KINDS, DIRT_EDGE_KEYS, DIRT_KEYS, GRASS_KEYS, PROP_KEYS, SpriteKey, THEME_ART, THEME_SCATTER, TREE_KEYS } from './assetManifest';
 import { buildingKey } from './BuildingArt';
 import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY, type Vec2 } from './iso';
 
@@ -84,6 +84,11 @@ export class MapView {
         const underBuilding = map.buildings.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
         if (tile !== TileType.FLOOR && !(!stone && (tile === TileType.TREE || underBuilding))) continue;
         const index = art.floorPick ? art.floorPick[tileHash(x, y) % art.floorPick.length]! : (x + y) % 2;
+        if (map.ground[y * map.width + x] === 2 && !stone) {
+          // grass on a map of another theme (the wet woods behind the beach)
+          add(GRASS_KEYS[tileHash(x, y) % GRASS_KEYS.length]!, x, y);
+          continue;
+        }
         if (tile === TileType.FLOOR && map.ground[y * map.width + x] === 1 && !stone) {
           // A dirt path: whole tiles in the middle; along its sides the grass stays and a soft-edged patch is laid over it.
           const dirtAt = (dx: number, dy: number) => {
@@ -138,7 +143,8 @@ export class MapView {
         if (tile !== TileType.WALL && tile !== TileType.TREE) continue;
         if (covered.has(y * map.width + x)) continue; // drawn by its building sprite
         const obstacles = THEME_ART[map.theme].obstacles;
-        const obstacleKey = obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
+        const onGrass = map.ground[y * map.width + x] === 2;
+        const obstacleKey = onGrass ? TREE_KEYS[tileHash(x, y) % TREE_KEYS.length]! : obstacles ? obstacles[tileHash(x, y) % obstacles.length]! : null;
         const wallKey = wallKeys[tileHash(y, x) % wallKeys.length]!;
         const wall =
           tile === TileType.TREE && obstacleKey

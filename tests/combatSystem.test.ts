@@ -74,6 +74,7 @@ function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
     deaths: 0,
     heals: [] as number[],
     arcs: [] as [number, number, number, number][],
+    strikes: [] as { points: readonly { x: number; y: number }[]; radius: number; delay: number; damage: number; style?: string }[],
   };
   const projectiles = {
     fire: (_x: number, _y: number, _dx: number, _dy: number, _speed: number, damage: number) => {
@@ -94,7 +95,7 @@ function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
     novaFlash: () => {},
     phaseChanged: () => {},
     spawnMinions: () => {},
-    pillars: () => {},
+    pillars: (points, radius, delay, damage, style) => events.strikes.push({ points, radius, delay, damage, style }),
   };
   const combat = new CombatSystem(
     player as unknown as Player,
@@ -301,5 +302,39 @@ describe('CombatSystem: poison', () => {
     const { player, combat } = setup();
     combat.meleeStrike(new Monster(MONSTERS.ghoul, { x: 2.9, y: 2.5 }));
     expect(player.isPoisoned).toBe(false);
+  });
+});
+
+describe('CombatSystem: what happens when some monsters die', () => {
+  const kill = (rng: number, id: 'wreck_revenant' | 'mask_phantom') => {
+    const t = setup(rng);
+    const m = new Monster(MONSTERS[id], { x: 3.7, y: 2.5 });
+    t.monsters.push(m);
+    m.takeDamage(m.maxHp - 1);
+    t.combat.playerSwingHit(1, 0);
+    return { ...t, m };
+  };
+
+  it('a wreck revenant may burst with resentment where it fell: a warning circle that goes off later', () => {
+    const lucky = kill(0, 'wreck_revenant');
+    expect(lucky.m.isDead).toBe(true);
+    const def = MONSTERS.wreck_revenant.deathBurst;
+    expect(lucky.events.strikes).toHaveLength(1);
+    expect(lucky.events.strikes[0]).toMatchObject({ radius: def.radius, delay: def.delay, style: 'burst' });
+    expect(lucky.events.strikes[0]!.points).toEqual([{ x: 3.7, y: 2.5 }]);
+    expect(lucky.events.strikes[0]!.damage).toBeCloseTo(lucky.m.damage * def.damageMult);
+    expect(lucky.events.kills).toEqual([lucky.m]); // it is still an ordinary kill
+  });
+
+  it('...and often does not', () => {
+    const unlucky = kill(0.99, 'wreck_revenant');
+    expect(unlucky.m.isDead).toBe(true);
+    expect(unlucky.events.strikes).toEqual([]);
+  });
+
+  it('a phantom is not a kill: no rewards, no events', () => {
+    const t = kill(0, 'mask_phantom');
+    expect(t.m.isDead).toBe(true);
+    expect(t.events.kills).toEqual([]);
   });
 });

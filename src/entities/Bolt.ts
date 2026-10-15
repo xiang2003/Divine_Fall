@@ -6,6 +6,8 @@ export interface BoltTarget {
   readonly pos: Vec2;
   readonly radius: number;
   readonly isDead: boolean;
+  /** Hiding (an ambusher under the water): cannot be hit. */
+  readonly hidden?: boolean;
 }
 
 /**
@@ -50,7 +52,7 @@ export class Bolt<T extends BoltTarget = BoltTarget> {
         return false;
       }
       for (const t of targets) {
-        if (t.isDead || this.alreadyHit.has(t)) continue;
+        if (t.isDead || t.hidden || this.alreadyHit.has(t)) continue;
         if (Math.hypot(t.pos.x - this.pos.x, t.pos.y - this.pos.y) < t.radius + this.radius) {
           this.alreadyHit.add(t);
           onHit(t);

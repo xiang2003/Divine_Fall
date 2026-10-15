@@ -29,6 +29,10 @@ export interface DungeonMapFile {
    * in the wall tile (x, y) that shoots poisoned arrows along `dir` into the floor tile next to it.
    */
   traps?: { kind: string; x: number; y: number; dir?: string; phase?: number }[];
+  /** Marks where the ground is grass on a map of another theme (the wet woods behind a beach): same size as `layout`, any character but a space marks a grass tile. Trees ("T") standing on it are drawn as trees. */
+  grass?: string[];
+  /** How thick the fog drifting over the map is (0 to 1; omitted: none). */
+  fog?: number;
   /** Wall torches: the wall tile (x, y) and the side `dir` its flame looks out on (`e` or `s`: the sides the camera sees). */
   torches?: { x: number; y: number; dir: string }[];
 }
@@ -51,9 +55,10 @@ export interface PortalFile {
   blockedText?: string;
 }
 
+/** mist: the chapter 2 landing coast (sand, rocks and driftwood, with grass and trees inland: "g" and "Y"). */
 /** stone: dungeon bricks; ruins: the same with moss and vines; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water, wall and "T" art. */
-export type MapTheme = 'stone' | 'ruins' | 'core' | 'grass' | 'sand' | 'cave';
-export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'core', 'grass', 'sand', 'cave'];
+export type MapTheme = 'stone' | 'ruins' | 'core' | 'grass' | 'sand' | 'mist' | 'cave';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'core', 'grass', 'sand', 'mist', 'cave'];
 
 export const TileType = {
   VOID: 0,
@@ -179,7 +184,7 @@ export interface MapData {
   height: number;
   /** Row-major, index = y * width + x. */
   tiles: Uint8Array;
-  /** Row-major like `tiles`: 1 where the ground is a dirt path (a "," in the layout), else 0. */
+  /** Row-major like `tiles`: 1 where the ground is a dirt path (a "," in the layout), 2 where it is grass (see `grass` in the file), else 0. */
   ground: Uint8Array;
   props: Prop[];
   spawns: MapSpawns;
@@ -192,6 +197,8 @@ export interface MapData {
   population: Population | null;
   interactables: InteractablePlacement[];
   decor: DecorPlacement[];
+  /** Fog thickness, 0 for none. */
+  fog: number;
   traps: TrapPlacement[];
   torches: TorchPlacement[];
 }
@@ -438,8 +445,23 @@ export function parseMap(raw: unknown): MapData {
     torches.push({ pos: { x: t.x + 0.5, y: t.y + 0.5 }, dir: sideOf('Torch', t.x, t.y, t.dir) });
   }
 
+  if (file.grass !== undefined) {
+    if (!Array.isArray(file.grass) || file.grass.length !== height || !file.grass.every((r) => typeof r === 'string' && r.length === width)) {
+      throw new MapParseError('Map "grass" must have the same size as "layout"');
+    }
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const t = tiles[y * width + x];
+        if (file.grass[y]![x] !== ' ' && (t === TileType.FLOOR || t === TileType.TREE) && ground[y * width + x] === 0) ground[y * width + x] = 2;
+      }
+    }
+  }
+
+  const fog = file.fog ?? 0;
+  if (typeof fog !== 'number' || fog < 0 || fog > 1) throw new MapParseError('Map "fog" must be a number from 0 to 1');
+
   const theme = file.theme ?? 'stone';
   if (!MAP_THEMES.includes(theme)) throw new MapParseError(`Unknown map theme "${String(theme)}"`);
 
-  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor, traps, torches };
+  return { id: file.id, name: file.name, theme, width, height, tiles, ground, props, spawns, entrances, portals, npcs, buildings, population, interactables, decor, fog, traps, torches };
 }

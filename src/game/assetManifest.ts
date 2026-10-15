@@ -19,7 +19,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawDisc, drawGlow, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
+import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawCloud, drawDisc, drawGlow, drawRipple, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
 import { drawMossyWall } from './RuinsArt';
 import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
@@ -80,8 +80,13 @@ export const SpriteKey = {
   ATTENDANT: 'monster.stone_attendant',
   MASK: 'monster.mask_spirit',
   WATCHER: 'monster.core_watcher',
+  BOAR: 'monster.cleft_boar',
+  SPIRIT: 'monster.drowned_spirit',
+  REVENANT: 'monster.wreck_revenant',
+  RIPPLE: 'fx.ripple',
   CHUNK: 'fx.chunk',
   DISC: 'fx.disc',
+  CLOUD: 'fx.cloud',
   PILLAR: 'fx.pillar',
   WARPED: 'monster.warped',
   WATER_SHADE: 'monster.water_shade',
@@ -140,11 +145,15 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   roots: { keys: ['decor.roots_a', 'decor.roots_b'], scale: 0.4 },
   shard: { keys: ['decor.shard_a', 'decor.shard_b'], scale: 0.32, floats: true },
   core: { keys: ['decor.core'], scale: 0.5 },
+  // the Mist Coast
+  driftwood: { keys: ['decor.driftwood_a', 'decor.driftwood_b'], scale: 0.4 },
+  anchor: { keys: ['decor.anchor'], scale: 0.4 },
 };
 export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density: number } | null> = {
   stone: null,
   ruins: { kinds: ['vines', 'moss', 'vines'], density: 0.05 },
   core: { kinds: ['roots', 'shard', 'roots', 'vines', 'shard'], density: 0.06 },
+  mist: { kinds: ['driftwood', 'tuft', 'tuft', 'driftwood', 'shrub'], density: 0.03 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
   cave: { kinds: ['moss', 'moss', 'vines'], density: 0.045 },
@@ -177,6 +186,7 @@ export const THEME_ART: Record<MapTheme, ThemeArt> = {
   core: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: CORE_PILLAR_KEYS, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
   grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
   sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
+  mist: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
   // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
   cave: { floor: CAVE_KEYS, floorPick: [0, 0, 1], obstacles: [PILLAR_KEYS[0]!, CRYSTAL_KEYS[0]!, PILLAR_KEYS[1]!, PILLAR_KEYS[2]!, CRYSTAL_KEYS[1]!, PILLAR_KEYS[0]!, PILLAR_KEYS[1]!, CRYSTAL_KEYS[2]!, PILLAR_KEYS[2]!], water: MURK_KEYS },
 };
@@ -396,7 +406,9 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   { key: SpriteKey.SLIT_HOT, frameWidth: 24, frameHeight: 32, anchor: { x: 0.5, y: 0.5 }, placeholder: () => drawArrowSlit(true) },
   { key: SpriteKey.TORCH_A, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(0) },
   { key: SpriteKey.TORCH_B, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(1) },
+  { key: SpriteKey.CLOUD, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawCloud },
   { key: SpriteKey.DISC, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawDisc },
+  { key: SpriteKey.RIPPLE, frameWidth: 48, frameHeight: 24, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawRipple },
   { key: SpriteKey.CHUNK, frameWidth: 12, frameHeight: 10, anchor: { x: 0.5, y: 0.5 }, placeholder: drawChunk },
   { key: SpriteKey.PILLAR, frameWidth: 40, frameHeight: 84, anchor: { x: 0.5, y: 0.1 }, placeholder: drawPillarColumn },
   { key: SpriteKey.GLOW, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawGlow },
@@ -483,6 +495,9 @@ function directionalMonsters(): SpriteAssetDef[] {
     directionalMonster(SpriteKey.ATTENDANT, 'stone_attendant', drawEchoSheet, 80),
     directionalMonster(SpriteKey.MASK, 'mask_spirit', drawShadeSheet),
     directionalMonster(SpriteKey.WATCHER, 'core_watcher', drawArchonSheet, 128, BOSS_FRAME),
+    directionalMonster(SpriteKey.BOAR, 'cleft_boar', drawHoundSheet),
+    directionalMonster(SpriteKey.SPIRIT, 'drowned_spirit', drawWaterShadeSheet),
+    directionalMonster(SpriteKey.REVENANT, 'wreck_revenant', drawGhoulSheet),
   ];
 }
 

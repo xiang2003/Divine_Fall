@@ -74,6 +74,34 @@ export interface SlamDef {
   damageMult: number;
 }
 
+/** A charge a normal monster makes from a few steps away: it crouches, runs `rush` units along the line to where you stood, and hurts you if it runs into you. */
+export interface ChargeDef {
+  /** It starts the charge when you are at most this far away (edge to edge), and at least `minRange`. */
+  range: number;
+  minRange: number;
+  /** How far the run carries it, in world units. */
+  rush: number;
+  /** Length of the whole move (crouch, run, recovery) in seconds. */
+  duration: number;
+  damageMult: number;
+  /** If the run ends against an obstacle instead of in open ground, it is stunned for this long. */
+  stunSeconds: number;
+}
+
+/** Hiding: it waits invisible and out of reach until the player comes within `triggerRange`, then surfaces (taking `emerge` seconds, during which it cannot act). */
+export interface AmbushDef {
+  triggerRange: number;
+  emerge: number;
+}
+
+/** When it dies it may burst: with probability `chance` a warning circle of `radius` appears where it fell and goes off `delay` seconds later. */
+export interface DeathBurstDef {
+  chance: number;
+  radius: number;
+  delay: number;
+  damageMult: number;
+}
+
 /** Splitting: the first time its health drops to `hpFraction` of the maximum, `count` copies of the monster `into` appear around it. */
 export interface SplitDef {
   hpFraction: number;
@@ -135,6 +163,14 @@ export interface MonsterDef {
   glow?: { color: number; height: number; size: number; hz: number };
   /** Its projectiles steer toward the target, turning at most this many radians per second. */
   homing?: number;
+  /** Melee: when it chases you it comes in from the side (each member of a pack takes a side), and only closes in straight when it is near. */
+  flank?: boolean;
+  /** Melee: a charge from a distance (see ChargeDef). */
+  charge?: ChargeDef;
+  /** Starts hidden (see AmbushDef). */
+  ambush?: AmbushDef;
+  /** May burst when it dies (see DeathBurstDef). */
+  deathBurst?: DeathBurstDef;
   /** Splits into phantoms when badly hurt (see SplitDef). */
   split?: SplitDef;
   /** Breaks into stone chunks when it dies instead of falling over. */
@@ -443,6 +479,96 @@ export const MONSTERS = {
       { id: 'pillars', kind: 'pillars', minPhase: 1, weight: 3, duration: 1.6, damageMult: 1.2, pillars: 4, radius: 1.3, hitFraction: 0.9 },
       { id: 'pillar_storm', kind: 'pillars', minPhase: 2, weight: 3, duration: 1.5, damageMult: 1.2, pillars: 7, radius: 1.3, hitFraction: 0.9 },
     ],
+  },
+  // ---- the Mist Coast (chapter 2) ---------------------------------------------------------------------
+  /** A wolf of the wild woods: fast, in packs, and it comes at you from the side. */
+  wild_wolf: {
+    id: 'wild_wolf',
+    name: '荒林野狼',
+    spriteKey: SpriteKey.WOLF,
+    directional: true,
+    attackStyle: 'pounce',
+    behavior: 'melee',
+    maxHp: 26,
+    damage: 7,
+    moveSpeed: 4.2,
+    detectRange: 9,
+    attackRange: 0.35,
+    attackCooldown: 1.3,
+    attackDuration: 0.4,
+    radius: 0.28,
+    pounce: { range: 2.6, speed: 8, duration: 0.7, damageMult: 1.3 },
+    flank: true,
+    packSize: 3,
+    xp: 8,
+    lootTable: 'normalMonster',
+    barHeight: 44,
+  },
+  /** A big boar with split horns. It charges, and if it runs into a rock or a tree instead of you it is left dazed. */
+  cleft_boar: {
+    id: 'cleft_boar',
+    name: '裂角野豬',
+    spriteKey: SpriteKey.BOAR,
+    directional: true,
+    attackStyle: 'charge',
+    behavior: 'melee',
+    maxHp: 70,
+    damage: 11,
+    moveSpeed: 2.6,
+    detectRange: 8,
+    attackRange: 0.4,
+    attackCooldown: 2,
+    attackDuration: 0.5,
+    radius: 0.4,
+    charge: { range: 8, minRange: 2.5, rush: 6, duration: 1.3, damageMult: 1.6, stunSeconds: 1.8 },
+    xp: 18,
+    lootTable: 'normalMonster',
+    barHeight: 46,
+  },
+  /** A figure of living seawater that lies in wait at the water's edge, rises when you come close, and throws blades of water. */
+  drowned_spirit: {
+    id: 'drowned_spirit',
+    name: '溺靈水妖',
+    spriteKey: SpriteKey.SPIRIT,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 30,
+    damage: 8,
+    moveSpeed: 2.6,
+    detectRange: 9,
+    attackRange: 7,
+    attackCooldown: 2.2,
+    attackDuration: 0.6,
+    radius: 0.28,
+    keepDistance: 3,
+    projectileSpeed: 7.5,
+    projectileTint: 0x7fd8ff,
+    ambush: { triggerRange: 3.6, emerge: 0.5 },
+    xp: 16,
+    lootTable: 'normalMonster',
+    barHeight: 56,
+  },
+  /** The dead of a wreck, held together by anger: slow, with a rusty blade, and sometimes it bursts with resentment when it falls. */
+  wreck_revenant: {
+    id: 'wreck_revenant',
+    name: '沉船怨骸',
+    spriteKey: SpriteKey.REVENANT,
+    directional: true,
+    attackStyle: 'lunge',
+    behavior: 'melee',
+    maxHp: 85,
+    damage: 12,
+    moveSpeed: 1.5,
+    detectRange: 6,
+    attackRange: 0.45,
+    attackCooldown: 2,
+    attackDuration: 1,
+    radius: 0.36,
+    deathBurst: { chance: 0.5, radius: 2.2, delay: 0.9, damageMult: 1.1 },
+    xp: 20,
+    lootTable: 'normalMonster',
+    barHeight: 62,
   },
   // ---- the ruins --------------------------------------------------------------------------------------
   /** A golem of ruin stone, furred with moss, a red core in its chest. Slow, and every blow is a slam that hits everything around it. */

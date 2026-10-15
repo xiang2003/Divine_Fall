@@ -322,6 +322,15 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
       c: { text: '碎片溫熱，不燙。你把它收進懷裡。洞裡的水，安靜了一瞬。', end: true },
     },
   },
+  mist_trace: {
+    id: 'mist_trace',
+    start: 'a',
+    nodes: {
+      a: { text: '沙地上有一圈圈細細的紋路，像水波，又不是水波。霧在這裡特別濃，貼著地面緩緩轉。', next: 'b' },
+      b: { text: '你掌心的印微微發熱。這片海岸的靈氣，和島上的很像，卻更亂，像是被什麼東西攪動過。', next: 'c' },
+      c: { text: '遠處的林子裡，有狼嚎。不止一隻。', end: true },
+    },
+  },
   core_look: {
     id: 'core_look',
     start: 'a',

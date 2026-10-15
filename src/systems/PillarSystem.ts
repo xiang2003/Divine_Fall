@@ -8,6 +8,8 @@ import { Layer, placeAt, type Vec2 } from '../game/iso';
 export const PILLAR_STAND = 1.2;
 export const PILLAR_RISE = 0.18;
 export const PILLAR_SINK = 0.3;
+/** A burst's warning circle stays this long after it went off. */
+const BURST_LINGER = 0.25;
 /** How much bigger than its picture the pillar is drawn. */
 const COLUMN_SCALE = 1.4;
 
@@ -25,13 +27,20 @@ export class Pillar {
     readonly radius: number,
     readonly delay: number,
     readonly damage: number,
+    /** A pillar bursts out of the floor and stays a moment; a burst is only the blast (no column). */
+    readonly style: 'pillar' | 'burst' = 'pillar',
   ) {}
+
+  /** Seconds the pillar (or the flash of a burst) lingers after it went off. */
+  private get lingers(): number {
+    return this.style === 'burst' ? BURST_LINGER : PILLAR_RISE + PILLAR_STAND + PILLAR_SINK;
+  }
 
   /** Advances by `dt`. Returns true on the tick the pillar bursts out and `target` is inside its circle. */
   update(dt: number, target: { pos: Vec2; radius: number; isDead: boolean }): boolean {
     this.age += dt;
     if (this.phase === 'warning' && this.age >= this.delay) this.phase = 'standing';
-    if (this.phase === 'standing' && this.age >= this.delay + PILLAR_RISE + PILLAR_STAND + PILLAR_SINK) this.phase = 'gone';
+    if (this.phase === 'standing' && this.age >= this.delay + this.lingers) this.phase = 'gone';
     if (this.phase !== 'standing' || this.struck) return false;
     this.struck = true;
     return !target.isDead && Math.hypot(target.pos.x - this.pos.x, target.pos.y - this.pos.y) <= this.radius + target.radius;
@@ -44,7 +53,7 @@ export class Pillar {
 
   /** How tall the pillar is drawn (0 to 1): it rises fast, stands, then sinks. */
   get height(): number {
-    if (this.phase !== 'standing') return 0;
+    if (this.phase !== 'standing' || this.style === 'burst') return 0;
     const t = this.age - this.delay;
     if (t < PILLAR_RISE) return t / PILLAR_RISE;
     if (t < PILLAR_RISE + PILLAR_STAND) return 1;
@@ -74,8 +83,8 @@ export class PillarSystem {
     return this.views.length;
   }
 
-  add(pos: Vec2, radius: number, delay: number, damage: number): void {
-    const pillar = new Pillar(pos, radius, delay, damage);
+  add(pos: Vec2, radius: number, delay: number, damage: number, style: 'pillar' | 'burst' = 'pillar'): void {
+    const pillar = new Pillar(pos, radius, delay, damage, style);
     const ringMaterial = this.assets.material(SpriteKey.DISC).clone();
     ringMaterial.opacity = 0;
     const ring = new THREE.Mesh(this.assets.sharedGeometry(SpriteKey.DISC), ringMaterial);
@@ -102,7 +111,8 @@ export class PillarSystem {
         continue;
       }
       const warning = v.pillar.phase === 'warning';
-      v.ringMaterial.opacity = warning ? 0.35 + 0.65 * v.pillar.warningProgress : 0;
+      // the circle shows during the warning, and a burst keeps it up for its flash
+      v.ringMaterial.opacity = warning ? 0.35 + 0.65 * v.pillar.warningProgress : v.pillar.style === 'burst' ? 1 : 0;
       const h = v.pillar.height;
       v.column.visible = h > 0;
       v.column.scale.set(COLUMN_SCALE, COLUMN_SCALE * Math.max(0.05, h), 1);

@@ -41,6 +41,8 @@ export class MonsterView {
   /** The pieces a stone monster falls apart into (scene pixels relative to where it stood), once it has died. */
   private readonly chunks: { mesh: THREE.Mesh; x: number; y: number; vx: number; vy: number; floor: number; size: number }[] = [];
   private shattered = false;
+  /** The ripples that show where an ambusher lies hidden. */
+  private readonly ripple: THREE.Mesh | null = null;
   private readonly nameplate: HTMLDivElement | null = null;
   private readonly screen: Vec2 = { x: 0, y: 0 };
   private shownState: MonsterState | null = null;
@@ -64,6 +66,10 @@ export class MonsterView {
     this.bar.visible = false;
     this.group.add(this.shadow, this.animator.mesh, this.bar.group);
     if (monster.def.phantom) this.directional?.setGhost(true);
+    if (monster.def.ambush) {
+      this.ripple = new THREE.Mesh(assets.sharedGeometry(SpriteKey.RIPPLE), assets.material(SpriteKey.RIPPLE));
+      this.group.add(this.ripple);
+    }
     if (monster.def.glow) {
       const material = assets.material(SpriteKey.GLOW).clone();
       material.blending = THREE.AdditiveBlending;
@@ -95,6 +101,7 @@ export class MonsterView {
 
   update(dt: number, camera: CameraController): void {
     const m = this.monster;
+    this.clock += dt;
 
     if (m.state !== this.shownState) {
       this.shownState = m.state;
@@ -128,15 +135,15 @@ export class MonsterView {
       this.animator.mesh.position.x += this.directional.offsetX;
       this.animator.mesh.position.y += this.directional.offsetY;
     }
-    this.shadow.visible = !dead;
+    this.shadow.visible = !dead && !m.hidden;
     if (dead && m.def.shatters) this.updateChunks(dt, m);
+    if (m.def.ambush) this.updateAmbush(m);
 
     const fade = dead ? Math.min(1, Math.max(0, (CORPSE_LIFETIME - m.stateTime) / CORPSE_FADE)) : 1;
-    if (this.directional) this.directional.setFade(fade);
+    if (this.directional) this.directional.setFade(fade * m.emergeProgress);
     else this.animator.mesh.scale.y = m.scale * fade;
 
     if (this.glow && m.def.glow) {
-      this.clock += dt;
       const g = m.def.glow;
       this.glow.mesh.visible = !dead;
       this.glow.mesh.position.x = this.animator.mesh.position.x;
@@ -161,6 +168,18 @@ export class MonsterView {
         this.nameplate.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y - lift)}px) translate(-50%, -100%)`;
       }
     }
+  }
+
+  /** An ambusher is only ripples on the water until it surfaces; then it rises out of them. */
+  private updateAmbush(m: Monster): void {
+    const ripple = this.ripple;
+    if (!ripple) return;
+    ripple.visible = m.hidden;
+    if (m.hidden) {
+      placeAt(ripple, Layer.GROUND_DECAL, m.pos.x, m.pos.y);
+      ripple.scale.setScalar(1 + 0.12 * Math.sin(this.clock * 4));
+    }
+    this.animator.mesh.visible = !m.hidden;
   }
 
   /** Breaks the corpse into stones that fly out, fall, and lie where they land until the corpse goes. */

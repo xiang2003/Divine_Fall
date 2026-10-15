@@ -6,7 +6,7 @@ import { makeCanvas } from './PlaceholderArt';
  * so edges stay clean on the 64x32 tile grid.
  */
 
-export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry';
+export type BuildingStyle = 'home' | 'elder' | 'store' | 'boat' | 'shed' | 'tent' | 'campfire' | 'well' | 'ferry' | 'wreck';
 
 /** One building sprite: its style and footprint. The manifest registers one asset per entry. */
 export interface BuildingVariant {
@@ -26,6 +26,7 @@ export const BUILDING_VARIANTS: readonly BuildingVariant[] = [
   { style: 'campfire', w: 2, h: 2 },
   { style: 'well', w: 2, h: 2 },
   { style: 'ferry', w: 5, h: 3 },
+  { style: 'wreck', w: 5, h: 3 },
 ];
 
 /**
@@ -45,6 +46,7 @@ export const CABIN_SPRITES: Partial<Record<BuildingStyle, { url: string; width: 
   // generated with Z-Image-Turbo in the same look as the cabins (tools/prepare_props.py, docs/art/prop-prompts.json)
   well: { url: 'assets/buildings/well.png', width: 130, height: 177, anchorY: 0.2 },
   ferry: { url: 'assets/buildings/ferry.png', width: 520, height: 481, anchorY: 0.3 },
+  wreck: { url: 'assets/buildings/wreck.png', width: 520, height: 570, anchorY: 0.27 },
 };
 
 export function buildingKey(style: string, w: number, h: number): string {
@@ -73,7 +75,7 @@ interface Palette {
   trim: string;
 }
 
-const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'shed' | 'tent' | 'campfire'>, Palette> = {
+const PALETTES: Record<Exclude<BuildingStyle, 'well' | 'ferry' | 'wreck' | 'shed' | 'tent' | 'campfire'>, Palette> = {
   home: { wallLeft: '#a8774b', wallRight: '#835a38', wallLine: '#5b3d25', roofLeft: '#d2ad56', roofRight: '#b08b3c', roofStroke: '#7d6026', door: '#4a2f1b', trim: '#5b3d25' },
   elder: { wallLeft: '#c3a57c', wallRight: '#9c8160', wallLine: '#6e583f', roofLeft: '#8fa874', roofRight: '#6f8858', roofStroke: '#46583a', door: '#4a3a28', trim: '#6e583f' },
   store: { wallLeft: '#8a6644', wallRight: '#6b4e33', wallLine: '#43301f', roofLeft: '#a85d42', roofRight: '#864830', roofStroke: '#53291a', door: '#35261a', trim: '#43301f' },
@@ -163,7 +165,7 @@ export function drawBuilding(style: BuildingStyle, w: number, h: number): HTMLCa
     drawWell(ctx, pt, w, h);
     return canvas;
   }
-  if (style === 'ferry') {
+  if (style === 'ferry' || style === 'wreck') {
     drawFerry(ctx, pt, w, h);
     return canvas;
   }

@@ -62,6 +62,7 @@ export function HUD({
   onCloseQuestLog,
   onCloseWorldMap,
   onDismissChapterEnd,
+  onContinueChapter,
 }: {
   snapshot: GameSnapshot;
   onRestart: () => void;
@@ -72,6 +73,7 @@ export function HUD({
   onCloseQuestLog: () => void;
   onCloseWorldMap: () => void;
   onDismissChapterEnd: () => void;
+  onContinueChapter: () => void;
 }) {
   if (snapshot.phase === 'loading') {
     return (
@@ -153,10 +155,15 @@ export function HUD({
           <h2>第一章　純源島</h2>
           <p className="chapter-end-line">渡船載著你離開了島。</p>
           <p className="muted">初胎之印在你的掌心微微發亮。海的另一邊，有一片你從未見過的陸地。</p>
-          <p className="muted">（第一章完。後面的故事還沒有寫。）</p>
-          <button type="button" onClick={onDismissChapterEnd}>
-            回到島上繼續探索
-          </button>
+          <p className="muted">（第二章「滄玄洲」剛開始：目前只做了迷霧海岸這一張地圖。）</p>
+          <div className="chapter-end-buttons">
+            <button type="button" onClick={onContinueChapter}>
+              登陸滄玄洲（第二章）
+            </button>
+            <button type="button" onClick={onDismissChapterEnd}>
+              回到島上繼續探索
+            </button>
+          </div>
         </div>
       )}
       {snapshot.dialogue && <DialogueBox dialogue={snapshot.dialogue} {...dialogueActions} />}
