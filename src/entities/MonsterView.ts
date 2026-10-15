@@ -12,6 +12,9 @@ import { CORPSE_LIFETIME, type Monster, type MonsterState } from './Monster';
 
 /** Seconds at the end of a corpse's life during which it sinks away. */
 const CORPSE_FADE = 0.6;
+/** A stone monster breaks into this many pieces, which fall under this pull (scene pixels per second squared). */
+const CHUNK_COUNT = 9;
+const CHUNK_GRAVITY = 420;
 
 const ANIMATION_FOR_STATE: Record<MonsterState, string> = {
   idle: 'idle',
@@ -35,13 +38,16 @@ export class MonsterView {
   /** The pulsing core (see MonsterDef.glow), or null. */
   private readonly glow: { mesh: THREE.Mesh; material: THREE.MeshBasicMaterial } | null = null;
   private clock = 0;
+  /** The pieces a stone monster falls apart into (scene pixels relative to where it stood), once it has died. */
+  private readonly chunks: { mesh: THREE.Mesh; x: number; y: number; vx: number; vy: number; floor: number; size: number }[] = [];
+  private shattered = false;
   private readonly nameplate: HTMLDivElement | null = null;
   private readonly screen: Vec2 = { x: 0, y: 0 };
   private shownState: MonsterState | null = null;
 
   constructor(
     private readonly monster: Monster,
-    assets: AssetLoader,
+    private readonly assets: AssetLoader,
     effects: EffectAssets,
     /** Where to put the name plate of an elite / boss; null disables name plates. */
     nameplateLayer: HTMLElement | null,
@@ -57,6 +63,7 @@ export class MonsterView {
     this.bar = new HealthBar(effects, monster.isBoss ? 'boss' : monster.isElite ? 'elite' : 'normal');
     this.bar.visible = false;
     this.group.add(this.shadow, this.animator.mesh, this.bar.group);
+    if (monster.def.phantom) this.directional?.setGhost(true);
     if (monster.def.glow) {
       const material = assets.material(SpriteKey.GLOW).clone();
       material.blending = THREE.AdditiveBlending;
@@ -122,6 +129,7 @@ export class MonsterView {
       this.animator.mesh.position.y += this.directional.offsetY;
     }
     this.shadow.visible = !dead;
+    if (dead && m.def.shatters) this.updateChunks(dt, m);
 
     const fade = dead ? Math.min(1, Math.max(0, (CORPSE_LIFETIME - m.stateTime) / CORPSE_FADE)) : 1;
     if (this.directional) this.directional.setFade(fade);
@@ -152,6 +160,44 @@ export class MonsterView {
         this.nameplate.style.display = 'block';
         this.nameplate.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y - lift)}px) translate(-50%, -100%)`;
       }
+    }
+  }
+
+  /** Breaks the corpse into stones that fly out, fall, and lie where they land until the corpse goes. */
+  private updateChunks(dt: number, m: Monster): void {
+    if (!this.shattered) {
+      this.shattered = true;
+      this.animator.mesh.visible = false;
+      for (let i = 0; i < CHUNK_COUNT; i++) {
+        const mesh = new THREE.Mesh(this.assets.sharedGeometry(SpriteKey.CHUNK), this.assets.material(SpriteKey.CHUNK));
+        this.group.add(mesh);
+        this.chunks.push({
+          mesh,
+          x: (Math.random() - 0.5) * 16,
+          y: 16 + Math.random() * 30,
+          vx: (Math.random() - 0.5) * 140,
+          vy: 70 + Math.random() * 90,
+          floor: -Math.random() * 8,
+          size: (0.8 + Math.random() * 0.9) * m.scale,
+        });
+      }
+    }
+    const shrink = Math.min(1, Math.max(0, (CORPSE_LIFETIME - m.stateTime) / CORPSE_FADE));
+    for (const c of this.chunks) {
+      if (c.y > c.floor) {
+        c.vy -= CHUNK_GRAVITY * dt;
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        if (c.y <= c.floor) {
+          c.y = c.floor;
+          c.vx = 0;
+          c.vy = 0;
+        }
+      }
+      placeAt(c.mesh, Layer.GROUND_DECAL, m.pos.x, m.pos.y);
+      c.mesh.position.x += c.x;
+      c.mesh.position.y += c.y;
+      c.mesh.scale.setScalar(c.size * shrink);
     }
   }
 

@@ -93,6 +93,8 @@ function setup(rngValue = 0.99, armor = 5, effects: LegendaryEffectId[] = []) {
     telegraph: () => {},
     novaFlash: () => {},
     phaseChanged: () => {},
+    spawnMinions: () => {},
+    pillars: () => {},
   };
   const combat = new CombatSystem(
     player as unknown as Player,

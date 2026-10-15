@@ -50,6 +50,8 @@ class Rig {
     novaStrike: () => {},
     telegraph: () => {},
     phaseChanged: () => {},
+    split: () => {},
+    summonPillars: () => {},
   };
   target: { pos: { x: number; y: number }; radius: number; isDead: boolean };
   constructor(

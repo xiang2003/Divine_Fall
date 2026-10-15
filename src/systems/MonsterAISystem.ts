@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { MapSpawns, Population } from '../data/mapData';
+import { MONSTERS, type MonsterDef } from '../data/monsters';
 import { Monster, type MonsterHooks, type MonsterTarget } from '../entities/Monster';
 import { MonsterView } from '../entities/MonsterView';
 import type { AssetLoader } from '../game/AssetLoader';
@@ -30,7 +31,7 @@ export class MonsterAISystem {
     return this.monsters;
   }
   get aliveCount(): number {
-    return this.monsters.reduce((n, m) => n + (m.isDead ? 0 : 1), 0);
+    return this.monsters.reduce((n, m) => n + (m.isDead || m.def.phantom ? 0 : 1), 0);
   }
   /** How many monsters the current round started with. */
   get total(): number {
@@ -50,6 +51,20 @@ export class MonsterAISystem {
     const plan = planSpawns(spawns, rng, population);
     for (const entry of plan) this.spawn(new Monster(entry.def, entry.pos, { affixes: entry.affixes, rng }));
     this.spawnedTotal = plan.length;
+  }
+
+  /** Puts `count` copies of the monster `defId` in a ring around `owner` (a mask splitting into phantoms). They are not part of the map's population. */
+  spawnMinions(owner: Monster, defId: string, count: number, rng: Rng): void {
+    const def = (MONSTERS as Record<string, MonsterDef>)[defId];
+    if (!def) throw new Error(`Unknown monster "${defId}"`);
+    const start = rng() * Math.PI * 2;
+    for (let i = 0; i < count; i++) {
+      const angle = start + (i / count) * Math.PI * 2;
+      const monster = new Monster(def, { x: owner.pos.x + Math.cos(angle) * 0.9, y: owner.pos.y + Math.sin(angle) * 0.9 }, { rng });
+      this.collision.pushOut(monster.pos, def.radius);
+      this.spawn(monster);
+      monster.engage(); // it was born in the middle of a fight
+    }
   }
 
   clear(): void {

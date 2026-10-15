@@ -8,6 +8,10 @@ import { Layer, placeAt, sortKey, worldToSceneX, worldToSceneY, type Vec2 } from
 /** Walls (and the rock pillars of a cave) that stand between the camera and the player turn see-through, so the player is never hidden. */
 export const FADE_OPACITY = 0.3;
 const FADE_SPEED = 8;
+/** Floating decoration hangs this high (scene pixels), and bobs this far up and down this many times a second. */
+const FLOAT_HEIGHT = 22;
+const FLOAT_BOB = 3;
+const FLOAT_HZ = 0.35;
 /** A wall fades when it is in front of the player (nearer the camera) within this many tiles, and no farther than this much to the side. */
 const FADE_AHEAD = 5;
 const FADE_ASIDE = 2.1;
@@ -43,6 +47,9 @@ function tileHash(x: number, y: number): number {
 export class MapView {
   readonly root = new THREE.Group();
   private readonly faders: Fader[] = [];
+  /** Decoration that hovers and bobs (floating crystals). */
+  private readonly floaters: { mesh: THREE.Mesh; baseY: number; phase: number }[] = [];
+  private clock = 0;
 
   constructor(map: MapData, assets: AssetLoader) {
     this.buildFloor(map, assets);
@@ -141,7 +148,7 @@ export class MapView {
         wall.matrixAutoUpdate = false;
         wall.updateMatrix();
         this.root.add(wall);
-        if (map.theme === 'stone' || map.theme === 'ruins' || map.theme === 'cave') {
+        if (map.theme === 'stone' || map.theme === 'ruins' || map.theme === 'core' || map.theme === 'cave') {
           // its own copy of the material, so that one wall can fade without the others
           const material = (wall.material as THREE.MeshBasicMaterial).clone();
           wall.material = material;
@@ -170,8 +177,13 @@ export class MapView {
       const key = def.keys[pick % def.keys.length]!;
       const sprite = new THREE.Mesh(assets.sharedGeometry(key), assets.material(key));
       placeAt(sprite, Layer.OBJECT, x, y);
-      sprite.matrixAutoUpdate = false;
-      sprite.updateMatrix();
+      if (def.floats) {
+        sprite.position.y += FLOAT_HEIGHT;
+        this.floaters.push({ mesh: sprite, baseY: sprite.position.y, phase: pick * 0.37 });
+      } else {
+        sprite.matrixAutoUpdate = false;
+        sprite.updateMatrix();
+      }
       this.root.add(sprite);
     };
     map.decor.forEach((d, i) => place(d.kind, d.x, d.y, tileHash(Math.floor(d.x * 7) + i, Math.floor(d.y * 7))));
@@ -229,8 +241,10 @@ export class MapView {
     this.root.add(marker);
   }
 
-  /** Fades the walls that hide the player (call every frame). */
+  /** Fades the walls that hide the player and bobs the floating decoration (call every frame). */
   update(dt: number, player: Vec2): void {
+    this.clock += dt;
+    for (const f of this.floaters) f.mesh.position.y = f.baseY + Math.sin(this.clock * FLOAT_HZ * Math.PI * 2 + f.phase) * FLOAT_BOB;
     const step = Math.min(1, dt * FADE_SPEED);
     for (const f of this.faders) {
       const target = hidesPlayer(f.tileX, f.tileY, player) ? FADE_OPACITY : 1;

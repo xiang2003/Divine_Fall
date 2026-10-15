@@ -108,6 +108,79 @@ export function drawTorch(frame: number): HTMLCanvasElement {
   return c;
 }
 
+/** A warning disc: a translucent filled circle with a bright rim (it is squashed into an ellipse on the floor). 128 x 128. */
+export function drawDisc(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(128, 128);
+  ctx.fillStyle = 'rgba(255, 150, 50, 0.45)';
+  ctx.beginPath();
+  ctx.arc(64, 64, 60, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 220, 140, 1)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(64, 64, 59, 0, Math.PI * 2);
+  ctx.stroke();
+  return c;
+}
+
+/** A broken piece of stone (the pieces a stone monster falls apart into). 12 x 10. */
+export function drawChunk(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(12, 10);
+  ctx.fillStyle = '#1e1c22';
+  ctx.beginPath();
+  ctx.moveTo(1, 6);
+  ctx.lineTo(4, 1);
+  ctx.lineTo(9, 1);
+  ctx.lineTo(11, 5);
+  ctx.lineTo(8, 9);
+  ctx.lineTo(3, 9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#8a8478';
+  ctx.beginPath();
+  ctx.moveTo(2, 6);
+  ctx.lineTo(4.5, 2);
+  ctx.lineTo(8.5, 2);
+  ctx.lineTo(10, 5);
+  ctx.lineTo(7.5, 8);
+  ctx.lineTo(3.5, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#b3ac9c';
+  ctx.fillRect(5, 3, 3, 1);
+  ctx.fillStyle = '#5c584f';
+  ctx.fillRect(4, 7, 4, 1);
+  return c;
+}
+
+/** A summoned stone pillar: a round carved column with a rough top, standing on its foot at the bottom centre (the foot is 8 px above the bottom). 40 x 84. */
+export function drawPillarColumn(): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(40, 84);
+  const body = ctx.createLinearGradient(6, 0, 34, 0);
+  body.addColorStop(0, '#6f695f');
+  body.addColorStop(0.45, '#a39c8c');
+  body.addColorStop(1, '#4a463f');
+  ctx.fillStyle = body;
+  ctx.fillRect(7, 10, 26, 66);
+  // the foot and the broken top
+  ctx.beginPath();
+  ctx.ellipse(20, 76, 15, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#c2bba9';
+  ctx.beginPath();
+  ctx.ellipse(20, 10, 13, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#57534b';
+  ctx.fillRect(10, 20, 2, 40);
+  ctx.fillRect(26, 28, 2, 30);
+  // carved bands, with a faint gold glow in the grooves
+  ctx.fillStyle = '#d9b25a';
+  for (const y of [26, 42, 58]) ctx.fillRect(9, y, 22, 1);
+  ctx.fillStyle = '#2c2a26';
+  for (const y of [27, 43, 59]) ctx.fillRect(9, y, 22, 1);
+  return c;
+}
+
 /** Soft round glow, white in the middle fading out (tint it with the material colour); drawn with additive blending so it lights what is under it. 128 x 128. */
 export function drawGlow(): HTMLCanvasElement {
   const [c, ctx] = makeCanvas(128, 128);

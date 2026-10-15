@@ -82,6 +82,34 @@
 **已知的限制**：沙地邊緣還留有一點淡淡的粉紅色（洋紅殘留）；岩石底下的沙堆顏色比沙灘的地磚亮一點；
 渡船的位置與大小是我對著畫面調的，船頭方向是模型畫出來的。洞窟的石筍與遺跡的牆仍是程式畫的佔位圖。
 
+## 初胎核心的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
+
+做法與源泉洞相同（本機 ComfyUI 的 Z-Image-Turbo，沒有付費 API、沒有 LoRA）：
+
+**三種新怪物**（像素精靈；種子與提示詞在 [docs/art/turnaround-prompts.json](docs/art/turnaround-prompts.json)，原圖在 [docs/art/turnarounds/](docs/art/turnarounds/)）：
+
+| 專案內檔案 | 怪物 |
+| --- | --- |
+| public/assets/monsters/stone_attendant.png | 胎岩侍者（320×320，80 像素的格子） |
+| public/assets/monsters/mask_spirit.png | 殘面靈（256×256） |
+| public/assets/monsters/core_watcher.png | 初胎守望者（Boss，512×512，128 像素的格子） |
+
+殘面靈只有一張圖（面具從後面看只是凹的），四個方向共用同一張；幻影用同一張圖加上半透明與淡藍色。
+
+**場景小物**（生成圖，去背後縮放；漂浮水晶用橘色底，其餘用洋紅底，見 [tools/prepare_props.py](tools/prepare_props.py)）：
+
+| 專案內檔案 | 用途 |
+| --- | --- |
+| public/assets/props/core_pillar_0..1.png | 巨大石柱（核心的 `T` 圖塊，擋路） |
+| public/assets/props/decor_shard_a/b.png | 漂浮水晶（地面上方飄浮、上下輕輕浮動，不擋路） |
+| public/assets/props/decor_roots_a/b.png | 樹根叢（地面裝飾，不擋路） |
+| public/assets/props/decor_core.png | 初胎核心本體（Boss 房中央的發光球與石環） |
+
+**程式畫的（沒有圖檔）**：Boss 召喚的石柱與預警圓盤、胎岩侍者死後的石塊碎片（[HazardArt.ts](src/game/HazardArt.ts)）。
+
+**已知的限制**：只有待機有畫格，其餘動作是程式演出；胎岩侍者與遺跡的胎岩魔像長得相近（都是石頭巨人，差在侍者比較瘦、身上有青色符文）；守望者的背面是模型另外畫的，細節和正面有出入；
+核心本體的石環底部在去背時被吃掉一些。
+
 ## 源泉洞與初胎遺跡的怪物與場景（2026-10-15，本機 AI 生成 + 程式繪製）
 
 全部在本機 ComfyUI 的 Z-Image-Turbo 上完成（沒有使用付費 API，沒有套 LoRA），流程和野狼、毒蛇相同：

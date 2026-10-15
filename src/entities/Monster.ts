@@ -30,6 +30,10 @@ export interface MonsterHooks {
   telegraph(monster: Monster, radius: number, duration: number): void;
   /** A boss crossed into a new phase (1 = second phase, ...). */
   phaseChanged(monster: Monster, phase: number): void;
+  /** A badly hurt monster throws off `count` copies of the monster `into`. */
+  split(monster: Monster, into: string, count: number): void;
+  /** A boss calls `count` stone pillars up out of the floor around its target: each shows a circle of `radius` and bursts out after `delay` seconds. */
+  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number): void;
 }
 
 /** What one attack looks like right now (normal attacks and boss moves alike). */
@@ -127,6 +131,10 @@ export class Monster {
   private chargeHit = false;
   /** Seconds spent trying to move, for hopping monsters (they only travel while airborne). */
   private hopClock = 0;
+  /** Seconds alive (for a phantom's lifetime), and the state of a split: due, and done. */
+  private age = 0;
+  private splitDue = false;
+  private splitDone = false;
 
   constructor(
     readonly def: MonsterDef,
@@ -190,6 +198,11 @@ export class Monster {
     return this.currentAttack?.duration ?? this.stats.attackDuration;
   }
 
+  /** Starts the hunt at once (a monster that was born in the middle of a fight). */
+  engage(): void {
+    if (this.state === 'idle') this.enter('chase');
+  }
+
   /** Staggers the monster for `seconds`, cancelling any attack. Bosses cannot be staggered. */
   stun(seconds: number): boolean {
     if (this.state === 'dead' || this.isBoss) return false;
@@ -218,6 +231,10 @@ export class Monster {
       this.moving = false;
       return true;
     }
+    if (this.def.split && !this.splitDone && this.hp / this.maxHp <= this.def.split.hpFraction) {
+      this.splitDone = true;
+      this.splitDue = true;
+    }
     if (this.def.phaseThresholds) {
       this.phase = Math.max(this.phase, phaseForHpRatio(this.hp / this.maxHp, this.def.phaseThresholds));
     }
@@ -242,6 +259,18 @@ export class Monster {
     this.moving = false;
     if (this.state === 'dead') return;
     this.sinceHurt += dt;
+    this.age += dt;
+    if (this.def.lifetime && this.age >= this.def.lifetime) {
+      // an illusion that has run its time: it just goes (no kill is reported)
+      this.hp = 0;
+      this.attack.cancel();
+      this.enter('dead');
+      return;
+    }
+    if (this.splitDue && this.def.split) {
+      this.splitDue = false;
+      hooks.split(this, this.def.split.into, this.def.split.count);
+    }
     if (this.phase !== this.announcedPhase) {
       this.announcedPhase = this.phase;
       hooks.phaseChanged(this, this.phase);
@@ -417,7 +446,7 @@ export class Monster {
             hitFraction: choice.hitFraction ?? MONSTER_HIT_FRACTION,
             damageMult: choice.damageMult,
             radius: choice.radius ?? 0,
-            count: choice.count ?? 1,
+            count: choice.pillars ?? choice.count ?? 1,
             spread: choice.spread ?? 0,
             rush: choice.rush,
           },
@@ -450,6 +479,7 @@ export class Monster {
     this.enter('attack');
     this.currentAttack = spec;
     if (spec.kind === 'nova') hooks.telegraph(this, spec.radius, spec.duration * spec.hitFraction);
+    if (spec.kind === 'pillars') hooks.summonPillars(this, spec.count, spec.radius, spec.duration * spec.hitFraction, spec.damageMult);
     this.face(target.pos.x - this.pos.x, target.pos.y - this.pos.y);
   }
 
@@ -525,7 +555,8 @@ export class Monster {
         hooks.meleeStrike(this, spec.damageMult);
         break;
       case 'charge':
-        break; // a charge hurts on contact, while it runs (see rush)
+      case 'pillars':
+        break; // a charge hurts on contact, while it runs (see rush); the pillars were summoned when the move began
       case 'projectile':
         hooks.fireProjectile(this, dx / len, dy / len, spec.damageMult);
         break;

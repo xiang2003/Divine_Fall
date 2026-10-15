@@ -138,9 +138,8 @@ grid[START[1]][START[0]] = 'P'
 for x, y in ((5, 5), (5, 4)):
     grid[y][x] = 'c'
 
-# the exit room: an exit marker that does nothing yet
+# the exit room: three floor tiles that lead on to the Primordial Core (see the portal below)
 EXIT = (42, 3)
-grid[EXIT[1]][EXIT[0]] = 'X'
 
 # the boss and what it guards
 bx0, by0, bx1, by1 = room_box(BOSS_ROOM)
@@ -289,13 +288,16 @@ data = {
         'm': 'normal monster spawn (floor)',
         'e': 'elite monster spawn (floor)',
         'B': 'boss spawn (floor)',
-        'X': 'exit (floor; does nothing yet)',
         'c': 'crate obstacle on floor (blocks movement)',
         'traps': 'spikes: floor tiles that rise on a timer; arrow: a slit in a wall that shoots poisoned arrows along the corridor (see data/mapData.ts)',
     },
     'layout': layout,
-    'entrances': {'from_forest': {'x': 3, 'y': 3}},
-    'portals': [{'id': 'to_forest', 'x': 1, 'y': 2, 'w': 1, 'h': 3, 'to': {'map': 'pure_forest', 'entrance': 'from_ruins'}}],
+    'entrances': {'from_forest': {'x': 3, 'y': 3}, 'from_core': {'x': 42, 'y': 5}},
+    'portals': [
+        {'id': 'to_forest', 'x': 1, 'y': 2, 'w': 1, 'h': 3, 'to': {'map': 'pure_forest', 'entrance': 'from_ruins'}},
+        {'id': 'to_core', 'x': EXIT[0] - 1, 'y': EXIT[1], 'w': 3, 'h': 1, 'to': {'map': 'pure_core', 'entrance': 'from_ruins'},
+         'requiresFlag': 'pure_ruins_boss_defeated', 'blockedText': '出口的石門紋絲不動。守衛還在這座遺跡裡。'},
+    ],
     'population': {'monsters': ['rock_golem'], 'elites': ['rock_golem'], 'boss': 'ruins_guardian'},
     'interactables': [{'id': 'ruins_relic', 'x': RELIC[0], 'y': RELIC[1]}],
     'traps': traps,

@@ -92,5 +92,54 @@
     "sampler": "res_multistep",
     "size": "1024x1024",
     "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick dark green creeping vines with broad leaves and a few small pale flowers sprawled over two small mossy stones, lying on the ground, the whole tangle fully visible."
+  },
+  "core_pillar_0": {
+    "seed": 8712,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A massive ancient carved stone pillar, a tall round column with weathered carvings and cracks, thick tree roots wrapping around it and breaking up its base, a little moss, the whole pillar fully visible."
+  },
+  "core_pillar_1": {
+    "seed": 8713,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A massive ancient carved stone pillar, a tall round column with weathered carvings and cracks, thick tree roots wrapping around it and breaking up its base, a little moss, the whole pillar fully visible."
+  },
+  "shard_a": {
+    "seed": 8722,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure orange (#FF8000) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A single large floating glowing violet crystal shard, a long pointed double-ended crystal hovering in the air, soft inner glow, no base, the whole crystal fully visible."
+  },
+  "shard_b": {
+    "seed": 8724,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure orange (#FF8000) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A single large floating glowing violet crystal shard, a long pointed double-ended crystal hovering in the air, soft inner glow, no base, the whole crystal fully visible."
+  },
+  "roots_a": {
+    "seed": 8732,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick brown gnarled tree roots spreading over the ground with a few small pale glowing mushrooms, the whole tangle fully visible."
+  },
+  "roots_b": {
+    "seed": 8734,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A low tangle of thick brown gnarled tree roots spreading over the ground with a few small pale glowing mushrooms, the whole tangle fully visible."
+  },
+  "core": {
+    "seed": 8742,
+    "steps": 8,
+    "sampler": "res_multistep",
+    "size": "1024x1024",
+    "prompt": "Stylized 3D render of a single game asset, isometric view seen from above at about 30 degrees, the object centered with empty space around it on a plain flat solid pure magenta (#FF00FF) background, soft studio lighting, clean crisp edges, hand-painted textures, natural muted colours, no cast shadow and no ground, no text, no watermark. A mysterious ancient glowing core: a sphere of swirling pale gold and white light floating above a round carved stone pedestal with runes, thin wisps of energy rising, the whole thing fully visible."
   }
 }

@@ -7,6 +7,7 @@ export const WORLD_MAP_FILES = {
   pure_ruins: 'maps/pure_ruins.json',
   pure_spring_cave: 'maps/pure_spring_cave.json',
   pure_coast: 'maps/pure_coast.json',
+  pure_core: 'maps/pure_core.json',
 } as const satisfies Record<string, string>;
 
 export type WorldMapId = keyof typeof WORLD_MAP_FILES;
@@ -22,6 +23,7 @@ export const WORLD_MAP_LAYOUT: Record<WorldMapId, { x: number; y: number; kind: 
   pure_spring_cave: { x: 50, y: 17, kind: '洞窟' },
   pure_ruins: { x: 80, y: 50, kind: '遺跡' },
   pure_coast: { x: 20, y: 84, kind: '海岸' },
+  pure_core: { x: 80, y: 17, kind: '遺跡' },
 };
 
 /** Coming back to a town refills the potions. */

@@ -42,6 +42,8 @@ class Rig {
       this.telegraphs.push(radius);
     },
     phaseChanged: () => {},
+    split: () => {},
+    summonPillars: () => {},
   };
   constructor(readonly collision: CollisionSystem, x: number, y: number) {
     this.target = { pos: { x, y }, radius: 0.28, isDead: false };

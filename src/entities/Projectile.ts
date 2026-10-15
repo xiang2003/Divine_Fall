@@ -10,6 +10,8 @@ export interface ShotEffects {
   slow?: SlowDef;
   /** Colour of the shot (0xRRGGBB). */
   tint?: number;
+  /** It steers toward the target, turning at most this many radians per second. */
+  homing?: number;
 }
 
 export type ProjectileOutcome = 'hit' | 'wall' | 'expired' | null;
@@ -59,12 +61,26 @@ export class Projectile {
     this.life = life;
   }
 
+  /** Turns the flight direction toward the target by at most `maxAngle` radians. */
+  private steer(target: ProjectileTarget, maxAngle: number): void {
+    const want = Math.atan2(target.pos.y - this.pos.y, target.pos.x - this.pos.x);
+    const have = Math.atan2(this.dirY, this.dirX);
+    let diff = want - have;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    const next = have + Math.max(-maxAngle, Math.min(maxAngle, diff));
+    this.dirX = Math.cos(next);
+    this.dirY = Math.sin(next);
+  }
+
   /**
    * Flies for `dt` seconds in sub-steps (so fast shots can't skip over thin walls or the target).
    * Returns what ended its flight this tick, or null if it is still flying.
    */
   update(dt: number, collision: CollisionSystem, target: ProjectileTarget): ProjectileOutcome {
     if (!this.active) return null;
+    const turn = this.effects?.homing;
+    if (turn && !target.isDead) this.steer(target, turn * dt);
     const dist = this.speed * dt;
     const steps = Math.max(1, Math.ceil(dist / MAX_MOVE_STEP));
     const sx = (this.dirX * dist) / steps;

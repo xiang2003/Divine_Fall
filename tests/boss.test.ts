@@ -197,6 +197,8 @@ class BossRig {
     novaStrike: (_m, radius, mult) => this.nova.push({ radius, mult }),
     telegraph: (_m, radius, duration) => this.telegraphs.push({ radius, duration }),
     phaseChanged: (_m, phase) => this.phases.push(phase),
+    split: () => {},
+    summonPillars: () => {},
   };
   readonly collision = new CollisionSystem(HALL);
   target: MonsterTarget & { pos: { x: number; y: number }; isDead: boolean };
@@ -387,6 +389,8 @@ function combatRig(sourceAffixes: EliteAffixId[]) {
     telegraph: () => {},
     novaFlash: () => {},
     phaseChanged: () => {},
+    spawnMinions: () => {},
+    pillars: () => {},
   };
   const combat = new CombatSystem(
     player as unknown as Player,

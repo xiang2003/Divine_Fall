@@ -2,6 +2,7 @@ import { PLAYER_CONFIG } from '../config/gameConfig';
 import { LEGENDARY_EFFECTS } from '../data/legendaryEffects';
 import type { SkillDef } from '../data/skills';
 import type { BoltTarget } from '../entities/Bolt';
+import type { Vec2 } from '../game/iso';
 import type { ShotEffects } from '../entities/Projectile';
 import {
   MELEE_STRIKE_SLACK,
@@ -37,6 +38,10 @@ export interface CombatEvents {
   novaFlash(x: number, y: number, radius: number): void;
   /** A boss entered a new phase (1 = second phase, ...). */
   phaseChanged(boss: Monster, phase: number): void;
+  /** Copies of the monster `defId` should appear around `owner`. */
+  spawnMinions(owner: Monster, defId: string, count: number): void;
+  /** Stone pillars were summoned: a circle of `radius` at each point, bursting out after `delay` seconds for `damage` (before armor). */
+  pillars(points: readonly Vec2[], radius: number, delay: number, damage: number): void;
 }
 
 /** Spawn the projectile slightly in front of the caster so it doesn't start inside its body. */
@@ -107,6 +112,28 @@ export class CombatSystem implements MonsterHooks {
     this.events.phaseChanged(monster, phase);
   }
 
+  split(monster: Monster, into: string, count: number): void {
+    this.events.spawnMinions(monster, into, count);
+  }
+
+  /** The first pillar comes up right where the player stands; the others around it, on floor that is free. */
+  summonPillars(monster: Monster, count: number, radius: number, delay: number, damageMult: number): void {
+    const centre = this.player.pos;
+    const points: Vec2[] = [{ x: centre.x, y: centre.y }];
+    for (let i = 1; i < count; i++) {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const angle = this.rng() * Math.PI * 2;
+        const distance = 1.6 + this.rng() * 3.4;
+        const x = centre.x + Math.cos(angle) * distance;
+        const y = centre.y + Math.sin(angle) * distance;
+        if (this.collision.collidesCircle(x, y, 0.4)) continue;
+        points.push({ x, y });
+        break;
+      }
+    }
+    this.events.pillars(points, radius, delay, monster.damage * damageMult);
+  }
+
   fireProjectile(monster: Monster, dirX: number, dirY: number, damageMult = 1): void {
     this.projectiles.fire(
       monster.pos.x + dirX * MUZZLE_OFFSET,
@@ -116,6 +143,7 @@ export class CombatSystem implements MonsterHooks {
       monster.def.projectileSpeed ?? 6,
       monster.damage * damageMult,
       monster,
+      monster.def.homing ? { homing: monster.def.homing } : null,
     );
   }
 
@@ -200,6 +228,7 @@ export class CombatSystem implements MonsterHooks {
 
   /** On-kill legendary effects first, then the kill is announced (so a heal shows before loot spawns). */
   private registerKill(m: Monster): void {
+    if (m.def.phantom) return; // an illusion: no rewards, no on-kill effects
     const cfg = LEGENDARY_EFFECTS;
     if (this.player.hasEffect('lifeOnKill')) {
       const heal = Math.max(cfg.lifeOnKill.minHeal, Math.round(this.player.stats.maxHp * cfg.lifeOnKill.healRatio));

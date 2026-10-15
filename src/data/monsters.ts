@@ -3,7 +3,7 @@ import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
 
-export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge';
+export type BossAttackKind = 'cleave' | 'nova' | 'fan' | 'charge' | 'pillars';
 
 /** One move in a boss's repertoire. Which are available depends on the current phase and distance to the player. */
 export interface BossAttackDef {
@@ -27,6 +27,8 @@ export interface BossAttackDef {
   hitFraction?: number;
   /** charge: how far the rush carries the boss, in world units. */
   rush?: number;
+  /** pillars: how many stone pillars are summoned (`radius` is the size of each one's circle). */
+  pillars?: number;
 }
 
 /** How a monster with directional art acts out its attack (see DirectionalAnimator). */
@@ -70,6 +72,13 @@ export interface SlamDef {
   /** Fraction of the slam at which the blow lands. */
   hitFraction: number;
   damageMult: number;
+}
+
+/** Splitting: the first time its health drops to `hpFraction` of the maximum, `count` copies of the monster `into` appear around it. */
+export interface SplitDef {
+  hpFraction: number;
+  into: string;
+  count: number;
 }
 
 export interface MonsterDef {
@@ -124,6 +133,16 @@ export interface MonsterDef {
   packSize?: number;
   /** A glowing core drawn over the sprite (additive), pulsing: colour, height above the feet in art pixels, size and beats per second. */
   glow?: { color: number; height: number; size: number; hz: number };
+  /** Its projectiles steer toward the target, turning at most this many radians per second. */
+  homing?: number;
+  /** Splits into phantoms when badly hurt (see SplitDef). */
+  split?: SplitDef;
+  /** Breaks into stone chunks when it dies instead of falling over. */
+  shatters?: boolean;
+  /** An illusion: drawn see-through, gives no experience, loot or quest progress, and does not count toward the monsters left on the map. */
+  phantom?: boolean;
+  /** Seconds after which it vanishes by itself. */
+  lifetime?: number;
   /** Tint of this monster's projectiles (0xRRGGBB). Poisonous monsters default to venom green. */
   projectileTint?: number;
 
@@ -318,6 +337,111 @@ export const MONSTERS = {
       { id: 'charge', kind: 'charge', minPhase: 0, weight: 3, duration: 1.4, damageMult: 1.5, rush: 6.5, hitFraction: 0.95 },
       { id: 'stomp', kind: 'nova', minPhase: 0, weight: 2, duration: 1.5, damageMult: 1.3, radius: 4.2, hitFraction: 0.85 },
       { id: 'quake', kind: 'nova', minPhase: 2, weight: 2, duration: 1.6, damageMult: 1.5, radius: 5.2, hitFraction: 0.85 },
+    ],
+  },
+  // ---- the primordial core ----------------------------------------------------------------------------
+  /** A man-shaped heap of ancient stone: slow, and it throws one heavy punch at a time. It breaks into stones when it dies. */
+  stone_attendant: {
+    id: 'stone_attendant',
+    name: '胎岩侍者',
+    spriteKey: SpriteKey.ATTENDANT,
+    directional: true,
+    attackStyle: 'lunge',
+    behavior: 'melee',
+    maxHp: 100,
+    damage: 15,
+    moveSpeed: 1.4,
+    detectRange: 7,
+    attackRange: 0.5,
+    attackCooldown: 2.2,
+    attackDuration: 1.2,
+    radius: 0.42,
+    shatters: true,
+    xp: 22,
+    lootTable: 'normalMonster',
+    barHeight: 66,
+  },
+  /** A floating old mask. Its spirit bolts follow you; when it is badly hurt it throws off two see-through copies of itself. */
+  mask_spirit: {
+    id: 'mask_spirit',
+    name: '殘面靈',
+    spriteKey: SpriteKey.MASK,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 34,
+    damage: 8,
+    moveSpeed: 2.6,
+    detectRange: 9,
+    attackRange: 7,
+    attackCooldown: 2.6,
+    attackDuration: 0.7,
+    radius: 0.28,
+    keepDistance: 3.5,
+    projectileSpeed: 4.2,
+    homing: 1.7,
+    flyer: true,
+    split: { hpFraction: 0.4, into: 'mask_phantom', count: 2 },
+    projectileTint: 0x8affea,
+    xp: 18,
+    lootTable: 'normalMonster',
+    barHeight: 52,
+  },
+  /** A copy a mask throws off: one hit takes it, and it fades on its own. */
+  mask_phantom: {
+    id: 'mask_phantom',
+    name: '殘面幻影',
+    spriteKey: SpriteKey.MASK,
+    directional: true,
+    attackStyle: 'spit',
+    behavior: 'ranged',
+    maxHp: 1,
+    damage: 5,
+    moveSpeed: 2.8,
+    detectRange: 12,
+    attackRange: 7,
+    attackCooldown: 2.4,
+    attackDuration: 0.7,
+    radius: 0.26,
+    keepDistance: 3.5,
+    projectileSpeed: 4.2,
+    homing: 1.7,
+    flyer: true,
+    phantom: true,
+    lifetime: 9,
+    projectileTint: 0x8affea,
+    xp: 0,
+    lootTable: 'normalMonster',
+    barHeight: 52,
+  },
+  /** The boss of the core: a huge faceless statue with a stone blade. Slashes, charges, and calls stone pillars up out of the floor. */
+  core_watcher: {
+    id: 'core_watcher',
+    name: '初胎守望者',
+    spriteKey: SpriteKey.WATCHER,
+    directional: true,
+    attackStyle: 'charge',
+    behavior: 'melee',
+    maxHp: 900,
+    damage: 18,
+    moveSpeed: 2.3,
+    detectRange: 12,
+    attackRange: 1.3,
+    attackCooldown: 2,
+    attackDuration: 1.1,
+    radius: 0.7,
+    xp: 400,
+    lootTable: 'boss',
+    barHeight: 124,
+    isBoss: true,
+    phaseThresholds: [0.66, 0.33],
+    phaseSpeed: [1, 1.1, 1.25],
+    phaseCooldown: [1, 0.85, 0.7],
+    bossAttacks: [
+      { id: 'slash', kind: 'cleave', minPhase: 0, weight: 3, duration: 1.1, damageMult: 1 },
+      { id: 'charge', kind: 'charge', minPhase: 0, weight: 2, duration: 1.5, damageMult: 1.5, rush: 7, hitFraction: 0.95 },
+      { id: 'pillars', kind: 'pillars', minPhase: 1, weight: 3, duration: 1.6, damageMult: 1.2, pillars: 4, radius: 1.3, hitFraction: 0.9 },
+      { id: 'pillar_storm', kind: 'pillars', minPhase: 2, weight: 3, duration: 1.5, damageMult: 1.2, pillars: 7, radius: 1.3, hitFraction: 0.9 },
     ],
   },
   // ---- the ruins --------------------------------------------------------------------------------------

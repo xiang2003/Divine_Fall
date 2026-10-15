@@ -38,6 +38,7 @@ import { Progression } from '../systems/progression';
 import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { SkillProjectileSystem } from '../systems/SkillProjectileSystem';
 import { TrapSystem } from '../systems/TrapSystem';
+import { PillarSystem } from '../systems/PillarSystem';
 import { TorchSystem } from '../systems/TorchSystem';
 import { ARROW_DAMAGE, ARROW_POISON, ARROW_SPEED } from '../systems/hazards';
 import { defaultRng } from '../systems/rng';
@@ -277,6 +278,7 @@ interface World {
   interactables: InteractableSystem;
   traps: TrapSystem;
   torches: TorchSystem;
+  pillars: PillarSystem;
   lightning: LightningEffect;
   numbers: DamageNumbers;
   debug: DebugOverlay;
@@ -430,6 +432,7 @@ export class Game {
     this.telegraphOwner = null;
     this.bossDefeated = false;
     w.projectiles.clear();
+    w.pillars.clear();
     w.skillBolts.clear();
     w.numbers.clear();
     w.slash.hide();
@@ -553,6 +556,7 @@ export class Game {
     w.interactables.dispose();
     w.traps.dispose();
     w.torches.dispose();
+    w.pillars.dispose();
     w.lightning.dispose();
     w.numbers.dispose();
     w.effects.dispose();
@@ -563,6 +567,7 @@ export class Game {
         w.interactables.group,
         w.traps.group,
         w.torches.group,
+        w.pillars.group,
         w.monsters.group,
         w.projectiles.group,
         w.skillBolts.group,
@@ -624,6 +629,7 @@ export class Game {
     // Combat and the monster system reference each other (combat reads the monster list,
     // monsters call combat hooks), so the list is passed lazily.
     let monsters: MonsterAISystem;
+    let pillars: PillarSystem;
     const combat = new CombatSystem(player, () => monsters.all, projectiles, skillBolts, collision, defaultRng, {
       damageDealt: (x, y, amount, crit) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt'),
       damageTaken: (x, y, amount) => {
@@ -648,6 +654,10 @@ export class Game {
         novaFx.trigger(x, y, 1, 0, radius, Math.PI, 0.35);
       },
       phaseChanged: (boss, phase) => this.notify(`${boss.def.name} 進入第 ${phase + 1} 階段！`),
+      spawnMinions: (owner, defId, count) => monsters.spawnMinions(owner, defId, count, defaultRng),
+      pillars: (points, radius, delay, damage) => {
+        for (const p of points) pillars.add(p, radius, delay, damage);
+      },
       monsterKilled: (m: Monster) => {
         this.kills++;
         if (m.isBoss) this.setFlag(`${this.mapId}_boss_defeated`, true);
@@ -669,6 +679,7 @@ export class Game {
     });
     monsters = new MonsterAISystem(assets, effects, collision, combat, this.cameraCtl, nameplateLayer);
     monsters.spawnAll(map.spawns, defaultRng, map.population);
+    pillars = new PillarSystem(assets, (damage) => combat.trapHit(damage));
     const traps = new TrapSystem(map.traps, assets, collision, {
       stab: (damage) => combat.trapHit(damage),
       shoot: (x, y, dx, dy) => projectiles.fire(x, y, dx, dy, ARROW_SPEED, ARROW_DAMAGE, null, { poison: ARROW_POISON }),
@@ -694,6 +705,7 @@ export class Game {
       interactables.group,
       traps.group,
       torches.group,
+      pillars.group,
       monsters.group,
       projectiles.group,
       skillBolts.group,
@@ -727,6 +739,7 @@ export class Game {
       interactables,
       traps,
       torches,
+      pillars,
       lightning,
       numbers,
       debug,
@@ -1314,7 +1327,7 @@ export class Game {
   private tick(dt: number): void {
     const w = this.world;
     if (!w) return;
-    const { player, debug, monsters, npcs, interactables, traps, torches, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
+    const { player, debug, monsters, npcs, interactables, traps, torches, pillars, combat, slash, spinFx, slamFx, telegraphFx, novaFx, lightning, numbers, groundLoot, moveMarker } = w;
     const input = this.input;
 
     if (this.transition) {
@@ -1460,6 +1473,7 @@ export class Game {
     npcs.update(dt, player.pos);
     interactables.update(dt, (f) => this.flags.has(f));
     traps.update(dt, player);
+    pillars.update(dt, player);
     torches.update(dt, player.pos);
     this.scene.updateMap(dt, player.pos);
     slash.update(dt);

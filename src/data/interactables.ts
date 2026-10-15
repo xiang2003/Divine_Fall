@@ -43,6 +43,15 @@ export const INTERACTABLES: Record<string, InteractableDef> = {
     reportOnUse: true,
     dialogue: [{ graph: 'relic_take' }],
   },
+  primordial_core: {
+    id: 'primordial_core',
+    name: '初胎核心',
+    prompt: '靠近',
+    spriteKey: null,
+    requiresFlag: 'pure_core_boss_defeated',
+    reportOnUse: false,
+    dialogue: [{ graph: 'core_look' }],
+  },
   ferry_board: {
     id: 'ferry_board',
     name: '擱淺的渡船',

@@ -186,5 +186,45 @@
       "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A spring-water slime creature: a rounded dome of translucent pale aqua jelly, glossy and wet, with a bright glowing cyan-white core floating in the middle of its body, small bubbles and faint ripples inside the jelly, a thin puddle of water around its base, no face, no eyes, three-quarter view from slightly above, the whole slime visible. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
       "note": "one picture for all four directions (the gel is round)"
     }
+  },
+  "stone_attendant": {
+    "base_seed": 9702,
+    "front": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a front view, the creature facing straight toward the viewer, head and chest toward the camera, symmetrical pose. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A humanoid figure built of ancient sandstone and grey rock blocks, a heavy broad body with thick long arms and huge blocky fists, a smooth plain rock head with two dim teal glowing eye slits, faint glowing teal rune lines carved across its chest and arms, cracks and a little moss, stiff upright stance."
+    },
+    "back": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a rear view seen from directly behind: its back and the back of its head are closest to the camera, the creature faces away from the viewer and its face is not visible. Identical colours, markings and proportions, same size as the left one, full body from head to feet. No text, no labels, no watermark. A humanoid figure built of ancient sandstone and grey rock blocks, a heavy broad body with thick long arms and huge blocky fists, a smooth plain rock head with two dim teal glowing eye slits, faint glowing teal rune lines carved across its chest and arms, cracks and a little moss, stiff upright stance."
+    },
+    "right": {
+      "seed": 9702,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A humanoid figure built of ancient sandstone and grey rock blocks, a heavy broad body with thick long arms and huge blocky fists, a smooth plain rock head with two dim teal glowing eye slits, faint glowing teal rune lines carved across its chest and arms, cracks and a little moss, stiff upright stance, three-quarter view facing right, full body. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
+  },
+  "core_watcher": {
+    "base_seed": 9902,
+    "front": {
+      "seed": 11,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a front view, the creature facing straight toward the viewer, head and chest toward the camera, symmetrical pose. Identical colours, markings and proportions, same size as the left one, full body from head to feet, the blade fully visible. No text, no labels, no watermark. A colossal faceless stone statue: a humanoid giant with a smooth blank oval head with no face at all, ancient carved robes and armour plates, gripping a huge ancient stone blade, a long slab of carved rock, in both hands, cracked weathered grey stone with faint glowing gold runes and thin roots creeping over it, heavy stance."
+    },
+    "back": {
+      "seed": 12,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. Reference sheet on a plain flat very light gray background: two full views of the SAME single creature side by side. On the left is the finished three-quarter view. On the right draw the same creature in a rear view seen from directly behind: its back and the back of its head are closest to the camera, the creature faces away from the viewer and its face is not visible. Identical colours, markings and proportions, same size as the left one, full body from head to feet, the blade fully visible. No text, no labels, no watermark. A colossal faceless stone statue: a humanoid giant with a smooth blank oval head with no face at all, ancient carved robes and armour plates, gripping a huge ancient stone blade, a long slab of carved rock, in both hands, cracked weathered grey stone with faint glowing gold runes and thin roots creeping over it, heavy stance."
+    },
+    "right": {
+      "seed": 9902,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A colossal faceless stone statue: a humanoid giant with a smooth blank oval head with no face at all, ancient carved robes and armour plates, gripping a huge ancient stone blade, a long slab of carved rock, in both hands, cracked weathered grey stone with faint glowing gold runes and thin roots creeping over it, heavy stance, three-quarter view facing right, full body. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "the base picture, three-quarter view facing right"
+    }
+  },
+  "mask_spirit": {
+    "base_seed": 9804,
+    "right": {
+      "seed": 9804,
+      "prompt": "Semi-realistic painterly creature illustration with a pixel-art texture: visible pixel clusters, stair-stepped pixel edges and fine dithering, soft cel shading, natural believable anatomy, muted earthy natural palette, soft even studio light, highly detailed. Dark fantasy creature, no cartoon or chibi look. A floating ancient ceremonial mask made of cracked pale stone and tarnished bronze, hollow glowing teal eyes and a thin mouth slit, ornate carved patterns on its forehead, thin wisps of teal spirit smoke trailing from beneath it, hovering in the air, no body, three-quarter view facing right, the whole mask visible. Whole figure fully inside the frame with empty margin on all sides, plain flat very light gray background, no text, no watermark.",
+      "note": "one picture for all four directions"
+    }
   }
 }

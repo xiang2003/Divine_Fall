@@ -42,6 +42,8 @@ class Rig {
     novaStrike: () => {},
     telegraph: () => {},
     phaseChanged: () => {},
+    split: () => {},
+    summonPillars: () => {},
   };
   constructor(
     readonly collision: CollisionSystem,

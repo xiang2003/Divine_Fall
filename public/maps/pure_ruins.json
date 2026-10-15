@@ -10,7 +10,6 @@
   "m": "normal monster spawn (floor)",
   "e": "elite monster spawn (floor)",
   "B": "boss spawn (floor)",
-  "X": "exit (floor; does nothing yet)",
   "c": "crate obstacle on floor (blocks movement)",
   "traps": "spikes: floor tiles that rise on a timer; arrow: a slit in a wall that shoots poisoned arrows along the corridor (see data/mapData.ts)"
  },
@@ -18,7 +17,7 @@
   "##############################################",
   "#........#......m.#.....#....................#",
   "#........#........#.....#....................#",
-  "#...P.#..#..#######..#..#..#..####..#..#..X..#",
+  "#...P.#..#..#######..#..#..#..####..#..#.....#",
   "#....c...#...........#...........#.m#..#.....#",
   "#....c...#...........#...........#..#..#.....#",
   "#..#######..#######..#######..#..#..####..#..#",
@@ -54,6 +53,10 @@
   "from_forest": {
    "x": 3,
    "y": 3
+  },
+  "from_core": {
+   "x": 42,
+   "y": 5
   }
  },
  "portals": [
@@ -67,6 +70,19 @@
     "map": "pure_forest",
     "entrance": "from_ruins"
    }
+  },
+  {
+   "id": "to_core",
+   "x": 41,
+   "y": 3,
+   "w": 3,
+   "h": 1,
+   "to": {
+    "map": "pure_core",
+    "entrance": "from_ruins"
+   },
+   "requiresFlag": "pure_ruins_boss_defeated",
+   "blockedText": "出口的石門紋絲不動。守衛還在這座遺跡裡。"
   }
  ],
  "population": {

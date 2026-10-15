@@ -322,6 +322,15 @@ export const DIALOGUES: Record<string, DialogueGraph> = {
       c: { text: '碎片溫熱，不燙。你把它收進懷裡。洞裡的水，安靜了一瞬。', end: true },
     },
   },
+  core_look: {
+    id: 'core_look',
+    start: 'a',
+    nodes: {
+      a: { text: '胎盤般的光球懸在石環之上，緩緩轉動。這裡的空氣裡全是靈氣，濃得幾乎能嚐出味道。', next: 'b' },
+      b: { text: '你的手還沒伸出去，掌心的印就先亮了。光球轉向你，像是在辨認一張很久以前見過的臉。', next: 'c' },
+      c: { text: '它沒有說話。但整座遺跡，在這一刻安靜了下來。', end: true },
+    },
+  },
   relic_take: {
     id: 'relic_take',
     start: 'a',

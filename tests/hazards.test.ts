@@ -191,9 +191,11 @@ describe('public/maps/pure_ruins.json (the maze)', () => {
     return seen;
   })();
 
-  it('is a mossy maze with an exit, a boss and the golems', () => {
+  it('is a mossy maze with a way on to the core, a boss and the golems', () => {
     expect(map.theme).toBe('ruins');
-    expect(map.spawns.exit).not.toBeNull();
+    const toCore = map.portals.find((p) => p.to.map === 'pure_core');
+    expect(toCore?.requiresFlag).toBe('pure_ruins_boss_defeated'); // the way on opens when the guardian is down
+    expect(map.entrances.from_core).toBeDefined();
     expect(map.spawns.boss).not.toBeNull();
     expect(map.population).toEqual({ monsters: ['rock_golem'], elites: ['rock_golem'], boss: 'ruins_guardian' });
     expect(map.traps.filter((t) => t.kind === 'spikes').length).toBeGreaterThanOrEqual(8);
@@ -201,9 +203,10 @@ describe('public/maps/pure_ruins.json (the maze)', () => {
     expect(map.torches.length).toBeGreaterThanOrEqual(10);
   });
 
-  it('can be walked from the start to the exit, the boss, the relic and every spawn and spike', () => {
+  it('can be walked from the start to the way on, the boss, the relic and every spawn and spike', () => {
     const at = (p: { x: number; y: number }) => reachable.has(key(Math.floor(p.x), Math.floor(p.y)));
-    expect(at(map.spawns.exit!)).toBe(true);
+    for (const portal of map.portals) expect(at({ x: (portal.rect.minX + portal.rect.maxX) / 2, y: (portal.rect.minY + portal.rect.maxY) / 2 }), portal.id).toBe(true);
+    expect(at(map.entrances.from_core!)).toBe(true);
     expect(at(map.spawns.boss!)).toBe(true);
     for (const i of map.interactables) expect(at(i.pos), i.id).toBe(true);
     for (const p of [...map.spawns.monsters, ...map.spawns.elites]) expect(at(p)).toBe(true);

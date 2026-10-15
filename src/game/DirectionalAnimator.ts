@@ -67,6 +67,7 @@ export class DirectionalAnimator {
   private hurtFlash = false;
   private poisoned = false;
   private slowed = false;
+  private ghost = false;
   /** Where a hopping monster is in its hop (0 to 1), set by the monster's own clock so the picture and the movement agree. */
   private gait = 0;
   private flap = 0;
@@ -148,6 +149,12 @@ export class DirectionalAnimator {
     this.applyTint();
   }
 
+  /** Draws the figure see-through and pale blue (an illusion). */
+  setGhost(on: boolean): void {
+    this.ghost = on;
+    this.applyTint();
+  }
+
   /** Tints the figure blue-green while it is slowed. */
   setSlowed(on: boolean): void {
     if (on === this.slowed) return;
@@ -169,6 +176,7 @@ export class DirectionalAnimator {
     if (this.hurtFlash) this.material.color.setRGB(1, 0.5, 0.5);
     else if (this.poisoned) this.material.color.setRGB(0.62, 1, 0.62);
     else if (this.slowed) this.material.color.setRGB(0.6, 0.9, 1);
+    else if (this.ghost) this.material.color.setRGB(0.7, 0.95, 1);
     else this.material.color.setRGB(1, 1, 1);
   }
 
@@ -327,7 +335,7 @@ export class DirectionalAnimator {
     }
     this.mesh.rotation.z = rotation;
     this.mesh.scale.set(this.baseScale * (1 + (1 - squash) * 0.5), this.baseScale * squash, 1);
-    this.material.opacity = alpha * this.fade;
+    this.material.opacity = alpha * this.fade * (this.ghost ? 0.55 : 1);
     const row = this.direction;
     if (this.shown.col !== col || this.shown.row !== row) {
       this.shown = { col, row };

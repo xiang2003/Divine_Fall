@@ -19,7 +19,7 @@ import {
   characterAnimations,
 } from './CharacterArt';
 import { drawItemIcon, drawLootRing, ICON_SIZE } from './ItemArt';
-import { SPIKE_SPRITE, drawArrowSlit, drawGlow, drawSpikes, drawTorch } from './HazardArt';
+import { SPIKE_SPRITE, drawArrowSlit, drawChunk, drawDisc, drawGlow, drawPillarColumn, drawSpikes, drawTorch } from './HazardArt';
 import { drawMossyWall } from './RuinsArt';
 import { BUILDING_VARIANTS, CABIN_SPRITES, SUPERSAMPLE, buildingCanvasSize, buildingKey, drawBuilding } from './BuildingArt';
 import { TERRAIN_SUPERSAMPLE, drawCaveTile, drawDirtTile, drawRelic, drawRock, drawSandTile, drawShard, drawWaterTile } from './TerrainArt';
@@ -77,6 +77,12 @@ export const SpriteKey = {
   BAT: 'monster.crystal_bat',
   DEER: 'monster.corroded_deer',
   GOLEM: 'monster.rock_golem',
+  ATTENDANT: 'monster.stone_attendant',
+  MASK: 'monster.mask_spirit',
+  WATCHER: 'monster.core_watcher',
+  CHUNK: 'fx.chunk',
+  DISC: 'fx.disc',
+  PILLAR: 'fx.pillar',
   WARPED: 'monster.warped',
   WATER_SHADE: 'monster.water_shade',
   ECHO: 'monster.echo',
@@ -118,7 +124,7 @@ export const PROP_KEYS = PROP_NAMES.map((n) => `prop.${n}`);
  * Loose decoration. A map names kinds in its "decor" list; each kind is one image, or one of several chosen per spot.
  * `scatter` lists the kinds sprinkled automatically over the ground of each theme (nature only, never on paths or near anything).
  */
-export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: number }> = {
+export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: number; /** drawn hovering and bobbing (floating crystals) */ floats?: boolean }> = {
   stump: { keys: ['decor.stump_a', 'decor.stump_b', 'decor.stump_c', 'decor.stump_d'], scale: 0.6 },
   firewood: { keys: ['decor.firewood_a', 'decor.firewood_b', 'decor.firewood_c'], scale: 0.6 },
   cauldron: { keys: ['decor.cauldron'], scale: 0.6 },
@@ -130,10 +136,15 @@ export const DECOR_KINDS: Record<string, { keys: readonly string[]; scale: numbe
   // generated pictures (docs/art/props): glowing moss and creeping vines
   moss: { keys: ['decor.moss_a', 'decor.moss_b'], scale: 0.4 },
   vines: { keys: ['decor.vines_a', 'decor.vines_b', 'decor.vines_c'], scale: 0.4 },
+  // the primordial core: root tangles, floating crystal shards, and the core itself
+  roots: { keys: ['decor.roots_a', 'decor.roots_b'], scale: 0.4 },
+  shard: { keys: ['decor.shard_a', 'decor.shard_b'], scale: 0.32, floats: true },
+  core: { keys: ['decor.core'], scale: 0.5 },
 };
 export const THEME_SCATTER: Record<MapTheme, { kinds: readonly string[]; density: number } | null> = {
   stone: null,
   ruins: { kinds: ['vines', 'moss', 'vines'], density: 0.05 },
+  core: { kinds: ['roots', 'shard', 'roots', 'vines', 'shard'], density: 0.06 },
   grass: { kinds: ['tuft', 'tuft', 'tuft', 'bush', 'shrub'], density: 0.07 },
   sand: { kinds: ['palm', 'tuft', 'tropical'], density: 0.015 },
   cave: { kinds: ['moss', 'moss', 'vines'], density: 0.045 },
@@ -144,6 +155,8 @@ export const PILLAR_KEYS = [0, 1, 2].map((i) => `terrain.pillar_${i}`);
 /** The cave's "T" tiles: clusters of glowing crystal (generated pictures; the drawn rock pillar is the fallback). */
 export const CRYSTAL_KEYS = [0, 1, 2].map((i) => `terrain.crystal_${i}`);
 /** The ruins' wall blocks: stone with moss and vines (drawn with canvas code, see RuinsArt). */
+/** The core's "T" tiles: giant carved pillars wrapped in roots (generated pictures). */
+export const CORE_PILLAR_KEYS = [0, 1].map((i) => `terrain.core_pillar_${i}`);
 export const MOSSY_WALL_KEYS = [0, 1, 2, 3].map((i) => `tile.wall_mossy_${i}`);
 
 /** What a map theme is made of: floor tiles, what a "T" tile looks like, and its water. */
@@ -161,6 +174,7 @@ export interface ThemeArt {
 export const THEME_ART: Record<MapTheme, ThemeArt> = {
   stone: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS },
   ruins: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: null, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
+  core: { floor: [SpriteKey.FLOOR_A, SpriteKey.FLOOR_B], obstacles: CORE_PILLAR_KEYS, water: SEA_KEYS, walls: MOSSY_WALL_KEYS },
   grass: { floor: GRASS_KEYS, floorPick: GRASS_PICK, obstacles: TREE_KEYS, water: SEA_KEYS },
   sand: { floor: SAND_KEYS, floorPick: [0, 0, 1], obstacles: BOULDER_KEYS, water: SEA_KEYS },
   // about one in three obstacles is a crystal cluster, the rest are plain rock pillars
@@ -285,6 +299,7 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   ...BOULDER_KEYS.map((key, i) => propSprite(key, `assets/props/boulder_${i}.png`, 0.45, 0.27, enlarged(() => drawRock('boulder', i), 64, 64))),
   ...PILLAR_KEYS.map((key, i) => terrainSprite(key, 64, 64, 0.25, () => drawRock('pillar', i))),
   ...CRYSTAL_KEYS.map((key, i) => propSprite(key, `assets/props/crystal_${i}.png`, 0.34, 0.2, enlarged(() => drawRock('pillar', i), 170, 220))),
+  ...CORE_PILLAR_KEYS.map((key, i) => propSprite(key, `assets/props/core_pillar_${i}.png`, 0.42, 0.14, enlarged(() => drawRock('pillar', i), 170, 220))),
   ...MOSSY_WALL_KEYS.map((key, i): SpriteAssetDef => ({ key, frameWidth: 64, frameHeight: 64, anchor: { x: 0.5, y: 0.25 }, placeholder: () => drawMossyWall(i) })),
   ...BUILDING_VARIANTS.map((v) => buildingSprite(v.style, v.w, v.h)),
   ...GRASS_KEYS.map((_, i) => groundTile(i)),
@@ -381,6 +396,9 @@ export const ASSET_MANIFEST: SpriteAssetDef[] = [
   { key: SpriteKey.SLIT_HOT, frameWidth: 24, frameHeight: 32, anchor: { x: 0.5, y: 0.5 }, placeholder: () => drawArrowSlit(true) },
   { key: SpriteKey.TORCH_A, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(0) },
   { key: SpriteKey.TORCH_B, frameWidth: 20, frameHeight: 34, anchor: { x: 0.5, y: 0 }, placeholder: () => drawTorch(1) },
+  { key: SpriteKey.DISC, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawDisc },
+  { key: SpriteKey.CHUNK, frameWidth: 12, frameHeight: 10, anchor: { x: 0.5, y: 0.5 }, placeholder: drawChunk },
+  { key: SpriteKey.PILLAR, frameWidth: 40, frameHeight: 84, anchor: { x: 0.5, y: 0.1 }, placeholder: drawPillarColumn },
   { key: SpriteKey.GLOW, frameWidth: 128, frameHeight: 128, smooth: true, anchor: { x: 0.5, y: 0.5 }, placeholder: drawGlow },
 ];
 
@@ -462,6 +480,9 @@ function directionalMonsters(): SpriteAssetDef[] {
     directionalMonster(SpriteKey.BAT, 'crystal_bat', drawShadeSheet),
     directionalMonster(SpriteKey.DEER, 'corroded_deer', drawArchonSheet, BOSS_FRAME, BOSS_FRAME),
     directionalMonster(SpriteKey.GOLEM, 'rock_golem', drawEchoSheet, 96),
+    directionalMonster(SpriteKey.ATTENDANT, 'stone_attendant', drawEchoSheet, 80),
+    directionalMonster(SpriteKey.MASK, 'mask_spirit', drawShadeSheet),
+    directionalMonster(SpriteKey.WATCHER, 'core_watcher', drawArchonSheet, 128, BOSS_FRAME),
   ];
 }
 

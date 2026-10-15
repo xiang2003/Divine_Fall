@@ -4,7 +4,7 @@ import type { Vec2 } from '../game/iso';
 export interface DungeonMapFile {
   id: string;
   name: string;
-  /** Look of the map: "stone" (default, dungeon), "ruins" (mossy walls), "grass", "sand" or "cave" (where "T" tiles are trees, boulders or crystals). */
+  /** Look of the map: "stone" (default, dungeon), "ruins" (mossy walls), "core" (the deep ruins: giant pillars, roots, floating crystals), "grass", "sand" or "cave" (where "T" tiles are trees, boulders or crystals). */
   theme?: MapTheme;
   /** Human-readable legend; informational only. */
   legend?: Record<string, string>;
@@ -52,8 +52,8 @@ export interface PortalFile {
 }
 
 /** stone: dungeon bricks; ruins: the same with moss and vines; grass: meadow and forest; sand: beach; cave: damp cave. Decides the floor, water, wall and "T" art. */
-export type MapTheme = 'stone' | 'ruins' | 'grass' | 'sand' | 'cave';
-export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'grass', 'sand', 'cave'];
+export type MapTheme = 'stone' | 'ruins' | 'core' | 'grass' | 'sand' | 'cave';
+export const MAP_THEMES: readonly MapTheme[] = ['stone', 'ruins', 'core', 'grass', 'sand', 'cave'];
 
 export const TileType = {
   VOID: 0,
