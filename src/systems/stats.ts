@@ -11,6 +11,8 @@ import {
   type StatMods,
 } from '../data/items';
 import type { LegendaryEffectId } from '../data/legendaryEffects';
+import type { StatusId } from '../data/statuses';
+import type { StatusTrigger } from './status';
 import { levelBonus } from './progression';
 
 export interface PlayerStats {
@@ -26,6 +28,33 @@ export interface PlayerStats {
   increased: Record<DamageType, number>;
   /** Resistance against each non-physical type as fractions (0.3 = 30%, negative = takes extra), before the cap that damage.ts applies. */
   resist: Record<ResistType, number>;
+  /** The chance (a fraction) that an attack puts each effect on its target. */
+  statusChance: Partial<Record<StatusId, number>>;
+  /** Freeze points that each attack adds to the target's gauge. */
+  freezeBuildup: number;
+  /** Increased damage over time (a fraction): raises burning, bleeding and the other damage effects. */
+  dotDamage: number;
+  /** Longer effects (a fraction): what an attack puts on lasts this much longer. */
+  statusDuration: number;
+}
+
+/** Which stat key holds the chance of each effect that gear can give. */
+export const STATUS_CHANCE_KEY: Partial<Record<StatusId, StatKey>> = {
+  bleeding: 'bleedChancePct',
+  burning: 'burnChancePct',
+  corruption: 'corruptionChancePct',
+  shock: 'shockChancePct',
+  armorBreak: 'armorBreakChancePct',
+  weaken: 'weakenChancePct',
+  slow: 'slowChancePct',
+};
+
+/** What the gear of a character puts on whatever it hits, as triggers for the status manager. */
+export function gearTriggers(stats: Pick<PlayerStats, 'statusChance' | 'freezeBuildup'>): StatusTrigger[] {
+  const out: StatusTrigger[] = [];
+  for (const [id, chance] of Object.entries(stats.statusChance ?? {}) as [StatusId, number][]) if (chance > 0) out.push({ id, chance });
+  if ((stats.freezeBuildup ?? 0) > 0) out.push({ id: 'freeze', buildup: stats.freezeBuildup });
+  return out;
 }
 
 /** Which stat key holds the "increased damage" / the resistance of a type. */
@@ -92,6 +121,16 @@ export function computeStats(equipment: Equipment, level = 1): PlayerStats {
     lightningResPct: 0,
     corruptionResPct: 0,
     divineResPct: 0,
+    bleedChancePct: 0,
+    burnChancePct: 0,
+    corruptionChancePct: 0,
+    shockChancePct: 0,
+    armorBreakChancePct: 0,
+    weakenChancePct: 0,
+    slowChancePct: 0,
+    freezeBuildup: 0,
+    dotDamagePct: 0,
+    statusDurationPct: 0,
   };
   for (const slot of EQUIP_SLOTS) {
     const item = equipment[slot];
@@ -111,6 +150,12 @@ export function computeStats(equipment: Equipment, level = 1): PlayerStats {
     moveSpeed: base.moveSpeed * (1 + sum.moveSpeedPct / 100),
     increased: Object.fromEntries(DAMAGE_TYPES.map((t) => [t, sum[INCREASED_KEY[t]] / 100])) as Record<DamageType, number>,
     resist: Object.fromEntries(RESIST_TYPES.map((t) => [t, sum[RESIST_KEY[t]] / 100])) as Record<ResistType, number>,
+    statusChance: Object.fromEntries(
+      (Object.entries(STATUS_CHANCE_KEY) as [StatusId, StatKey][]).filter(([, key]) => sum[key] > 0).map(([id, key]) => [id, sum[key] / 100]),
+    ) as Partial<Record<StatusId, number>>,
+    freezeBuildup: sum.freezeBuildup,
+    dotDamage: sum.dotDamagePct / 100,
+    statusDuration: sum.statusDurationPct / 100,
   };
 }
 

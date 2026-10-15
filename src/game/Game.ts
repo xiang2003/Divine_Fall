@@ -9,6 +9,7 @@ import {
 } from '../config/gameConfig';
 import { EQUIP_SLOTS, LEGENDARIES, SLOT_LABEL, type EquipSlot, type ItemInstance } from '../data/items';
 import { GOLD_NAME, SHOPS } from '../data/economy';
+import { STATUSES } from '../data/statuses';
 import { LOOT_TABLES } from '../data/lootTables';
 import { RECHARGE_BOSS_MULT, RECHARGE_ELITE_MULT, RECHARGE_PER_KILL, type PotionId } from '../data/potions';
 import { SKILLS, type SkillDef } from '../data/skills';
@@ -218,6 +219,10 @@ const EMPTY_INVENTORY: InventoryView = {
     moveSpeed: 0,
     increased: { physical: 0, fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
     resist: { fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
+    statusChance: {},
+    freezeBuildup: 0,
+    dotDamage: 0,
+    statusDuration: 0,
   },
   level: 1,
 };
@@ -676,6 +681,7 @@ export class Game {
     let pools: PoolSystem;
     const combat = new CombatSystem(player, () => monsters.all, projectiles, skillBolts, collision, defaultRng, {
       damageDealt: (x, y, amount, crit, type) => numbers.spawn(x, y, String(amount), crit ? 'crit' : 'dealt', type),
+      statusApplied: (x, y, ids) => ids.forEach((id, i) => numbers.spawn(x, y - 0.35 * (i + 1), STATUSES[id].name, 'status', 'physical', STATUSES[id].color)),
       damageTaken: (x, y, amount, type) => {
         numbers.spawn(x, y, `-${amount}`, 'taken', type);
         this.hitSeq++;

@@ -50,6 +50,8 @@ export interface Defense {
   resistCap?: Partial<Record<ResistType, number>>;
   /** Resistance reduction placed on the target (a curse): taken off before the cap is applied. Not the attacker's penetration. */
   resistReduction?: Partial<Record<ResistType, number>>;
+  /** What the target takes in total, after its defenses, as a multiplier ("more damage taken"; shock makes it 1.2). Default 1. */
+  takenMultiplier?: number;
 }
 
 export const NO_DEFENSE: Defense = { armor: 0 };
@@ -73,6 +75,8 @@ export interface HitResult {
   crit: boolean;
   /** The type that did the most (picks the colour of the number). */
   dominant: DamageType;
+  /** The damage before any defense (after skill, increases, more and crit): what damage over time that comes from this hit is worked out from. */
+  raw: number;
 }
 
 /** The damage a monster of this level is "worth" for armor purposes: 8 at level 1, growing 4.5% per level. */
@@ -104,8 +108,9 @@ export function effectiveResist(defense: Defense, type: ResistType, penetration 
 
 /** The multiplier a target's defense leaves of a hit of this type (1 = untouched, 0.25 = a quarter gets through). */
 export function defenseMultiplier(type: DamageType, defense: Defense, referenceDamage?: number, penetration = 0): number {
-  if (type === 'physical') return 1 - armorReduction(defense.armor, referenceDamage, penetration);
-  return 1 - effectiveResist(defense, type, penetration);
+  const taken = Math.max(0, defense.takenMultiplier ?? 1);
+  if (type === 'physical') return (1 - armorReduction(defense.armor, referenceDamage, penetration)) * taken;
+  return (1 - effectiveResist(defense, type, penetration)) * taken;
 }
 
 /** Splits damage by the conversions. Each source type converts at most 100% of itself (more is scaled down) and only once. */
@@ -190,7 +195,7 @@ export function resolveHit(input: HitInput, offense: Offense = {}, defense: Defe
     byType[dominant] = 1;
     total = 1;
   }
-  return { byType, total, crit, dominant };
+  return { byType, total, crit, dominant, raw };
 }
 
 // --- damage over time -------------------------------------------------------------------------
@@ -265,6 +270,27 @@ export class DotSet {
     const shortest = same.reduce((a, b) => (b.left < a.left ? b : a));
     shortest.dps = spec.dps;
     shortest.left = spec.duration;
+  }
+
+  /** Seconds the longest-running copy of `id` has left (0 if none is running). */
+  remaining(id: string): number {
+    return this.stacks.reduce((best, s) => (s.spec.id === id ? Math.max(best, s.left) : best), 0);
+  }
+
+  /** The strongest rate among the copies of `id` (0 if none). */
+  rate(id: string): number {
+    return this.stacks.reduce((best, s) => (s.spec.id === id ? Math.max(best, s.dps) : best), 0);
+  }
+
+  /** Stops every copy of `id` (a cleansing); what was worked out but not yet paid is dropped too. Returns whether anything was removed. */
+  remove(id: string): boolean {
+    const before = this.stacks.length;
+    for (let i = this.stacks.length - 1; i >= 0; i--) if (this.stacks[i]!.spec.id === id) this.stacks.splice(i, 1);
+    if (this.stacks.length === 0) {
+      this.clock = 0;
+      for (const t of DAMAGE_TYPES) this.carry[t] = 0;
+    }
+    return this.stacks.length !== before;
   }
 
   clear(): void {

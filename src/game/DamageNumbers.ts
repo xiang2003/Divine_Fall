@@ -2,7 +2,7 @@ import type { DamageType } from '../data/damageTypes';
 import type { CameraController } from './CameraController';
 import type { Vec2 } from './iso';
 
-export type DamageKind = 'dealt' | 'crit' | 'taken' | 'heal' | 'levelup' | 'gold';
+export type DamageKind = 'dealt' | 'crit' | 'taken' | 'heal' | 'levelup' | 'gold' | 'status';
 
 const POOL_SIZE = 32;
 const LIFETIME = 0.9;
@@ -43,7 +43,7 @@ export class DamageNumbers {
   }
 
   /** `type` colours the number by the kind of damage (physical stays the plain colour of its kind). */
-  spawn(wx: number, wy: number, text: string, kind: DamageKind, type: DamageType = 'physical'): void {
+  spawn(wx: number, wy: number, text: string, kind: DamageKind, type: DamageType = 'physical', color?: string): void {
     // Reuse the oldest slot when everything is busy; a burst never allocates.
     let entry = this.pool.find((e) => !e.active);
     if (!entry) {
@@ -57,6 +57,7 @@ export class DamageNumbers {
     entry.wy = wy + (Math.random() - 0.5) * 0.4;
     entry.el.textContent = text;
     entry.el.className = `damage-number ${kind}${type === 'physical' ? '' : ` t-${type}`}`;
+    entry.el.style.color = color ?? '';
     entry.el.style.display = 'block';
   }
 

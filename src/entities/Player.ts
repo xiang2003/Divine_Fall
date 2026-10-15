@@ -8,10 +8,11 @@ import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, placeAt, type Vec2 } from '../game/iso';
 import { DirectionalAnimator } from '../game/DirectionalAnimator';
 import { AttackTimer } from '../systems/AttackTimer';
-import { Buffs, DodgeController, PoisonEffect, SlowEffect } from '../systems/buffs';
+import { Buffs, DodgeController } from '../systems/buffs';
+import { StatusSet } from '../systems/status';
 import type { DamageType } from '../data/damageTypes';
 import { normalizeInto } from '../systems/combatMath';
-import { defenseMultiplier, resolveHit, type Defense } from '../systems/damage';
+import { resolveHit, type Defense } from '../systems/damage';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import { ClickMover } from '../systems/movement';
 import { PotionBelt } from '../systems/potions';
@@ -63,8 +64,8 @@ export class Player {
   private readonly dodgeDir: Vec2 = { x: 1, y: 1 };
   /** True from the start of a dodge until the first tick after its dash (the animator runs at roll speed meanwhile). */
   private rolling = false;
-  private readonly poison = new PoisonEffect();
-  private readonly slow = new SlowEffect();
+  /** Everything that is on the player: poison, slow (see systems/status.ts). */
+  readonly status = new StatusSet();
   private effects: ReadonlySet<LegendaryEffectId> = new Set();
   private activeSkill: ActiveSkill | null = null;
   private hurtTimer = 0;
@@ -224,47 +225,46 @@ export class Player {
     this.activeSkill = null;
     this.attack.cancel();
     this.mover.stop();
-    this.poison.clear();
-    this.slow.clear();
+    this.status.clear();
     this.animator.setSpeed(1);
     this.animator.play('die', true);
   }
 
   get isPoisoned(): boolean {
-    return this.poison.active && !this.isDead;
+    return this.status.has('poison') && !this.isDead;
   }
 
   get isSlowed(): boolean {
-    return this.slow.active && !this.isDead;
+    return this.status.has('slow') && !this.isDead;
   }
 
   /** Slows the player to `factor` of its speed for `duration` seconds (a stronger slow replaces a weaker one; the time left never shortens). */
   applySlow(factor: number, duration: number): void {
     if (this.isDead) return;
-    this.slow.apply(factor, duration);
+    this.status.apply({ id: 'slow', magnitude: factor, duration });
   }
 
   /** Poisons the player (a stronger poison replaces a weaker one; the time left never shortens). */
   applyPoison(dps: number, duration: number): void {
     if (this.isDead) return;
-    this.poison.apply(dps, duration);
+    this.status.apply({ id: 'poison', dps, duration });
   }
 
   /**
-   * Advances the poison by `dt` seconds. Returns the damage of a tick that fell in it (armor and a dodge's invulnerability do not
-   * stop poison that is already in the blood) and whether it was fatal, or null when no tick fell.
+   * Advances every status on the player by `dt` seconds (call it once per frame). Returns the damage of a damage-over-time tick that fell in it
+   * (through the player's defense for its type: the corruption resistance works on poison, armor does not; a dodge's invulnerability does not
+   * stop what is already in the blood), the kind of damage that did the most, and whether it was fatal, or null when no tick fell.
    */
-  tickPoison(dt: number): { amount: number; died: boolean } | null {
+  tickStatus(dt: number): { amount: number; died: boolean; type: DamageType } | null {
     if (this.isDead) return null;
-    let amount = this.poison.tick(dt);
-    if (amount === 0) return null;
-    // poison is corruption damage over time: the corruption resistance works on it (armor does not)
-    amount = Math.max(1, Math.round(amount * defenseMultiplier('corruption', this.defense)));
-    this.hp = Math.max(0, this.hp - amount);
+    const tick = this.status.tick(dt, this.defense);
+    if (!tick) return null;
+    this.hp = Math.max(0, this.hp - tick.amount);
     this.sinceDamaged = 0; // no regeneration while it burns
     const died = this.hp <= 0;
     if (died) this.die();
-    return { amount, died };
+    const type = (Object.entries(tick.byType) as [DamageType, number][]).sort((x, y) => y[1] - x[1])[0]?.[0] ?? 'corruption';
+    return { amount: tick.amount, died, type };
   }
 
   /**
@@ -293,8 +293,7 @@ export class Player {
     this.potions.refill();
     this.isDead = false;
     this.hurtTimer = 0;
-    this.poison.clear();
-    this.slow.clear();
+    this.status.clear();
     this.sinceDamaged = Infinity;
     this.attack.reset();
     this.activeSkill = null;
@@ -320,7 +319,6 @@ export class Player {
     this.animator.setHurtFlash(this.hurtTimer > 0);
     this.animator.setPoisoned(this.isPoisoned);
     this.animator.setSlowed(this.isSlowed);
-    this.slow.update(dt);
     if (this.sinceDamaged > PLAYER_CONFIG.regenDelay && this.hp < this.stats.maxHp) {
       this.hp = Math.min(this.stats.maxHp, this.hp + PLAYER_CONFIG.regenPerSecond * dt);
     }
@@ -360,7 +358,7 @@ export class Player {
       moving = this.mover.update(
         this.pos,
         dt,
-        this.stats.moveSpeed * this.buffs.moveMultiplier * this.slow.multiplier,
+        this.stats.moveSpeed * this.buffs.moveMultiplier * this.status.moveSpeedMultiplier,
         this.radius,
         this.collision,
       );

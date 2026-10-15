@@ -65,6 +65,7 @@ export class DirectionalAnimator {
   private speed = 1;
   private direction: number = Facing.FRONT;
   private hurtFlash = false;
+  private statusTint: readonly [number, number, number] | null = null;
   private poisoned = false;
   private slowed = false;
   private ghost = false;
@@ -180,8 +181,16 @@ export class DirectionalAnimator {
     this.fade = fade;
   }
 
+  /** Tints the figure with the colour of the status effect on it (or null for none); a hit's red flash still comes first. */
+  setStatusTint(rgb: readonly [number, number, number] | null): void {
+    if (rgb === this.statusTint) return;
+    this.statusTint = rgb;
+    this.applyTint();
+  }
+
   private applyTint(): void {
     if (this.hurtFlash) this.material.color.setRGB(1, 0.5, 0.5);
+    else if (this.statusTint) this.material.color.setRGB(this.statusTint[0], this.statusTint[1], this.statusTint[2]);
     else if (this.poisoned) this.material.color.setRGB(0.62, 1, 0.62);
     else if (this.slowed) this.material.color.setRGB(0.6, 0.9, 1);
     else if (this.enraged) this.material.color.setRGB(1, 0.62, 0.62);

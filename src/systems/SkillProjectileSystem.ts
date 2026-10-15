@@ -5,6 +5,7 @@ import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import { Layer, sortKey, worldToSceneX, worldToSceneY } from '../game/iso';
 import type { CollisionSystem } from './CollisionSystem';
+import type { StatusTrigger } from './status';
 
 /** Hard cap on simultaneous player bolts; extra shots are dropped rather than allocating. */
 const MAX_BOLTS = 16;
@@ -31,10 +32,10 @@ export class SkillProjectileSystem {
     }
   }
 
-  fire(x: number, y: number, dirX: number, dirY: number, speed: number, range: number, damageMult: number, damageType: DamageType = 'physical'): boolean {
+  fire(x: number, y: number, dirX: number, dirY: number, speed: number, range: number, damageMult: number, damageType: DamageType = 'physical', applies: readonly StatusTrigger[] = []): boolean {
     const slot = this.slots.find((s) => !s.bolt.active);
     if (!slot) return false;
-    slot.bolt.launch(x, y, dirX, dirY, speed, range / speed, damageMult, damageType);
+    slot.bolt.launch(x, y, dirX, dirY, speed, range / speed, damageMult, damageType, applies);
     slot.mesh.visible = true;
     this.place(slot);
     return true;

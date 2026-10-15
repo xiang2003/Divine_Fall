@@ -141,6 +141,10 @@ describe('stats from equipment', () => {
       ...PLAYER_CONFIG.baseStats,
       increased: { physical: 0, fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
       resist: { fire: 0, cold: 0, lightning: 0, corruption: 0, divine: 0 },
+      statusChance: {},
+      freezeBuildup: 0,
+      dotDamage: 0,
+      statusDuration: 0,
     });
   });
 

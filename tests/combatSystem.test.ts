@@ -9,7 +9,8 @@ import { CollisionSystem } from '../src/systems/CollisionSystem';
 import type { ProjectileSystem } from '../src/systems/ProjectileSystem';
 import type { SkillProjectileSystem } from '../src/systems/SkillProjectileSystem';
 import { parseMap } from '../src/data/mapData';
-import { Buffs, PoisonEffect } from '../src/systems/buffs';
+import { Buffs } from '../src/systems/buffs';
+import { StatusSet } from '../src/systems/status';
 import { computeStats, emptyEquipment } from '../src/systems/stats';
 import type { LegendaryEffectId } from '../src/data/legendaryEffects';
 
@@ -29,19 +30,19 @@ function fakePlayer(armor = 5, effects: LegendaryEffectId[] = []) {
     hp: stats.maxHp,
     isDead: false,
     buffs: new Buffs(),
-    poison: new PoisonEffect(),
+    status: new StatusSet(),
     get isPoisoned() {
-      return p.poison.active;
+      return p.status.has('poison');
     },
     applyPoison(dps: number, duration: number) {
-      p.poison.apply(dps, duration);
+      p.status.apply({ id: 'poison', dps, duration });
     },
-    tickPoison(dt: number) {
-      const amount = p.poison.tick(dt);
-      if (amount === 0 || p.isDead) return null;
-      p.hp = Math.max(0, p.hp - amount);
+    tickStatus(dt: number) {
+      const tick = p.status.tick(dt, { armor: stats.armor });
+      if (!tick || p.isDead) return null;
+      p.hp = Math.max(0, p.hp - tick.amount);
       if (p.hp === 0) p.isDead = true;
-      return { amount, died: p.isDead };
+      return { amount: tick.amount, died: p.isDead, type: 'corruption' as const };
     },
     hasEffect: (id: LegendaryEffectId) => effects.includes(id),
     heal(amount: number) {
@@ -285,7 +286,7 @@ describe('CombatSystem: poison', () => {
     expect(player.isPoisoned).toBe(false);
     const poison = MONSTERS.forest_viper.poison!;
     const ticks = Math.floor(poison.duration / 0.5);
-    expect(afterHit - player.hp).toBe(ticks * Math.max(1, Math.round(poison.dps * 0.5)));
+    expect(afterHit - player.hp).toBe(poison.dps * poison.duration); // a fraction of a point is carried, nothing is lost
     expect(events.taken).toHaveLength(1 + ticks);
   });
 

@@ -13,7 +13,10 @@ import {
 import type { Player } from '../entities/Player';
 import type { DamageType } from '../data/damageTypes';
 import { inAttackArc } from './combatMath';
-import { resolveHit, type Offense } from './damage';
+import { resolveHit, type HitResult, type Offense } from './damage';
+import { applyTriggers, type StatusTrigger } from './status';
+import type { StatusId } from '../data/statuses';
+import { gearTriggers } from './stats';
 import type { CollisionSystem } from './CollisionSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import type { SkillProjectileSystem } from './SkillProjectileSystem';
@@ -22,6 +25,8 @@ import type { Rng } from './rng';
 
 /** Things the rest of the game wants to react to (floating numbers, HUD, kill counts). */
 export interface CombatEvents {
+  /** Effects were put on a monster by a hit (floating text with their names). Optional. */
+  statusApplied?(x: number, y: number, ids: readonly StatusId[]): void;
   /** The player hurt a monster. (x, y) is where to show the number; `type` is the kind of damage that did the most (it colours the number). */
   damageDealt(x: number, y: number, amount: number, crit: boolean, type?: DamageType): void;
   /** The player took damage after armor or resistance. */
@@ -164,7 +169,7 @@ export class CombatSystem implements MonsterHooks {
         const radius = def.radius ?? 2;
         for (const m of this.monsters()) {
           if (!m.hittable) continue;
-          if (Math.hypot(m.pos.x - pos.x, m.pos.y - pos.y) <= radius + m.def.radius) this.skillHit(m, stats.damageMult, def.damageType);
+          if (Math.hypot(m.pos.x - pos.x, m.pos.y - pos.y) <= radius + m.def.radius) this.skillHit(m, stats.damageMult, def.damageType, def.applies);
         }
         this.events.skillFx('spin', pos.x, pos.y, radius);
         break;
@@ -176,7 +181,7 @@ export class CombatSystem implements MonsterHooks {
           const angle = base + (i - (stats.count - 1) / 2) * spread;
           const dx = Math.cos(angle);
           const dy = Math.sin(angle);
-          this.skillBolts.fire(pos.x + dx * 0.5, pos.y + dy * 0.5, dx, dy, def.speed ?? 12, def.range ?? 10, stats.damageMult, def.damageType);
+          this.skillBolts.fire(pos.x + dx * 0.5, pos.y + dy * 0.5, dx, dy, def.speed ?? 12, def.range ?? 10, stats.damageMult, def.damageType, def.applies);
         }
         break;
       }
@@ -193,7 +198,7 @@ export class CombatSystem implements MonsterHooks {
         for (const m of this.monsters()) {
           if (!m.hittable) continue;
           if (Math.hypot(m.pos.x - tx, m.pos.y - ty) <= radius + m.def.radius) {
-            if (!this.skillHit(m, stats.damageMult, def.damageType)) m.stun(def.stunSeconds ?? 1);
+            if (!this.skillHit(m, stats.damageMult, def.damageType, def.applies)) m.stun(def.stunSeconds ?? 1);
           }
         }
         this.events.skillFx('slam', tx, ty, radius);
@@ -203,14 +208,14 @@ export class CombatSystem implements MonsterHooks {
   }
 
   /** A player bolt reached an enemy. */
-  boltHit(target: BoltTarget, damageMult: number, type: DamageType = 'physical'): void {
+  boltHit(target: BoltTarget, damageMult: number, type: DamageType = 'physical', applies: readonly StatusTrigger[] = []): void {
     const m = this.monsters().find((x) => x === target);
-    if (m && m.hittable) this.skillHit(m, damageMult, type);
+    if (m && m.hittable) this.skillHit(m, damageMult, type, applies);
   }
 
   /** A skill hit: the attack damage as `type`, x the skill's multiplier, with crits. Returns true if it killed the monster. */
-  private skillHit(m: Monster, damageMult: number, type: DamageType = 'physical'): boolean {
-    return this.strike(m, type, damageMult);
+  private skillHit(m: Monster, damageMult: number, type: DamageType = 'physical', applies: readonly StatusTrigger[] = []): boolean {
+    return this.strike(m, type, damageMult, applies);
   }
 
   /** What the player's attacks bring: increased damage by type and the crit numbers. */
@@ -223,21 +228,45 @@ export class CombatSystem implements MonsterHooks {
    * One of the player's hits on a monster, through the shared damage rules: the attack stat as damage of `type`, the skill's multiplier,
    * the player's increased damage and crit, then the monster's armor or resistance. Returns true if it killed the monster.
    */
-  private strike(m: Monster, type: DamageType, skillMultiplier: number): boolean {
+  private strike(m: Monster, type: DamageType, skillMultiplier: number, applies: readonly StatusTrigger[] = []): boolean {
     const hit = resolveHit({ damage: { [type]: this.player.stats.damage }, skillMultiplier, canCrit: true }, this.offense(), m.defense, this.rng);
-    return this.damageMonster(m, hit.total, hit.crit, hit.dominant);
+    const killed = this.damageMonster(m, hit.total, hit.crit, hit.dominant);
+    if (!killed) this.applyStatuses(m, hit, applies);
+    return killed;
+  }
+
+  /** What a hit puts on the monster: what the skill carries, and what the gear of the player gives every attack. */
+  private applyStatuses(m: Monster, hit: HitResult, skillTriggers: readonly StatusTrigger[]): void {
+    const { stats } = this.player;
+    const triggers = [...skillTriggers, ...gearTriggers(stats)];
+    if (triggers.length === 0) return;
+    const applied = applyTriggers(
+      m.status,
+      triggers,
+      { raw: hit.raw, crit: hit.crit, increased: stats.increased, dotDamage: stats.dotDamage, durationBonus: stats.statusDuration },
+      this.rng,
+    );
+    if (applied.length > 0) this.events.statusApplied?.(m.pos.x, m.pos.y, applied);
   }
 
   /** Moves projectiles and bolts, applying the ones that reached their targets. */
   update(dt: number): void {
-    // poison that is already in the blood keeps ticking
-    const tick = this.player.tickPoison(dt);
+    // what is already in the blood keeps ticking (poison, and later anything else that burns or bleeds)
+    const tick = this.player.tickStatus(dt);
     if (tick) {
-      this.events.damageTaken(this.player.pos.x, this.player.pos.y, tick.amount);
+      this.events.damageTaken(this.player.pos.x, this.player.pos.y, tick.amount, tick.type);
       if (tick.died) this.events.playerDied();
     }
+    // the same for the monsters: timers run, damage over time hurts (and can kill)
+    for (const m of this.monsters()) {
+      if (m.state === 'dead') continue;
+      const dot = m.status.tick(dt, m.baseDefense);
+      if (!dot) continue;
+      const type = (Object.entries(dot.byType) as [DamageType, number][]).sort((x, y) => y[1] - x[1])[0]?.[0] ?? 'physical';
+      this.damageMonster(m, dot.amount, false, type);
+    }
     this.projectiles.update(dt, this.collision, this.player, (p) => this.hurtPlayer(p.damage, p.owner, p.effects));
-    this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult, bolt.damageType));
+    this.skillBolts.update(dt, this.collision, this.monsters(), (target, bolt) => this.boltHit(target, bolt.damageMult, bolt.damageType, bolt.applies));
   }
 
   /** Applies final damage to a monster, reports it, and handles the kill. */
@@ -290,7 +319,9 @@ export class CombatSystem implements MonsterHooks {
       this.events.lightningArc(from.pos.x, from.pos.y, best.pos.x, best.pos.y);
       // lightning damage: the monster's lightning resistance applies, and so does the player's increased lightning damage; it does not crit
       const hit = resolveHit({ damage: { lightning: damage } }, { increased: this.player.stats.increased }, best.defense);
-      this.damageMonster(best, hit.total, false, 'lightning');
+      const killed = this.damageMonster(best, hit.total, false, 'lightning');
+      // the lightning shocks what it strikes
+      if (!killed) this.applyStatuses(best, hit, [{ id: 'shock', chance: cfg.shockChance }]);
       from = best;
     }
   }

@@ -1,5 +1,6 @@
 import { SpriteKey } from '../game/assetManifest';
 import type { DamageType, ResistType } from './damageTypes';
+import type { StatusId } from './statuses';
 import type { LootTableId } from './lootTables';
 
 export type MonsterBehavior = 'melee' | 'ranged';
@@ -155,6 +156,10 @@ export interface MonsterDef {
   armor?: number;
   /** Resistances against the other kinds of damage as fractions (0.5 = takes half; -0.5 = takes half again as much). */
   resist?: Partial<Record<ResistType, number>>;
+  /** Shortens slow, freeze and the other control effects on it by this share (0 to 0.9). A boss has 0.5 unless this says otherwise. */
+  controlResist?: number;
+  /** Effects it can never have (a stone golem does not bleed, an ice spirit does not freeze). */
+  immune?: readonly StatusId[];
   /** World units per second. */
   moveSpeed: number;
   /** Starts chasing when the player is this close (centre distance) and in line of sight. */
@@ -351,6 +356,7 @@ export const MONSTERS = {
     damage: 5,
     damageType: 'cold',
     resist: { cold: 0.5, lightning: -0.25 },
+    immune: ['bleeding', 'freeze'],
     moveSpeed: 1.7,
     detectRange: 8,
     attackRange: 5.5,
@@ -439,6 +445,7 @@ export const MONSTERS = {
     maxHp: 100,
     damage: 15,
     armor: 15,
+    immune: ['bleeding', 'poison'],
     moveSpeed: 1.4,
     detectRange: 7,
     attackRange: 0.5,
@@ -462,6 +469,7 @@ export const MONSTERS = {
     damage: 8,
     damageType: 'corruption',
     resist: { divine: -0.25 },
+    immune: ['bleeding', 'poison'],
     moveSpeed: 2.6,
     detectRange: 9,
     attackRange: 7,
@@ -489,6 +497,7 @@ export const MONSTERS = {
     maxHp: 1,
     damage: 5,
     damageType: 'corruption',
+    immune: ['bleeding', 'poison'],
     moveSpeed: 2.8,
     detectRange: 12,
     attackRange: 7,
@@ -519,6 +528,7 @@ export const MONSTERS = {
     damageType: 'divine',
     armor: 15,
     resist: { divine: 0.4, corruption: -0.25 },
+    immune: ['bleeding', 'poison'],
     moveSpeed: 2.3,
     detectRange: 12,
     attackRange: 1.3,
@@ -597,6 +607,7 @@ export const MONSTERS = {
     damage: 8,
     damageType: 'cold',
     resist: { cold: 0.5, lightning: -0.3 },
+    immune: ['bleeding', 'poison', 'freeze'],
     moveSpeed: 2.6,
     detectRange: 9,
     attackRange: 7,
@@ -622,6 +633,7 @@ export const MONSTERS = {
     maxHp: 85,
     damage: 12,
     resist: { corruption: 0.5 },
+    immune: ['poison'],
     moveSpeed: 1.5,
     detectRange: 6,
     attackRange: 0.45,
@@ -691,6 +703,7 @@ export const MONSTERS = {
     maxHp: 150,
     damage: 14,
     armor: 10,
+    resist: { fire: -0.3 },
     moveSpeed: 1.9,
     detectRange: 7,
     attackRange: 1.8,
@@ -713,7 +726,8 @@ export const MONSTERS = {
     maxHp: 60,
     damage: 5,
     damageType: 'corruption',
-    resist: { corruption: 0.6, divine: -0.25 },
+    resist: { corruption: 0.6, divine: -0.25, fire: -0.5 },
+    immune: ['poison', 'corruption'],
     moveSpeed: 1.1,
     detectRange: 9,
     attackRange: 7,
@@ -737,6 +751,7 @@ export const MONSTERS = {
     maxHp: 1100,
     damage: 20,
     armor: 15,
+    resist: { fire: -0.5 },
     moveSpeed: 2.2,
     detectRange: 12,
     attackRange: 1.6,
@@ -841,6 +856,7 @@ export const MONSTERS = {
     damage: 22,
     armor: 40,
     resist: { lightning: -0.3 },
+    immune: ['bleeding', 'poison'],
     moveSpeed: 1.9,
     detectRange: 12,
     attackRange: 1.8,
@@ -874,6 +890,7 @@ export const MONSTERS = {
     maxHp: 140,
     damage: 12,
     armor: 25,
+    immune: ['bleeding', 'poison'],
     moveSpeed: 1.3,
     detectRange: 6,
     attackRange: 1.7,
@@ -913,6 +930,7 @@ export const MONSTERS = {
     maxHp: 28,
     damage: 7,
     damageType: 'cold',
+    immune: ['bleeding', 'poison'],
     moveSpeed: 2.0,
     detectRange: 9,
     attackRange: 6,
@@ -952,6 +970,7 @@ export const MONSTERS = {
     maxHp: 520,
     damage: 14,
     armor: 20,
+    immune: ['bleeding', 'poison'],
     moveSpeed: 2.5,
     detectRange: 11,
     attackRange: 0.7,

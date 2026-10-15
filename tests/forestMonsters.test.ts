@@ -10,7 +10,7 @@ import {
   type MonsterTarget,
 } from '../src/entities/Monster';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
-import { POISON_TICK, PoisonEffect } from '../src/systems/buffs';
+import { StatusSet } from '../src/systems/status';
 
 const HALL = parseMap({
   id: 'hall',
@@ -164,40 +164,41 @@ describe('viper: spits venom', () => {
 
 describe('poison', () => {
   it('ticks on a fixed beat and runs out', () => {
-    const p = new PoisonEffect();
-    p.apply(4, 2);
+    const p = new StatusSet();
+    p.apply({ id: 'poison', dps: 4, duration: 2 });
     let total = 0;
     let ticks = 0;
     for (let i = 0; i < 60 * 3; i++) {
-      const d = p.tick(DT);
+      const d = p.tick(DT)?.amount ?? 0;
       if (d > 0) {
         ticks++;
         total += d;
       }
     }
-    expect(ticks).toBe(Math.floor(2 / POISON_TICK));
-    expect(total).toBe(ticks * Math.round(4 * POISON_TICK));
-    expect(p.active).toBe(false);
-    expect(p.tick(DT)).toBe(0);
+    expect(ticks).toBe(Math.floor(2 / 0.5));
+    expect(total).toBe(4 * 2);
+    expect(p.has('poison')).toBe(false);
+    expect(p.tick(DT)).toBeNull();
   });
 
   it('does not stack: a second dose keeps the stronger rate and the longer time', () => {
-    const p = new PoisonEffect();
-    p.apply(2, 4);
-    p.apply(6, 1);
-    expect(p.secondsLeft).toBe(4);
+    const p = new StatusSet();
+    p.apply({ id: 'poison', dps: 2, duration: 4 });
+    p.apply({ id: 'poison', dps: 6, duration: 1 });
+    expect(p.remaining('poison')).toBeCloseTo(4, 9);
     let first = 0;
-    for (let i = 0; first === 0 && i < 600; i++) first = p.tick(DT);
-    expect(first).toBe(Math.round(6 * POISON_TICK));
+    for (let i = 0; first === 0 && i < 600; i++) first = p.tick(DT)?.amount ?? 0;
+    expect(first).toBe(6 * 0.5);
   });
 
-  it('never deals less than 1 per tick, and clear() ends it', () => {
-    const p = new PoisonEffect();
-    p.apply(0.2, 5);
-    let first = 0;
-    for (let i = 0; first === 0 && i < 600; i++) first = p.tick(DT);
-    expect(first).toBe(1);
+  it('carries a fraction of a point to the next tick, so a weak poison still adds up and nothing is lost; clear() ends it', () => {
+    const p = new StatusSet();
+    p.apply({ id: 'poison', dps: 0.4, duration: 5 });
+    let total = 0;
+    for (let i = 0; i < 60 * 6; i++) total += p.tick(DT)?.amount ?? 0;
+    expect(total).toBe(2); // 0.4 per second for 5 seconds
+    p.apply({ id: 'poison', dps: 5, duration: 5 });
     p.clear();
-    expect(p.active).toBe(false);
+    expect(p.has('poison')).toBe(false);
   });
 });

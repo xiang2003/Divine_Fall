@@ -1,4 +1,5 @@
 import type { InputAction } from '../config/gameConfig';
+import type { StatusTrigger } from '../systems/status';
 import type { DamageType } from './damageTypes';
 
 export type SkillKind = 'spin' | 'bolt' | 'slam';
@@ -22,6 +23,8 @@ export interface SkillDef {
   damageMult: number;
   /** The kind of damage it deals (default physical). */
   damageType?: DamageType;
+  /** What it puts on the enemies it hits (see systems/status.ts). */
+  applies?: readonly StatusTrigger[];
   /** spin / slam: radius of the area in world units. */
   radius?: number;
   /** slam: farthest distance from the player the target point may be; bolt: how far a bolt flies. */
@@ -43,12 +46,13 @@ export const SKILLS: readonly SkillDef[] = [
     action: 'skillQ',
     keyLabel: 'Q',
     name: '旋風斬',
-    description: '以自身為中心橫掃一圈，對範圍內所有敵人造成大量傷害。',
+    description: '以自身為中心橫掃一圈，對範圍內所有敵人造成大量傷害；暴擊時使敵人流血。',
     kind: 'spin',
     cooldown: 6,
     castTime: 0.45,
     hitFraction: 0.5,
     damageMult: 1.6,
+    applies: [{ id: 'bleeding', chance: 1, on: 'crit' }],
     radius: 2.4,
   },
   {
@@ -56,13 +60,14 @@ export const SKILLS: readonly SkillDef[] = [
     action: 'skillW',
     keyLabel: 'W',
     name: '神罰之矢',
-    description: '朝游標方向射出會穿透敵人的光矢。',
+    description: '朝游標方向射出會穿透敵人的光矢，有機率使敵人感電。',
     kind: 'bolt',
     cooldown: 4,
     castTime: 0.35,
     hitFraction: 0.5,
     damageMult: 1.3,
     damageType: 'divine',
+    applies: [{ id: 'shock', chance: 0.3 }],
     speed: 12,
     range: 10,
     count: 1,
@@ -73,12 +78,13 @@ export const SKILLS: readonly SkillDef[] = [
     action: 'skillE',
     keyLabel: 'E',
     name: '墜神震擊',
-    description: '重擊游標指定的位置，對範圍內敵人造成傷害並使其暈眩。',
+    description: '重擊游標指定的位置，對範圍內敵人造成傷害，使其暈眩並破壞護甲。',
     kind: 'slam',
     cooldown: 9,
     castTime: 0.6,
     hitFraction: 0.6,
     damageMult: 2.2,
+    applies: [{ id: 'armorBreak', chance: 1 }],
     radius: 2.2,
     range: 7,
     stunSeconds: 1.5,

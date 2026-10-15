@@ -323,6 +323,12 @@ body,
 .damage-number.t-divine {
   color: #fff2b0;
 }
+.damage-number.status {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 3px #000;
+}
 .damage-number.gold {
   color: #ffd84a;
   font-size: 15px;
@@ -718,6 +724,16 @@ body,
 .nameplate.boss .nameplate-title {
   font-size: 17px;
   color: #d98cff;
+}
+
+.nameplate-status {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  min-height: 0;
 }
 
 .nameplate-affixes {

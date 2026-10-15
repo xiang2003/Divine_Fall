@@ -3,7 +3,7 @@ import { parseMap } from '../src/data/mapData';
 import { MONSTERS } from '../src/data/monsters';
 import { CHARGE_END, CHARGE_START, Monster, type MonsterHooks, type MonsterTarget } from '../src/entities/Monster';
 import { CollisionSystem } from '../src/systems/CollisionSystem';
-import { SlowEffect } from '../src/systems/buffs';
+import { StatusSet } from '../src/systems/status';
 import { PACK_RADIUS, planSpawns } from '../src/systems/spawnPlan';
 
 const HALL = parseMap({
@@ -60,28 +60,28 @@ const at = (id: keyof typeof MONSTERS, x: number, y: number, rng?: () => number)
 
 describe('slow', () => {
   it('slows to a fraction for a while and then wears off', () => {
-    const s = new SlowEffect();
-    expect(s.multiplier).toBe(1);
-    s.apply(0.5, 2);
-    expect(s.active).toBe(true);
-    expect(s.multiplier).toBe(0.5);
-    s.update(1.9);
-    expect(s.multiplier).toBe(0.5);
-    s.update(0.2);
-    expect(s.active).toBe(false);
-    expect(s.multiplier).toBe(1);
+    const s = new StatusSet();
+    expect(s.moveSpeedMultiplier).toBe(1);
+    s.apply({ id: 'slow', magnitude: 0.5, duration: 2 });
+    expect(s.has('slow')).toBe(true);
+    expect(s.moveSpeedMultiplier).toBe(0.5);
+    s.tick(1.9);
+    expect(s.moveSpeedMultiplier).toBe(0.5);
+    s.tick(0.2);
+    expect(s.has('slow')).toBe(false);
+    expect(s.moveSpeedMultiplier).toBe(1);
   });
 
   it('does not stack: the stronger slow and the longer time win', () => {
-    const s = new SlowEffect();
-    s.apply(0.7, 1);
-    s.apply(0.4, 3);
-    s.apply(0.9, 0.5);
-    expect(s.multiplier).toBe(0.4);
-    s.update(2.9);
-    expect(s.active).toBe(true);
+    const s = new StatusSet();
+    s.apply({ id: 'slow', magnitude: 0.7, duration: 1 });
+    s.apply({ id: 'slow', magnitude: 0.4, duration: 3 });
+    s.apply({ id: 'slow', magnitude: 0.9, duration: 0.5 });
+    expect(s.moveSpeedMultiplier).toBe(0.4);
+    s.tick(2.9);
+    expect(s.has('slow')).toBe(true);
     s.clear();
-    expect(s.multiplier).toBe(1);
+    expect(s.moveSpeedMultiplier).toBe(1);
   });
 });
 

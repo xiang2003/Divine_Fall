@@ -1,6 +1,7 @@
 import { MAX_MOVE_STEP } from '../config/gameConfig';
 import type { DamageType } from '../data/damageTypes';
 import type { Vec2 } from '../game/iso';
+import type { StatusTrigger } from '../systems/status';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 
 export interface BoltTarget {
@@ -25,10 +26,12 @@ export class Bolt<T extends BoltTarget = BoltTarget> {
   damageMult = 1;
   /** What kind of damage it deals. */
   damageType: DamageType = 'physical';
+  /** What it puts on whatever it hits. */
+  applies: readonly StatusTrigger[] = [];
   life = 0;
   private readonly alreadyHit = new Set<T>();
 
-  launch(x: number, y: number, dirX: number, dirY: number, speed: number, life: number, damageMult: number, damageType: DamageType = 'physical'): void {
+  launch(x: number, y: number, dirX: number, dirY: number, speed: number, life: number, damageMult: number, damageType: DamageType = 'physical', applies: readonly StatusTrigger[] = []): void {
     this.active = true;
     this.pos.x = x;
     this.pos.y = y;
@@ -38,6 +41,7 @@ export class Bolt<T extends BoltTarget = BoltTarget> {
     this.life = life;
     this.damageMult = damageMult;
     this.damageType = damageType;
+    this.applies = applies;
     this.alreadyHit.clear();
   }
 

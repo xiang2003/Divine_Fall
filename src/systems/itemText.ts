@@ -1,5 +1,6 @@
 import { getAffix } from '../data/affixes';
 import { DAMAGE_TYPES, DAMAGE_TYPE_INFO, RESIST_TYPES } from '../data/damageTypes';
+import { STATUSES, type StatusId } from '../data/statuses';
 import { getBaseItem, getLegendary, SLOT_LABEL, type ItemInstance, type ItemMod, type StatKey } from '../data/items';
 import { LEGENDARY_EFFECT_TEXT } from '../data/legendaryEffects';
 import { RARITY_INFO } from '../data/rarity';
@@ -29,6 +30,16 @@ const STAT_TEXT: Record<StatKey, (v: number) => string> = {
   lightningResPct: (v) => `雷電抗性 +${v}%`,
   corruptionResPct: (v) => `腐化抗性 +${v}%`,
   divineResPct: (v) => `神聖抗性 +${v}%`,
+  bleedChancePct: (v) => `攻擊有 ${v}% 機率使敵人流血`,
+  burnChancePct: (v) => `攻擊有 ${v}% 機率點燃敵人`,
+  corruptionChancePct: (v) => `攻擊有 ${v}% 機率使敵人受腐化侵蝕`,
+  shockChancePct: (v) => `攻擊有 ${v}% 機率使敵人感電`,
+  armorBreakChancePct: (v) => `攻擊有 ${v}% 機率破壞敵人的護甲`,
+  weakenChancePct: (v) => `攻擊有 ${v}% 機率使敵人虛弱`,
+  slowChancePct: (v) => `攻擊有 ${v}% 機率使敵人緩速`,
+  freezeBuildup: (v) => `每次攻擊累積 ${v} 點凍結值`,
+  dotDamagePct: (v) => `持續傷害增加 ${v}%`,
+  statusDurationPct: (v) => `異常狀態持續時間 +${v}%`,
 };
 
 /** Lines for the item's fixed base stats. */
@@ -97,6 +108,13 @@ export const STAT_ROWS: StatRowDef[] = [
   { key: 'moveSpeed', label: '移動速度', get: plain('moveSpeed'), format: (v) => v.toFixed(2) },
   ...DAMAGE_TYPES.map((t): StatRowDef => ({ key: `increased.${t}`, label: `${DAMAGE_TYPE_INFO[t].label}傷害增加`, get: (s) => s.increased?.[t] ?? 0, format: pct, extra: true })),
   ...RESIST_TYPES.map((t): StatRowDef => ({ key: `resist.${t}`, label: DAMAGE_TYPE_INFO[t].defenseLabel, get: (s) => s.resist?.[t] ?? 0, format: pct, extra: true })),
+  // what attacks put on their target
+  ...(['bleeding', 'burning', 'corruption', 'shock', 'armorBreak', 'weaken', 'slow'] as StatusId[]).map(
+    (id): StatRowDef => ({ key: `status.${id}`, label: `${STATUSES[id].name}機率`, get: (s) => s.statusChance?.[id] ?? 0, format: pct, extra: true }),
+  ),
+  { key: 'freezeBuildup', label: '凍結值（每次攻擊）', get: (s) => s.freezeBuildup ?? 0, format: (v) => v.toFixed(0), extra: true },
+  { key: 'dotDamage', label: '持續傷害增加', get: (s) => s.dotDamage ?? 0, format: pct, extra: true },
+  { key: 'statusDuration', label: '異常持續時間', get: (s) => s.statusDuration ?? 0, format: pct, extra: true },
 ];
 
 /** Rows where the value differs between two stat sets, for the "compare with equipped" section. */

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CAMERA_CONFIG } from '../config/gameConfig';
 import { ELITE_AFFIXES } from '../data/eliteAffixes';
+import type { StatusId } from '../data/statuses';
 import { SpriteKey } from '../game/assetManifest';
 import type { AssetLoader } from '../game/AssetLoader';
 import type { CameraController } from '../game/CameraController';
@@ -28,6 +29,19 @@ const ANIMATION_FOR_STATE: Record<MonsterState, string> = {
  * Draws one Monster: sprite animation, shadow, health bar and (for elites and bosses) a name plate.
  * Reads the monster's state; never changes it.
  */
+/** The tint of the figure for each status effect on it, and which one wins when there are several. */
+const STATUS_TINT: Partial<Record<StatusId, readonly [number, number, number]>> = {
+  freeze: [0.62, 0.86, 1],
+  burning: [1, 0.64, 0.34],
+  shock: [1, 1, 0.55],
+  corruption: [0.8, 0.6, 1],
+  bleeding: [1, 0.6, 0.6],
+  armorBreak: [0.92, 0.82, 0.62],
+  weaken: [0.76, 0.72, 0.95],
+  slow: [0.66, 0.9, 1],
+};
+const STATUS_TINT_ORDER: readonly StatusId[] = ['freeze', 'burning', 'shock', 'corruption', 'bleeding', 'armorBreak', 'weaken', 'slow'];
+
 export class MonsterView {
   readonly group = new THREE.Group();
   private readonly animator: SpriteAnimator | DirectionalAnimator;
@@ -44,6 +58,10 @@ export class MonsterView {
   /** The ripples that show where an ambusher lies hidden. */
   private readonly ripple: THREE.Mesh | null = null;
   private readonly nameplate: HTMLDivElement | null = null;
+  /** The line of the name plate that lists the status effects on the monster. */
+  private statusLine: HTMLDivElement | null = null;
+  private shownStatuses = '';
+  private shownFrozen = false;
   private readonly screen: Vec2 = { x: 0, y: 0 };
   private shownState: MonsterState | null = null;
 
@@ -93,6 +111,9 @@ export class MonsterView {
         affixes.textContent = monster.affixes.map((id) => ELITE_AFFIXES[id].name).join(' · ');
         el.appendChild(affixes);
       }
+      this.statusLine = document.createElement('div');
+      this.statusLine.className = 'nameplate-status';
+      el.appendChild(this.statusLine);
       nameplateLayer.appendChild(el);
       this.nameplate = el;
     }
@@ -125,6 +146,7 @@ export class MonsterView {
       this.directional.setEnraged(m.berserk);
       if (m.def.hop) this.directional.setGait(m.hopPhase);
     }
+    this.updateStatus(m);
     this.animator.update(dt);
 
     const dead = m.state === 'dead';
@@ -167,6 +189,35 @@ export class MonsterView {
         const lift = (m.def.barHeight * m.scale + 14) * CAMERA_CONFIG.zoom;
         this.nameplate.style.display = 'block';
         this.nameplate.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y - lift)}px) translate(-50%, -100%)`;
+      }
+    }
+  }
+
+  /** The status effects on the monster: its tint, a frozen figure holding still, and the list on the name plate of an elite or a boss. */
+  private updateStatus(m: Monster): void {
+    const list = m.status.list();
+    if (this.directional) {
+      const top = STATUS_TINT_ORDER.find((id) => list.some((s) => s.id === id));
+      this.directional.setStatusTint(top ? (STATUS_TINT[top] ?? null) : null);
+    }
+    const frozen = m.status.frozen && m.state !== 'dead';
+    if (frozen !== this.shownFrozen) {
+      this.shownFrozen = frozen;
+      if (frozen) this.animator.setSpeed(0);
+      else this.shownState = null; // picks the animation speed of its state again
+    }
+    if (this.statusLine) {
+      const key = list.map((s) => s.id).join(',');
+      if (key !== this.shownStatuses) {
+        this.shownStatuses = key;
+        this.statusLine.replaceChildren(
+          ...list.map((s) => {
+            const span = document.createElement('span');
+            span.textContent = s.name;
+            span.style.color = s.color;
+            return span;
+          }),
+        );
       }
     }
   }

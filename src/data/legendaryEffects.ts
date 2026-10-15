@@ -11,6 +11,8 @@ export const LEGENDARY_EFFECTS = {
     range: 4,
     /** Fraction of the player's attack damage dealt by each arc. */
     damageRatio: 0.6,
+    /** Chance that each arc shocks the enemy it strikes. */
+    shockChance: 0.5,
   },
   lifeOnKill: {
     /** Fraction of max HP restored per kill. */
@@ -33,7 +35,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 /** Tooltip text, generated from the numbers above so it can never disagree with the behaviour. */
 export const LEGENDARY_EFFECT_TEXT: Record<LegendaryEffectId, string> = {
-  chainLightning: `攻擊命中時有 ${pct(LEGENDARY_EFFECTS.chainLightning.chance)} 機率釋放連鎖閃電，對附近最多 ${LEGENDARY_EFFECTS.chainLightning.maxTargets} 名敵人各造成 ${pct(LEGENDARY_EFFECTS.chainLightning.damageRatio)} 攻擊傷害`,
+  chainLightning: `攻擊命中時有 ${pct(LEGENDARY_EFFECTS.chainLightning.chance)} 機率釋放連鎖閃電，對附近最多 ${LEGENDARY_EFFECTS.chainLightning.maxTargets} 名敵人各造成 ${pct(LEGENDARY_EFFECTS.chainLightning.damageRatio)} 攻擊傷害，並有 ${pct(LEGENDARY_EFFECTS.chainLightning.shockChance)} 機率使其感電`,
   lifeOnKill: `擊殺敵人時恢復 ${pct(LEGENDARY_EFFECTS.lifeOnKill.healRatio)} 最大生命（至少 ${LEGENDARY_EFFECTS.lifeOnKill.minHeal} 點）`,
   dodgeHaste: `閃避後 ${LEGENDARY_EFFECTS.dodgeHaste.duration} 秒內移動速度 +${pct(LEGENDARY_EFFECTS.dodgeHaste.speedBonus)}`,
   killFrenzy: `擊殺敵人後 ${LEGENDARY_EFFECTS.killFrenzy.duration} 秒內攻擊速度 +${pct(LEGENDARY_EFFECTS.killFrenzy.attackSpeedBonus)}`,

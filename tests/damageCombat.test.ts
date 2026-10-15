@@ -11,7 +11,8 @@ import { resolveHit } from '../src/systems/damage';
 import type { ProjectileSystem } from '../src/systems/ProjectileSystem';
 import type { SkillProjectileSystem } from '../src/systems/SkillProjectileSystem';
 import { parseMap } from '../src/data/mapData';
-import { Buffs, PoisonEffect } from '../src/systems/buffs';
+import { Buffs } from '../src/systems/buffs';
+import { StatusSet } from '../src/systems/status';
 import { computeStats, emptyEquipment } from '../src/systems/stats';
 import type { ItemInstance } from '../src/data/items';
 
@@ -27,9 +28,9 @@ function setup(statsOver: Partial<ReturnType<typeof computeStats>> = {}) {
     hp: stats.maxHp,
     isDead: false,
     buffs: new Buffs(),
-    poison: new PoisonEffect(),
+    status: new StatusSet(),
     applyPoison() {},
-    tickPoison: () => null,
+    tickStatus: () => null,
     hasEffect: () => false,
     heal: () => 0,
     takeDamage(raw: number, type: DamageType = 'physical') {

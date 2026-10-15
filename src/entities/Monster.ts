@@ -7,6 +7,8 @@ import { AttackTimer } from '../systems/AttackTimer';
 import { chooseBossAttack, phaseForHpRatio } from '../systems/bossAI';
 import type { CollisionSystem } from '../systems/CollisionSystem';
 import type { Defense } from '../systems/damage';
+import { StatusSet } from '../systems/status';
+import { BOSS_CONTROL_RESIST, FREEZE_RULES } from '../data/statuses';
 import { computeMonsterStats, type MonsterStats } from '../systems/elite';
 import { defaultRng, type Rng } from '../systems/rng';
 
@@ -113,6 +115,8 @@ export class Monster {
   readonly affixes: readonly EliteAffixId[];
   /** Effective stats (base definition plus elite bonuses). */
   readonly stats: MonsterStats;
+  /** Everything that is on this monster: burning, slow, freeze, shock... (see systems/status.ts). */
+  readonly status: StatusSet;
   hp: number;
   state: MonsterState = 'idle';
   /** Seconds spent in the current state. */
@@ -163,6 +167,11 @@ export class Monster {
     this.affixes = options.affixes ?? [];
     this.rng = options.rng ?? defaultRng;
     this.stats = computeMonsterStats(def, this.affixes);
+    this.status = new StatusSet({
+      controlResist: def.controlResist ?? (def.isBoss ? BOSS_CONTROL_RESIST : 0),
+      immune: def.immune,
+      buildupFactor: def.isBoss ? FREEZE_RULES.bossFactor : 1,
+    });
     this.hp = this.stats.maxHp;
     this.hidden = def.ambush !== undefined;
     if (options.summoned) this.splitDone = true;
@@ -200,13 +209,18 @@ export class Monster {
     return this.stats.maxHp;
   }
   /** Base damage per hit (elite bonuses included, armor not yet applied). */
-  /** What the player's attacks are measured against: this monster's armor and resistances. */
-  get defense(): Defense {
+  /** What the monster is made of without anything on it: its armor and resistances. */
+  get baseDefense(): Defense {
     return { armor: this.def.armor ?? 0, resist: this.def.resist };
   }
 
+  /** What the player's attacks are measured against right now: the monster's armor and resistances, with armor break and shock on it. */
+  get defense(): Defense {
+    return this.status.defend(this.baseDefense);
+  }
+
   get damage(): number {
-    return this.stats.damage * (this.berserk ? this.def.berserk!.damageMult : 1);
+    return this.stats.damage * (this.berserk ? this.def.berserk!.damageMult : 1) * this.status.damageDealtMultiplier;
   }
   get scale(): number {
     return this.stats.scale;
@@ -222,7 +236,7 @@ export class Monster {
     return this.state === 'dead' && this.stateTime >= CORPSE_LIFETIME;
   }
   get moveSpeed(): number {
-    return this.stats.moveSpeed * (this.def.phaseSpeed?.[this.phase] ?? 1) * (this.berserk ? this.def.berserk!.speedMult : 1);
+    return this.stats.moveSpeed * (this.def.phaseSpeed?.[this.phase] ?? 1) * (this.berserk ? this.def.berserk!.speedMult : 1) * this.status.moveSpeedMultiplier;
   }
   /** Seconds between the start of one attack and the next (faster in later boss phases). */
   get attackCooldown(): number {
@@ -300,6 +314,14 @@ export class Monster {
     if (this.state === 'dead') return;
     this.sinceHurt += dt;
     this.age += dt;
+    if (!this.status.canAct) {
+      // frozen: whatever it was doing stops where it is, and it stays that way until it thaws
+      if (this.state === 'attack') {
+        this.attack.cancel();
+        this.enter('chase');
+      }
+      return;
+    }
     if (this.def.lifetime && this.age >= this.def.lifetime) {
       // an illusion that has run its time: it just goes (no kill is reported)
       this.hp = 0;

@@ -36,7 +36,18 @@ export type StatKey =
   | 'coldResPct'
   | 'lightningResPct'
   | 'corruptionResPct'
-  | 'divineResPct';
+  | 'divineResPct'
+  // status effects: the chance that an attack applies one (whole percentages), the freeze points an attack adds, more damage over time, longer effects
+  | 'bleedChancePct'
+  | 'burnChancePct'
+  | 'corruptionChancePct'
+  | 'shockChancePct'
+  | 'armorBreakChancePct'
+  | 'weakenChancePct'
+  | 'slowChancePct'
+  | 'freezeBuildup'
+  | 'dotDamagePct'
+  | 'statusDurationPct';
 
 export type StatMods = Partial<Record<StatKey, number>>;
 
